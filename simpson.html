@@ -1,0 +1,3006 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simpson's 1/3 Rule — Integral Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #07101f;
+        --surf: #0f1b2d;
+        --surf2: #152030;
+        --bord: #1a3050;
+        --acc: #00d4ff;
+        --acc2: #7c3aed;
+        --acc3: #10b981;
+        --txt: #e2e8f0;
+        --dim: #94a3b8;
+        --muted: #64748b;
+        --err: #f87171;
+        --warn: #fbbf24;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg);
+        color: var(--txt);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.022) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.022) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 44px 20px 90px;
+      }
+
+      /* ── HEADER ── */
+      .hdr {
+        text-align: center;
+        margin-bottom: 44px;
+        animation: fdown 0.6s ease both;
+      }
+      .badge {
+        display: inline-block;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.08),
+          rgba(124, 58, 237, 0.08)
+        );
+        border: 1px solid rgba(0, 212, 255, 0.22);
+        color: var(--acc);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        padding: 5px 16px;
+        border-radius: 100px;
+        margin-bottom: 16px;
+      }
+      h1 {
+        font-size: clamp(24px, 5vw, 44px);
+        font-weight: 800;
+        line-height: 1.1;
+        background: linear-gradient(
+          135deg,
+          #fff 0%,
+          var(--acc) 55%,
+          var(--acc2) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+      }
+      .sub {
+        color: var(--dim);
+        font-size: 14px;
+        max-width: 500px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+
+      /* ── SELECTION SCREEN ── */
+      #selectScreen {
+        animation: fup 0.5s ease both;
+      }
+      .sel-title {
+        text-align: center;
+        font-size: 12px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--dim);
+        font-family: "JetBrains Mono", monospace;
+        margin-bottom: 26px;
+      }
+      .sel-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .sel-card {
+        background: var(--surf);
+        border: 2px solid var(--bord);
+        border-radius: 22px;
+        padding: 36px 26px;
+        cursor: pointer;
+        transition: all 0.25s;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+      }
+      .sel-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--acc2), var(--acc));
+        opacity: 0;
+        transition: opacity 0.25s;
+      }
+      .sel-card:hover {
+        border-color: var(--acc);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 44px rgba(0, 212, 255, 0.18);
+      }
+      .sel-card:hover::after {
+        opacity: 1;
+      }
+      .sel-card.dbl:hover {
+        border-color: #c026d3;
+        box-shadow: 0 10px 44px rgba(192, 38, 211, 0.18);
+      }
+      .sel-card.dbl::after {
+        background: linear-gradient(90deg, var(--acc2), #c026d3);
+      }
+      .sel-icon {
+        font-size: 48px;
+        margin-bottom: 14px;
+        display: block;
+        line-height: 1;
+      }
+      .sel-name {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--txt);
+        margin-bottom: 12px;
+      }
+      .sel-formula {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--acc);
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.15);
+        border-radius: 8px;
+        padding: 8px 14px;
+        margin-bottom: 13px;
+        display: inline-block;
+        letter-spacing: 0.5px;
+      }
+      .sel-card.dbl .sel-formula {
+        color: #c4b5fd;
+        background: rgba(124, 58, 237, 0.06);
+        border-color: rgba(124, 58, 237, 0.2);
+      }
+      .sel-desc {
+        font-size: 13px;
+        color: var(--dim);
+        line-height: 1.65;
+      }
+      .sel-tag {
+        display: inline-block;
+        margin-top: 14px;
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 100px;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .sel-card:not(.dbl) .sel-tag {
+        background: rgba(0, 212, 255, 0.1);
+        color: var(--acc);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+      }
+      .sel-card.dbl .sel-tag {
+        background: rgba(192, 38, 211, 0.1);
+        color: #c4b5fd;
+        border: 1px solid rgba(192, 38, 211, 0.2);
+      }
+
+      /* ── CALC SCREEN ── */
+      #calcScreen {
+        display: none;
+      }
+      #calcScreen.show {
+        display: block;
+        animation: fup 0.4s ease both;
+      }
+      .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: transparent;
+        border: 1px solid var(--bord);
+        border-radius: 8px;
+        color: var(--dim);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        padding: 7px 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 24px;
+      }
+      .back-btn:hover {
+        border-color: var(--acc);
+        color: var(--acc);
+      }
+      .type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 100px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 16px;
+        margin-bottom: 18px;
+      }
+      .type-pill.sgl {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        color: var(--acc);
+      }
+      .type-pill.dbl {
+        background: rgba(192, 38, 211, 0.1);
+        border: 1px solid rgba(192, 38, 211, 0.3);
+        color: #c4b5fd;
+      }
+
+      /* ── FORMULA BAR ── */
+      .fbar {
+        background: var(--surf);
+        border: 1px solid var(--bord);
+        border-radius: 14px;
+        padding: 18px 24px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .fbar::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          var(--acc2),
+          var(--acc),
+          var(--acc3)
+        );
+      }
+      .fbar.dbl::before {
+        background: linear-gradient(90deg, var(--acc2), #c026d3, var(--acc));
+      }
+      .flbl {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 2px;
+        color: var(--acc);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .fbar.dbl .flbl {
+        color: #c4b5fd;
+      }
+      .ftxt {
+        font-family: "JetBrains Mono", monospace;
+        font-size: clamp(11px, 2vw, 13px);
+        color: #c4b5fd;
+        line-height: 2.1;
+      }
+      .ftxt .c1 {
+        color: var(--acc);
+      }
+      .ftxt .c4 {
+        color: var(--warn);
+      }
+      .ftxt .c2 {
+        color: var(--acc3);
+      }
+      .ftxt .cp {
+        color: #c026d3;
+      }
+
+      /* ── CARD ── */
+      .card {
+        background: var(--surf);
+        border: 1px solid var(--bord);
+        border-radius: 18px;
+        padding: 26px;
+        margin-bottom: 18px;
+      }
+      .sec {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--acc);
+        font-family: "JetBrains Mono", monospace;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .sec::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, var(--bord), transparent);
+      }
+      .sec.dbl {
+        color: #c4b5fd;
+      }
+
+      /* ── INPUTS ── */
+      .igrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .igrid4 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .ig {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .ig.full {
+        grid-column: 1/-1;
+      }
+      label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .lh {
+        font-weight: 400;
+        font-size: 10px;
+        color: var(--muted);
+        text-transform: none;
+        letter-spacing: 0;
+        font-family: "JetBrains Mono", monospace;
+      }
+      input[type="text"],
+      input[type="number"] {
+        background: var(--surf2);
+        border: 1px solid var(--bord);
+        border-radius: 9px;
+        color: var(--txt);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        padding: 10px 13px;
+        outline: none;
+        transition: all 0.2s;
+        width: 100%;
+      }
+      input:focus {
+        border-color: var(--acc);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.07);
+      }
+      input::placeholder {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .inote {
+        font-size: 10px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 7px;
+      }
+      .chip {
+        background: rgba(0, 212, 255, 0.04);
+        border: 1px solid rgba(0, 212, 255, 0.13);
+        border-radius: 7px;
+        color: var(--acc);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        padding: 4px 10px;
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+      .chip:hover {
+        background: rgba(0, 212, 255, 0.12);
+        border-color: rgba(0, 212, 255, 0.4);
+        transform: translateY(-1px);
+      }
+      .chip.d {
+        color: #c4b5fd;
+        border-color: rgba(192, 38, 211, 0.2);
+        background: rgba(192, 38, 211, 0.04);
+      }
+      .chip.d:hover {
+        background: rgba(192, 38, 211, 0.12);
+        border-color: rgba(192, 38, 211, 0.4);
+      }
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 4px 0 14px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .divider::before,
+      .divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--bord);
+      }
+
+      /* ── MESSAGES ── */
+      .msg {
+        padding: 9px 13px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-family: "JetBrains Mono", monospace;
+        margin-top: 10px;
+        display: none;
+      }
+      .msg.error {
+        background: rgba(248, 113, 113, 0.07);
+        border: 1px solid rgba(248, 113, 113, 0.26);
+        color: var(--err);
+      }
+      .msg.warn {
+        background: rgba(251, 191, 36, 0.07);
+        border: 1px solid rgba(251, 191, 36, 0.26);
+        color: var(--warn);
+      }
+      .msg.show {
+        display: block;
+        animation: fin 0.3s ease;
+      }
+
+      /* ── BUTTONS ── */
+      .btn-row {
+        display: flex;
+        gap: 11px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+      }
+      .btn-c {
+        flex: 1;
+        min-width: 150px;
+        background: linear-gradient(135deg, var(--acc2), var(--acc));
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-family: "Syne", sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 13px 24px;
+        cursor: pointer;
+        transition: all 0.22s;
+      }
+      .btn-c:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 28px rgba(0, 212, 255, 0.28);
+      }
+      .btn-c.dbl {
+        background: linear-gradient(135deg, var(--acc2), #c026d3);
+      }
+      .btn-c.dbl:hover {
+        box-shadow: 0 0 28px rgba(192, 38, 211, 0.35);
+      }
+      .btn-r {
+        background: transparent;
+        border: 1px solid var(--bord);
+        border-radius: 10px;
+        color: var(--dim);
+        font-family: "Syne", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 13px 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-r:hover {
+        border-color: var(--err);
+        color: var(--err);
+      }
+
+      /* ── RESULT HERO ── */
+      .rhero {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.04),
+          rgba(124, 58, 237, 0.04)
+        );
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 18px;
+        padding: 26px;
+        text-align: center;
+        margin-bottom: 18px;
+        position: relative;
+        overflow: hidden;
+      }
+      .rhero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          var(--acc2),
+          var(--acc),
+          var(--acc3)
+        );
+      }
+      .rhero.dbl::before {
+        background: linear-gradient(90deg, var(--acc2), #c026d3, var(--acc));
+      }
+      .rlbl {
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        margin-bottom: 8px;
+      }
+      .rval {
+        font-family: "JetBrains Mono", monospace;
+        font-size: clamp(22px, 5vw, 42px);
+        font-weight: 700;
+        color: var(--acc);
+        text-shadow: 0 0 28px rgba(0, 212, 255, 0.4);
+        letter-spacing: 2px;
+      }
+      .rmeta {
+        margin-top: 12px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .mp {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--bord);
+        border-radius: 7px;
+        padding: 5px 12px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--dim);
+      }
+      .mp span {
+        color: var(--acc3);
+      }
+
+      /* ── RESULTS ── */
+      .results {
+        display: none;
+      }
+      .results.show {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        margin-top: 28px;
+        animation: fup 0.4s ease both;
+      }
+      @media (max-width: 1100px) {
+        .results.show {
+          grid-template-columns: 1fr;
+        }
+      }
+      #graphCard {
+        grid-column: 1;
+        grid-row: 1 / 3;
+      }
+      #rhero {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      .results.show > .card:not(#graphCard):not(:first-child) {
+        grid-column: 2;
+      }
+
+      /* ── GRAPH ── */
+      .gwrap {
+        position: relative;
+        margin-top: 8px;
+      }
+      #graphCanvas {
+        width: 100%;
+        border-radius: 10px;
+        display: block;
+        cursor: crosshair;
+        background: var(--surf2);
+      }
+      #tooltip {
+        position: absolute;
+        background: rgba(5, 12, 24, 0.96);
+        border: 1px solid rgba(0, 212, 255, 0.35);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--txt);
+        pointer-events: none;
+        display: none;
+        z-index: 20;
+        white-space: nowrap;
+        box-shadow: 0 4px 24px rgba(0, 212, 255, 0.14);
+        min-width: 185px;
+      }
+      .trow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .trow:last-child {
+        margin-bottom: 0;
+      }
+      .tdot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .tk {
+        color: var(--muted);
+        min-width: 56px;
+        font-size: 11px;
+      }
+      .tv {
+        color: var(--acc);
+        font-weight: 700;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 13px;
+        margin-top: 12px;
+      }
+      .leg {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--dim);
+      }
+      .legdot {
+        width: 9px;
+        height: 9px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+
+      /* ── TABLE ── */
+      .tbl-wrap {
+        overflow-x: auto;
+        margin-top: 6px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+      thead tr {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.05),
+          rgba(124, 58, 237, 0.05)
+        );
+      }
+      th {
+        padding: 9px 13px;
+        text-align: left;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--acc);
+        border-bottom: 1px solid var(--bord);
+        white-space: nowrap;
+      }
+      th.d {
+        color: #c4b5fd;
+      }
+      td {
+        padding: 8px 13px;
+        border-bottom: 1px solid rgba(26, 48, 80, 0.35);
+        color: var(--dim);
+        white-space: nowrap;
+        transition: background 0.14s;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .cb {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        font-weight: 700;
+        font-size: 12px;
+      }
+      .cb1 {
+        background: rgba(0, 212, 255, 0.1);
+        color: var(--acc);
+      }
+      .cb4 {
+        background: rgba(251, 191, 36, 0.1);
+        color: var(--warn);
+      }
+      .cb2 {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--acc3);
+      }
+      .c1 {
+        color: var(--acc);
+        font-weight: 600;
+      }
+      .c4 {
+        color: var(--warn);
+        font-weight: 600;
+      }
+      .c2 {
+        color: var(--acc3);
+        font-weight: 600;
+      }
+      .sum-row td {
+        border-top: 2px solid rgba(124, 58, 237, 0.35);
+        color: var(--txt);
+        font-weight: 700;
+        background: rgba(124, 58, 237, 0.05);
+      }
+      .final-row td {
+        border-top: 1px solid rgba(0, 212, 255, 0.18);
+        color: var(--txt);
+        font-weight: 700;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .hl-row td {
+        background: rgba(0, 212, 255, 0.07) !important;
+      }
+
+      /* ── STEPS ── */
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--bord);
+      }
+      .steps-header-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--acc);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+      .step-nav button {
+        background: var(--surf);
+        border: 1px solid var(--bord);
+        color: var(--dim);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--acc);
+        color: var(--acc);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--dim);
+        min-width: 80px;
+        text-align: center;
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--acc2);
+        color: var(--acc2);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .step-card {
+        background: var(--surf);
+        border: 1px solid var(--bord);
+        border-radius: 14px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        animation: fup 0.4s ease both;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--acc2), var(--acc3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.35rem 1rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--acc);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5rem;
+      }
+      @media (max-width: 1000px) {
+        .step-body {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 700px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-col-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--acc);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--bord);
+        border-radius: 10px;
+        padding: 1rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        line-height: 1.8;
+        color: var(--dim);
+      }
+      .calc-box strong {
+        color: var(--acc);
+      }
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--bord);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--dim);
+      }
+      .all-steps-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .step {
+        display: none;
+      }
+      .step.show {
+        display: block;
+      }
+
+      /* ── ANIM ── */
+      @keyframes fdown {
+        from {
+          opacity: 0;
+          transform: translateY(-16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fup {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fin {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surf);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--bord);
+        border-radius: 3px;
+      }
+      @media (max-width: 600px) {
+        .sel-cards,
+        .igrid,
+        .igrid4 {
+          grid-template-columns: 1fr;
+        }
+        .ig.full {
+          grid-column: 1;
+        }
+        .btn-row {
+          flex-direction: column;
+        }
+        .btn-c {
+          min-width: 100%;
+        }
+        .rmeta {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+
+      /* ── FOOTER BAR ── */
+      .site-footer {
+        position: sticky;
+        left: 14px;
+        right: 14px;
+        bottom: 12px;
+        z-index: 4;
+        background: rgba(6, 16, 31, 0.82);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 14px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+      }
+      .site-footer .foot-left {
+        color: var(--dim);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .site-footer .foot-left .inf {
+        color: var(--acc);
+        font-weight: 700;
+        margin-right: 6px;
+      }
+      .site-footer .foot-links {
+        display: flex;
+        gap: 26px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .site-footer .foot-links a {
+        color: #7ea0be;
+        text-decoration: none;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 8px;
+        transition: color 0.2s ease;
+      }
+      .site-footer .foot-links a:hover {
+        color: var(--acc);
+      }
+
+      @media (max-width: 900px) {
+        .site-footer {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        .site-footer .foot-links {
+          gap: 16px;
+          justify-content: flex-start;
+        }
+      }
+
+      /* ── BACKGROUND MOTION LAYERS ── */
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #bgGrid {
+        opacity: 0.55;
+      }
+      #bgParticles {
+        opacity: 0.95;
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(26px);
+        opacity: 0.34;
+        mix-blend-mode: screen;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .blob.b1 {
+        width: 320px;
+        height: 320px;
+        left: -70px;
+        top: 10%;
+        background: radial-gradient(
+          circle,
+          rgba(0, 212, 255, 0.55),
+          transparent 70%
+        );
+        animation-delay: 0s;
+      }
+      .blob.b2 {
+        width: 340px;
+        height: 340px;
+        right: -80px;
+        top: 45%;
+        background: radial-gradient(
+          circle,
+          rgba(124, 58, 237, 0.52),
+          transparent 70%
+        );
+        animation-delay: 1.4s;
+      }
+      .blob.b3 {
+        width: 300px;
+        height: 300px;
+        left: 30%;
+        bottom: -90px;
+        background: radial-gradient(
+          circle,
+          rgba(16, 185, 129, 0.5),
+          transparent 70%
+        );
+        animation-delay: 2.6s;
+      }
+
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+    <div class="wrap">
+      <!-- HEADER -->
+      <div class="hdr">
+        <div class="badge">Numerical Integration</div>
+        <h1>Simpson's 1/3 Rule<br />Calculator</h1>
+        <p class="sub">
+          Professional-grade numerical integration tool for engineering students
+          — single and double variable support.
+        </p>
+      </div>
+
+      <!-- ════════════ SELECTION SCREEN ════════════ -->
+      <div id="selectScreen">
+        <p class="sel-title">— Choose Integral Type to Begin —</p>
+        <div class="sel-cards">
+          <div class="sel-card" onclick="startCalc('single')">
+            <span class="sel-icon">∫</span>
+            <div class="sel-name">Single Integral</div>
+            <div class="sel-formula">∫[a→b] f(x) dx</div>
+            <div class="sel-desc">
+              Integrate a function of one variable f(x) over the interval [a, b]
+              using Simpson's composite 1/3 rule.
+            </div>
+            <div class="sel-tag">1 Variable · f(x)</div>
+          </div>
+
+          <div class="sel-card dbl" onclick="startCalc('double')">
+            <span class="sel-icon">∬</span>
+            <div class="sel-name">Double Integral</div>
+            <div class="sel-formula">∬ f(x,y) dx dy</div>
+            <div class="sel-desc">
+              Integrate over a rectangular region [a,b] × [c,d]. Applies
+              Simpson's rule along both x and y independently.
+            </div>
+            <div class="sel-tag">2 Variables · f(x,y)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ CALCULATOR SCREEN ════════════ -->
+      <div id="calcScreen">
+        <button class="back-btn" onclick="goBack()">← Back to Selection</button
+        ><br />
+        <div class="type-pill sgl" id="typePill">∫ Single Integral</div>
+
+        <!-- Formula bar -->
+        <div class="fbar" id="fbar">
+          <div class="flbl" id="flbl">∫ Formula</div>
+          <div class="ftxt" id="ftxt"></div>
+        </div>
+
+        <!-- INPUT CARD -->
+        <div class="card">
+          <div class="sec" id="inpSec">Input Parameters</div>
+
+          <!-- Single inputs -->
+          <div id="singleIn">
+            <div class="igrid">
+              <div class="ig full">
+                <label
+                  >Function f(x)
+                  <span class="lh">— use x as variable</span></label
+                >
+                <input
+                  type="text"
+                  id="fnS"
+                  placeholder="e.g.  1/(1+x^2)  or  x^3 + 2*x"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <div class="inote">
+                  Ops: + − * / ^ &nbsp;|&nbsp; Fns: sin cos tan exp log sqrt abs
+                  &nbsp;|&nbsp; Const: pi e
+                </div>
+                <div class="chips">
+                  <span class="chip" onclick="egS('1/(1+x^2)', 0, 1, 6)"
+                    >1/(1+x²)</span
+                  >
+                  <span class="chip" onclick="egS('x^3 + 2*x', 0, 2, 4)"
+                    >x³+2x</span
+                  >
+                  <span class="chip" onclick="egS('sin(x)', 0, 3.141593, 8)"
+                    >sin(x)</span
+                  >
+                  <span class="chip" onclick="egS('exp(-x^2)', 0, 2, 6)"
+                    >e^(−x²)</span
+                  >
+                  <span class="chip" onclick="egS('sqrt(1+x^3)', 0, 3, 6)"
+                    >√(1+x³)</span
+                  >
+                  <span class="chip" onclick="egS('log(1+x)', 0, 1, 4)"
+                    >ln(1+x)</span
+                  >
+                  <span
+                    class="chip"
+                    onclick="egS('x^2 * sin(x)', 0, 3.141593, 6)"
+                    >x²·sin(x)</span
+                  >
+                  <span class="chip" onclick="egS('1/x', 1, 3, 6)">1/x</span>
+                </div>
+              </div>
+              <div class="ig">
+                <label>Lower Limit a</label
+                ><input type="text" id="aS" placeholder="0" />
+                <div class="inote">Start of x-interval</div>
+              </div>
+              <div class="ig">
+                <label>Upper Limit b</label
+                ><input type="text" id="bS" placeholder="1" />
+                <div class="inote">End of x-interval</div>
+              </div>
+              <div class="ig">
+                <label>Sub-intervals n</label
+                ><input
+                  type="number"
+                  id="nS"
+                  placeholder="6"
+                  min="2"
+                  step="2"
+                />
+                <div class="inote">Positive even integer</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Double inputs -->
+          <div id="doubleIn" style="display: none">
+            <div class="igrid">
+              <div class="ig full">
+                <label
+                  >Function f(x, y)
+                  <span class="lh">— use x and y as variables</span></label
+                >
+                <input
+                  type="text"
+                  id="fnD"
+                  placeholder="e.g.  x^2 + y^2  or  sin(x)*cos(y)"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <div class="inote">
+                  Ops: + − * / ^ &nbsp;|&nbsp; Fns: sin cos tan exp log sqrt abs
+                  &nbsp;|&nbsp; Const: pi e
+                </div>
+                <div class="chips">
+                  <span
+                    class="chip d"
+                    onclick="egD('x^2 + y^2', 0, 1, 0, 1, 4, 4)"
+                    >x²+y²</span
+                  >
+                  <span class="chip d" onclick="egD('x * y', 0, 2, 0, 2, 4, 4)"
+                    >x·y</span
+                  >
+                  <span
+                    class="chip d"
+                    onclick="
+                      egD('sin(x)*cos(y)', 0, 3.141593, 0, 3.141593, 6, 6)
+                    "
+                    >sin(x)·cos(y)</span
+                  >
+                  <span
+                    class="chip d"
+                    onclick="egD('exp(x+y)', 0, 1, 0, 1, 4, 4)"
+                    >e^(x+y)</span
+                  >
+                  <span
+                    class="chip d"
+                    onclick="egD('x^2 * y', 0, 2, 0, 3, 4, 6)"
+                    >x²·y</span
+                  >
+                  <span
+                    class="chip d"
+                    onclick="egD('1/(1+x^2+y^2)', 0, 1, 0, 1, 4, 4)"
+                    >1/(1+x²+y²)</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="divider">x — limits &amp; intervals</div>
+            <div class="igrid4">
+              <div class="ig">
+                <label>Lower x (a)</label
+                ><input type="text" id="aD" placeholder="0" />
+                <div class="inote">Start of x</div>
+              </div>
+              <div class="ig">
+                <label>Upper x (b)</label
+                ><input type="text" id="bD" placeholder="1" />
+                <div class="inote">End of x</div>
+              </div>
+              <div class="ig">
+                <label>Sub-intervals nx</label
+                ><input
+                  type="number"
+                  id="nxD"
+                  placeholder="4"
+                  min="2"
+                  step="2"
+                />
+                <div class="inote">Positive even integer</div>
+              </div>
+              <div class="ig" style="visibility: hidden"></div>
+            </div>
+            <div class="divider">y — limits &amp; intervals</div>
+            <div class="igrid4">
+              <div class="ig">
+                <label>Lower y (c)</label
+                ><input type="text" id="cD" placeholder="0" />
+                <div class="inote">Start of y</div>
+              </div>
+              <div class="ig">
+                <label>Upper y (d)</label
+                ><input type="text" id="dD" placeholder="1" />
+                <div class="inote">End of y</div>
+              </div>
+              <div class="ig">
+                <label>Sub-intervals ny</label
+                ><input
+                  type="number"
+                  id="nyD"
+                  placeholder="4"
+                  min="2"
+                  step="2"
+                />
+                <div class="inote">Positive even integer</div>
+              </div>
+              <div class="ig" style="visibility: hidden"></div>
+            </div>
+          </div>
+
+          <div id="errMsg" class="msg error"></div>
+          <div id="warnMsg" class="msg warn"></div>
+          <div class="btn-row">
+            <button class="btn-c" id="calcBtn" onclick="calculate()">
+              ▶ &nbsp;Calculate Integral
+            </button>
+            <button class="btn-r" onclick="resetCalc()">✕ &nbsp;Reset</button>
+          </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div class="results" id="results">
+          <div class="rhero" id="rhero">
+            <div class="rlbl" id="rLbl">Approximate Integral Value</div>
+            <div class="rval" id="rVal">—</div>
+            <div class="rmeta" id="rMeta"></div>
+          </div>
+
+          <!-- Single graph -->
+          <div class="card" id="graphCard">
+            <div class="sec">📈 Graph — Hover or Click Nodes to Inspect</div>
+            <div class="gwrap">
+              <canvas id="graphCanvas" height="360"></canvas>
+              <div id="tooltip">
+                <div class="trow">
+                  <div class="tdot" id="tdot"></div>
+                  <strong id="tpLbl" style="color: var(--acc)"></strong>
+                </div>
+                <div class="trow">
+                  <div class="tdot" style="background: transparent"></div>
+                  <span class="tk">x =</span><span class="tv" id="tx"></span>
+                </div>
+                <div class="trow">
+                  <div class="tdot" style="background: transparent"></div>
+                  <span class="tk">f(x) =</span><span class="tv" id="ty"></span>
+                </div>
+                <div class="trow">
+                  <div class="tdot" id="tcdot"></div>
+                  <span class="tk">coeff =</span
+                  ><span class="tv" id="tc"></span>
+                </div>
+                <div class="trow">
+                  <div class="tdot" style="background: transparent"></div>
+                  <span class="tk">contrib =</span
+                  ><span class="tv" id="tcon"></span>
+                </div>
+              </div>
+            </div>
+            <div class="legend">
+              <div class="leg">
+                <div
+                  class="legdot"
+                  style="background: #00d4ff; opacity: 0.7"
+                ></div>
+                f(x) curve
+              </div>
+              <div class="leg">
+                <div
+                  class="legdot"
+                  style="background: rgba(0, 212, 255, 0.3)"
+                ></div>
+                Simpson panels
+              </div>
+              <div class="leg">
+                <div class="legdot" style="background: #fbbf24"></div>
+                Coeff ×4
+              </div>
+              <div class="leg">
+                <div class="legdot" style="background: #10b981"></div>
+                Coeff ×2
+              </div>
+              <div class="leg">
+                <div class="legdot" style="background: #c4b5fd"></div>
+                Endpoints
+              </div>
+            </div>
+          </div>
+
+          <!-- Double heatmap -->
+          <div class="card" id="heatCard" style="display: none">
+            <div class="sec dbl">📊 f(x,y) Heatmap — Integration Grid</div>
+            <canvas
+              id="heatCanvas"
+              style="
+                width: 100%;
+                border-radius: 10px;
+                display: block;
+                background: var(--surf2);
+              "
+            ></canvas>
+            <div class="legend" style="margin-top: 12px">
+              <div class="leg">
+                <div
+                  class="legdot"
+                  style="
+                    background: linear-gradient(
+                      90deg,
+                      #0f2d4a,
+                      #7c3aed,
+                      #c026d3,
+                      #fbbf24
+                    );
+                  "
+                ></div>
+                f(x,y) magnitude low → high
+              </div>
+              <div class="leg">
+                <div class="legdot" style="background: #fbbf24"></div>
+                Weight 16 (×4×4)
+              </div>
+              <div class="leg">
+                <div class="legdot" style="background: #10b981"></div>
+                Weight 4
+              </div>
+              <div class="leg">
+                <div class="legdot" style="background: #c4b5fd"></div>
+                Weight 1 (corners)
+              </div>
+            </div>
+          </div>
+
+          <!-- Steps -->
+          <div class="card">
+            <div class="steps-header">
+              <div class="steps-header-title" id="stepsSec">
+                Step-by-Step Solution
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.8rem;
+                  flex-wrap: wrap;
+                "
+              >
+                <button
+                  class="step-all-btn"
+                  id="toggleAllBtn"
+                  onclick="toggleAllSteps()"
+                >
+                  Show All Steps
+                </button>
+                <div class="step-nav">
+                  <button id="prevBtn" onclick="changeStep(-1)" disabled>
+                    ◀ Prev
+                  </button>
+                  <span class="step-counter" id="stepCounter">Step 1 / 1</span>
+                  <button id="nextBtn" onclick="changeStep(1)">Next ▶</button>
+                </div>
+              </div>
+            </div>
+            <div id="singleStepView"><div id="stepCardContainer"></div></div>
+            <div id="allStepsView" style="display: none">
+              <div class="all-steps-wrap" id="allStepsContainer"></div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="card">
+            <div class="sec" id="tableSec">Evaluation Table</div>
+            <div class="tbl-wrap">
+              <table>
+                <thead id="tHead"></thead>
+                <tbody id="tBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /calcScreen -->
+    </div>
+    <!-- /wrap -->
+
+    <footer class="site-footer" aria-label="Site navigation footer">
+      <div class="foot-left">
+        <span class="inf">∞</span> Numerical Methods Calculator &nbsp;|&nbsp;
+        Mathematics Assignment
+      </div>
+      <nav class="foot-links" aria-label="Footer links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/gauss_seidel.html">Gauss-Seidel</a>
+        <a href="/gauss_jordan.html">Gauss-Jordan</a>
+        <a href="/lagrange.html">Lagrange Interpolation</a>
+        <a href="/power1.html">Power Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/Newton_divide.html">Newton's divide</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/trapezoidel.html">Trapezoidal Rule</a>
+        <a href="/adam.html">Adam's Method</a>
+        <a href="/index.html">Home</a>
+      </nav>
+    </footer>
+
+    <script>
+      /* ═══════════ STATE ═══════════ */
+      let MODE = null,
+        G = null,
+        gNodes = [];
+      let currentStep = 0;
+      let totalSteps = 0;
+      let showingAllSteps = false;
+
+      /* ═══════════ STEP NAVIGATION ═══════════ */
+      function changeStep(dir) {
+        const allCards = document.querySelectorAll(".step-card");
+        if (allCards.length === 0) return;
+        currentStep += dir;
+        if (currentStep < 0) currentStep = 0;
+        if (currentStep >= allCards.length) currentStep = allCards.length - 1;
+        updateStepNav();
+      }
+
+      function updateStepNav() {
+        const allCards = document.querySelectorAll(".step-card");
+        totalSteps = allCards.length;
+        allCards.forEach((card, idx) => {
+          card.style.display = idx === currentStep ? "block" : "none";
+        });
+        document.getElementById("stepCounter").textContent =
+          "Step " + (currentStep + 1) + " / " + totalSteps;
+        document.getElementById("prevBtn").disabled = currentStep === 0;
+        document.getElementById("nextBtn").disabled =
+          currentStep === totalSteps - 1;
+      }
+
+      function toggleAllSteps() {
+        showingAllSteps = !showingAllSteps;
+        document.getElementById("singleStepView").style.display =
+          showingAllSteps ? "none" : "block";
+        document.getElementById("allStepsView").style.display = showingAllSteps
+          ? "block"
+          : "none";
+        document.getElementById("toggleAllBtn").textContent = showingAllSteps
+          ? "Show Single Step"
+          : "Show All Steps";
+      }
+
+      /* ═══════════ NAVIGATION ═══════════ */
+      function startCalc(type) {
+        MODE = type;
+        document.getElementById("selectScreen").style.display = "none";
+        const cs = document.getElementById("calcScreen");
+        cs.style.display = "block";
+        cs.className = "show";
+
+        document.getElementById("singleIn").style.display =
+          type === "single" ? "block" : "none";
+        document.getElementById("doubleIn").style.display =
+          type === "double" ? "block" : "none";
+
+        const pill = document.getElementById("typePill");
+        pill.textContent =
+          type === "single" ? "∫  Single Integral" : "∬  Double Integral";
+        pill.className = "type-pill " + (type === "single" ? "sgl" : "dbl");
+        document.getElementById("calcBtn").className =
+          "btn-c " + (type === "double" ? "dbl" : "");
+        document.getElementById("inpSec").className =
+          "sec" + (type === "double" ? " dbl" : "");
+
+        setFormula(type);
+        resetCalc();
+      }
+
+      function goBack() {
+        document.getElementById("calcScreen").style.display = "none";
+        document.getElementById("selectScreen").style.display = "block";
+        document.getElementById("results").classList.remove("show");
+        G = null;
+        gNodes = [];
+      }
+
+      /* ═══════════ FORMULA ═══════════ */
+      function setFormula(type) {
+        const bar = document.getElementById("fbar");
+        if (type === "single") {
+          bar.className = "fbar";
+          document.getElementById("flbl").textContent =
+            "∫ Simpson's 1/3 Composite Formula";
+          document.getElementById("ftxt").innerHTML =
+            `∫[a→b] f(x) dx &nbsp;≈&nbsp; <span class="c1">h/3</span> × [<span class="c1">f(x₀)</span> + <span class="c4">4·f(x₁)</span> + <span class="c2">2·f(x₂)</span> + <span class="c4">4·f(x₃)</span> + … + <span class="c4">4·f(xₙ₋₁)</span> + <span class="c1">f(xₙ)</span>]<br>where <span class="c1">h = (b−a)/n</span> &nbsp;&nbsp; n must be even`;
+        } else {
+          bar.className = "fbar dbl";
+          document.getElementById("flbl").textContent =
+            "∬ Double Simpson's 1/3 Formula";
+          document.getElementById("ftxt").innerHTML =
+            `∬ f(x,y) dx dy &nbsp;≈&nbsp; <span class="c1">hx/3</span> · <span class="cp">hy/3</span> · Σᵢ Σⱼ <span class="c4">Wᵢ</span>·<span class="cp">Wⱼ</span>·f(xᵢ,yⱼ)<br>
+<span class="c1">hx = (b−a)/nx</span> &nbsp;&nbsp; <span class="cp">hy = (d−c)/ny</span> &nbsp;&nbsp; both nx, ny must be even<br>
+Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd index = 4</span> &nbsp; <span class="c2">even interior = 2</span>`;
+        }
+      }
+
+      /* ═══════════ EXAMPLES ═══════════ */
+      function egS(fn, a, b, n) {
+        document.getElementById("fnS").value = fn;
+        document.getElementById("aS").value = a;
+        document.getElementById("bS").value = b;
+        document.getElementById("nS").value = n;
+        hide();
+      }
+      function egD(fn, a, b, c, d, nx, ny) {
+        document.getElementById("fnD").value = fn;
+        document.getElementById("aD").value = a;
+        document.getElementById("bD").value = b;
+        document.getElementById("cD").value = c;
+        document.getElementById("dD").value = d;
+        document.getElementById("nxD").value = nx;
+        document.getElementById("nyD").value = ny;
+        hide();
+      }
+
+      /* ═══════════ MATH EVAL ═══════════ */
+      function evalF(expr, x, y = 0) {
+        let e = expr
+          .replace(/\^/g, "**")
+          .replace(/sin\(/g, "Math.sin(")
+          .replace(/cos\(/g, "Math.cos(")
+          .replace(/tan\(/g, "Math.tan(")
+          .replace(/exp\(/g, "Math.exp(")
+          .replace(/log\(/g, "Math.log(")
+          .replace(/ln\(/g, "Math.log(")
+          .replace(/sqrt\(/g, "Math.sqrt(")
+          .replace(/abs\(/g, "Math.abs(")
+          .replace(/\bpi\b/gi, "Math.PI")
+          .replace(/\be\b/g, "Math.E");
+        e = e.replace(/(?<![A-Za-z\d_.])x(?![A-Za-z\d_])/g, `(${x})`);
+        e = e.replace(/(?<![A-Za-z\d_.])y(?![A-Za-z\d_])/g, `(${y})`);
+        try {
+          const r = Function('"use strict";return(' + e + ");")();
+          return typeof r === "number" && isFinite(r) ? r : NaN;
+        } catch {
+          return NaN;
+        }
+      }
+
+      /* ═══════════ MESSAGES ═══════════ */
+      function showErr(m) {
+        const el = document.getElementById("errMsg");
+        el.textContent = "⚠ " + m;
+        el.classList.add("show");
+      }
+      function showWarn(m) {
+        const el = document.getElementById("warnMsg");
+        el.textContent = "⚡ " + m;
+        el.classList.add("show");
+      }
+      function hide() {
+        document.getElementById("errMsg").classList.remove("show");
+        document.getElementById("warnMsg").classList.remove("show");
+      }
+      function fmt(v, d = 8) {
+        if (typeof v !== "number" || !isFinite(v)) return "—";
+        return parseFloat(v.toFixed(d)).toString();
+      }
+
+      /* ═══════════ DISPATCH ═══════════ */
+      function calculate() {
+        hide();
+        document.getElementById("results").classList.remove("show");
+        if (MODE === "single") calcSingle();
+        else calcDouble();
+      }
+
+      /* ═══════════ SINGLE ═══════════ */
+      function calcSingle() {
+        const fn = document.getElementById("fnS").value.trim();
+        const aS = document.getElementById("aS").value.trim();
+        const bS = document.getElementById("bS").value.trim();
+        const nS = document.getElementById("nS").value.trim();
+        if (!fn) {
+          showErr("Enter function f(x).");
+          return;
+        }
+        if (!aS) {
+          showErr("Enter lower limit a.");
+          return;
+        }
+        if (!bS) {
+          showErr("Enter upper limit b.");
+          return;
+        }
+        if (!nS) {
+          showErr("Enter sub-intervals n.");
+          return;
+        }
+        const a = parseFloat(aS),
+          b = parseFloat(bS);
+        let n = parseInt(nS);
+        if (isNaN(a)) {
+          showErr("a is not valid.");
+          return;
+        }
+        if (isNaN(b)) {
+          showErr("b is not valid.");
+          return;
+        }
+        if (a >= b) {
+          showErr("a must be less than b.");
+          return;
+        }
+        if (isNaN(n) || n < 2) {
+          showErr("n must be ≥ 2.");
+          return;
+        }
+        if (n % 2 !== 0) {
+          n++;
+          document.getElementById("nS").value = n;
+          showWarn("n auto-corrected to " + n + " (must be even).");
+        }
+        if (isNaN(evalF(fn, a))) {
+          showErr("Cannot evaluate f(x) at x=" + a + ". Check syntax.");
+          return;
+        }
+
+        const h = (b - a) / n,
+          xs = [],
+          ys = [];
+        for (let i = 0; i <= n; i++) {
+          const xi = a + i * h;
+          xs.push(xi);
+          ys.push(evalF(fn, xi));
+        }
+        for (let i = 0; i <= n; i++) {
+          if (isNaN(ys[i]) || !isFinite(ys[i])) {
+            showErr("f(x) undefined at x=" + fmt(xs[i], 5) + ".");
+            return;
+          }
+        }
+
+        const coeffs = [1];
+        let S = ys[0] + ys[n];
+        for (let i = 1; i < n; i++) {
+          const c = i % 2 === 1 ? 4 : 2;
+          coeffs.push(c);
+          S += c * ys[i];
+        }
+        coeffs.push(1);
+        const result = (h / 3) * S;
+
+        document.getElementById("rhero").className = "rhero";
+        document.getElementById("rLbl").textContent =
+          "∫[" + fmt(a, 4) + " → " + fmt(b, 4) + "] f(x) dx ≈";
+        document.getElementById("rVal").textContent = fmt(result, 10);
+        document.getElementById("rMeta").innerHTML =
+          `<div class="mp">h = <span>${fmt(h, 6)}</span></div>
+     <div class="mp">n = <span>${n}</span></div>
+     <div class="mp">a = <span>${fmt(a, 4)}</span></div>
+     <div class="mp">b = <span>${fmt(b, 4)}</span></div>
+     <div class="mp">S = <span>${fmt(S, 6)}</span></div>`;
+
+        document.getElementById("stepsSec").textContent =
+          "Step-by-Step Solution";
+        const stepsHTML = singleSteps(
+          fn,
+          a,
+          b,
+          n,
+          h,
+          xs,
+          ys,
+          coeffs,
+          S,
+          result,
+        );
+        document.getElementById("stepCardContainer").innerHTML = stepsHTML[0];
+        document.getElementById("allStepsContainer").innerHTML = stepsHTML[1];
+        currentStep = 0;
+        totalSteps = document.querySelectorAll(".step-card").length;
+        updateStepNav();
+        singleTable(xs, ys, coeffs, h);
+
+        document.getElementById("graphCard").style.display = "block";
+        document.getElementById("heatCard").style.display = "none";
+        document.getElementById("results").classList.add("show");
+        setTimeout(() => {
+          document
+            .getElementById("results")
+            .scrollIntoView({ behavior: "smooth", block: "start" });
+          G = { fn, a, b, n, h, xs, ys, coeffs };
+          drawGraph();
+        }, 120);
+      }
+
+      /* ═══════════ DOUBLE ═══════════ */
+      function calcDouble() {
+        const fn = document.getElementById("fnD").value.trim();
+        const aS = document.getElementById("aD").value.trim();
+        const bS = document.getElementById("bD").value.trim();
+        const cS = document.getElementById("cD").value.trim();
+        const dS = document.getElementById("dD").value.trim();
+        const nxS = document.getElementById("nxD").value.trim();
+        const nyS = document.getElementById("nyD").value.trim();
+        if (!fn) {
+          showErr("Enter function f(x,y).");
+          return;
+        }
+        if (!aS || !bS) {
+          showErr("Enter x limits a and b.");
+          return;
+        }
+        if (!cS || !dS) {
+          showErr("Enter y limits c and d.");
+          return;
+        }
+        if (!nxS) {
+          showErr("Enter nx.");
+          return;
+        }
+        if (!nyS) {
+          showErr("Enter ny.");
+          return;
+        }
+        const a = parseFloat(aS),
+          b = parseFloat(bS),
+          c = parseFloat(cS),
+          d = parseFloat(dS);
+        let nx = parseInt(nxS),
+          ny = parseInt(nyS);
+        if (isNaN(a) || isNaN(b) || isNaN(c) || isNaN(d)) {
+          showErr("Limits must be valid numbers.");
+          return;
+        }
+        if (a >= b) {
+          showErr("x: a must be less than b.");
+          return;
+        }
+        if (c >= d) {
+          showErr("y: c must be less than d.");
+          return;
+        }
+        if (isNaN(nx) || nx < 2) {
+          showErr("nx must be ≥ 2.");
+          return;
+        }
+        if (isNaN(ny) || ny < 2) {
+          showErr("ny must be ≥ 2.");
+          return;
+        }
+        let w = false;
+        if (nx % 2 !== 0) {
+          nx++;
+          document.getElementById("nxD").value = nx;
+          w = true;
+        }
+        if (ny % 2 !== 0) {
+          ny++;
+          document.getElementById("nyD").value = ny;
+          w = true;
+        }
+        if (w) showWarn("nx / ny auto-corrected to even values.");
+        if (isNaN(evalF(fn, a, c))) {
+          showErr("Cannot evaluate f(a,c). Check syntax.");
+          return;
+        }
+
+        const hx = (b - a) / nx,
+          hy = (d - c) / ny;
+        const xs = [],
+          ys = [],
+          wx = [],
+          wy = [];
+        for (let i = 0; i <= nx; i++) xs.push(a + i * hx);
+        for (let j = 0; j <= ny; j++) ys.push(c + j * hy);
+        for (let i = 0; i <= nx; i++)
+          wx.push(i === 0 || i === nx ? 1 : i % 2 === 1 ? 4 : 2);
+        for (let j = 0; j <= ny; j++)
+          wy.push(j === 0 || j === ny ? 1 : j % 2 === 1 ? 4 : 2);
+
+        const grid = [];
+        let S = 0;
+        for (let i = 0; i <= nx; i++) {
+          grid.push([]);
+          for (let j = 0; j <= ny; j++) {
+            const fv = evalF(fn, xs[i], ys[j]);
+            if (isNaN(fv) || !isFinite(fv)) {
+              showErr(
+                "f(" + fmt(xs[i], 4) + "," + fmt(ys[j], 4) + ") is undefined.",
+              );
+              return;
+            }
+            grid[i].push(fv);
+            S += wx[i] * wy[j] * fv;
+          }
+        }
+        const result = (hx / 3) * (hy / 3) * S;
+
+        document.getElementById("rhero").className = "rhero dbl";
+        document.getElementById("rLbl").textContent = "∬ f(x,y) dx dy ≈";
+        document.getElementById("rVal").textContent = fmt(result, 10);
+        document.getElementById("rMeta").innerHTML =
+          `<div class="mp">hx = <span>${fmt(hx, 5)}</span></div>
+     <div class="mp">hy = <span>${fmt(hy, 5)}</span></div>
+     <div class="mp">nx = <span>${nx}</span></div>
+     <div class="mp">ny = <span>${ny}</span></div>
+     <div class="mp">[a,b] = <span>[${fmt(a, 3)},${fmt(b, 3)}]</span></div>
+     <div class="mp">[c,d] = <span>[${fmt(c, 3)},${fmt(d, 3)}]</span></div>`;
+
+        document.getElementById("stepsSec").textContent =
+          "Step-by-Step Solution";
+        const stepsHTML = doubleSteps(
+          fn,
+          a,
+          b,
+          c,
+          d,
+          nx,
+          ny,
+          hx,
+          hy,
+          xs,
+          ys,
+          wx,
+          wy,
+          grid,
+          S,
+          result,
+        );
+        document.getElementById("stepCardContainer").innerHTML = stepsHTML[0];
+        document.getElementById("allStepsContainer").innerHTML = stepsHTML[1];
+        currentStep = 0;
+        totalSteps = document.querySelectorAll(".step-card").length;
+        updateStepNav();
+        doubleTable(xs, ys, wx, wy, grid, hx, hy, result);
+
+        document.getElementById("graphCard").style.display = "none";
+        document.getElementById("heatCard").style.display = "block";
+        document.getElementById("results").classList.add("show");
+        setTimeout(() => {
+          document
+            .getElementById("results")
+            .scrollIntoView({ behavior: "smooth", block: "start" });
+          drawHeatmap(xs, ys, wx, wy, grid, a, b, c, d, fn, nx, ny);
+        }, 120);
+      }
+
+      /* ═══════════ SINGLE STEPS ═══════════ */
+      function singleSteps(fn, a, b, n, h, xs, ys, coeffs, S, result) {
+        const steps = [];
+
+        function stepCard(
+          num,
+          title,
+          col1Title,
+          col1Body,
+          col2Title,
+          col2Body,
+          col3Title,
+          col3Body,
+        ) {
+          return `<div class="step-card">
+            <div class="step-badge">STEP ${num}</div>
+            <div style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--txt); font-weight: 600">${title}</div>
+            <div class="step-body">
+              <div>
+                <div class="step-col-title">${col1Title}</div>
+                <div class="calc-box">${col1Body}</div>
+              </div>
+              <div>
+                <div class="step-col-title">${col2Title}</div>
+                <div class="calc-box">${col2Body}</div>
+              </div>
+              <div>
+                <div class="step-col-title">${col3Title}</div>
+                <div class="calc-box">${col3Body}</div>
+              </div>
+            </div>
+          </div>`;
+        }
+
+        steps.push(
+          stepCard(
+            1,
+            "Verify Simpson's Condition",
+            "n Value",
+            `n = <strong>${n}</strong>`,
+            "Check",
+            `${n} is <strong>even</strong> ✓`,
+            "Rule",
+            "Simpson's requires<br>even sub-intervals",
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            2,
+            "Calculate Step Size",
+            "Formula",
+            `h = (b − a) / n`,
+            "Substitute",
+            `h = (${fmt(b, 5)} − ${fmt(a, 5)}) / ${n}`,
+            "Result",
+            `h = <strong style="color: var(--acc)">${fmt(h, 8)}</strong>`,
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            3,
+            "Generate Nodes",
+            "x Nodes",
+            xs.map((x, i) => `x<sub>${i}</sub> = ${fmt(x, 5)}`).join("<br>"),
+            "Formula",
+            `xᵢ = a + i·h<br>for i = 0…${n}`,
+            "Count",
+            `Total: ${n + 1} nodes`,
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            4,
+            "Evaluate f(x) at Nodes",
+            "Function",
+            `f(x) = ${fn}`,
+            "Evaluations",
+            ys
+              .map((y, i) => `f(x<sub>${i}</sub>) = ${fmt(y, 6)}`)
+              .slice(0, 3)
+              .join("<br>") + (ys.length > 3 ? "<br>..." : ""),
+            "Summary",
+            `${ys.length} values<br>computed`,
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            5,
+            "Assign Simpson's Coefficients",
+            "Pattern",
+            `1, 4, 2, 4, 2, ...,<br>4, 2, 4, 1`,
+            "Rules",
+            `Endpoints: <strong style="color: var(--acc)">1</strong><br>Odd i: <strong style="color: #fbbf24">4</strong><br>Even i: <strong style="color: #10b981">2</strong>`,
+            "Applied",
+            coeffs
+              .map((c, i) => `c<sub>${i}</sub> = ${c}`)
+              .slice(0, 3)
+              .join("<br>") + (coeffs.length > 3 ? "<br>..." : ""),
+          ),
+        );
+
+        const wtTerms = coeffs.map(
+          (c, i) =>
+            `<strong style="color: ${c === 4 ? "#fbbf24" : c === 2 ? "#10b981" : "var(--acc)"}">${c}</strong>×${fmt(ys[i], 5)}`,
+        );
+
+        steps.push(
+          stepCard(
+            6,
+            "Compute Weighted Sum",
+            "Sum Formula",
+            `S = Σ(coeff × f)`,
+            "Calculation",
+            wtTerms.slice(0, 4).join("<br>") +
+              (wtTerms.length > 4 ? "<br>..." : ""),
+            "Result",
+            `S = <strong style="color: var(--acc)">${fmt(S, 8)}</strong>`,
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            7,
+            "Final Integration Result",
+            "Formula",
+            `∫f(x)dx ≈<br>(h/3) × S`,
+            "Substitute",
+            `(${fmt(h, 6)}/3) ×<br>${fmt(S, 6)}`,
+            "Result",
+            `<strong style="color: var(--acc3); font-size: 1.1rem">${fmt(result, 10)}</strong>`,
+          ),
+        );
+
+        const singleHTML = steps[0]; // First step for single view
+        const allHTML = steps.join("");
+
+        return [singleHTML, allHTML];
+      }
+
+      /* ═══════════ SINGLE TABLE ═══════════ */
+      function singleTable(xs, ys, coeffs, h) {
+        document.getElementById("tHead").innerHTML =
+          `<tr><th>i</th><th>xᵢ</th><th>f(xᵢ)</th><th>Coeff</th><th>Coeff × f(xᵢ)</th></tr>`;
+        const tb = document.getElementById("tBody");
+        tb.innerHTML = "";
+        let W = 0;
+        xs.forEach((x, i) => {
+          const c = coeffs[i],
+            cont = c * ys[i];
+          W += cont;
+          const cc = c === 4 ? "cb4" : c === 2 ? "cb2" : "cb1";
+          const dc = c === 4 ? "c4" : c === 2 ? "c2" : "c1";
+          const tr = document.createElement("tr");
+          tr.id = "tr" + i;
+          tr.innerHTML = `<td>${i}</td><td style="color:var(--acc3)">${fmt(x, 6)}</td><td>${fmt(ys[i], 8)}</td><td><span class="cb ${cc}">${c}</span></td><td class="${dc}">${fmt(cont, 8)}</td>`;
+          tb.appendChild(tr);
+        });
+        const sr = document.createElement("tr");
+        sr.className = "sum-row";
+        sr.innerHTML = `<td colspan="4" style="text-align:right">Weighted Sum S =</td><td style="color:var(--acc)">${fmt(W, 10)}</td>`;
+        tb.appendChild(sr);
+        const fr = document.createElement("tr");
+        fr.className = "final-row";
+        fr.innerHTML = `<td colspan="4" style="text-align:right">Integral = (h/3)·S =</td><td style="color:var(--acc3)">${fmt((h / 3) * W, 10)}</td>`;
+        tb.appendChild(fr);
+      }
+
+      /* ═══════════ DOUBLE STEPS ═══════════ */
+      function doubleSteps(
+        fn,
+        a,
+        b,
+        c,
+        d,
+        nx,
+        ny,
+        hx,
+        hy,
+        xs,
+        ys,
+        wx,
+        wy,
+        grid,
+        S,
+        result,
+      ) {
+        const steps = [];
+
+        function stepCard(
+          num,
+          title,
+          col1Title,
+          col1Body,
+          col2Title,
+          col2Body,
+          col3Title,
+          col3Body,
+        ) {
+          return `<div class="step-card">
+            <div class="step-badge">STEP ${num}</div>
+            <div style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--txt); font-weight: 600">${title}</div>
+            <div class="step-body">
+              <div>
+                <div class="step-col-title">${col1Title}</div>
+                <div class="calc-box">${col1Body}</div>
+              </div>
+              <div>
+                <div class="step-col-title">${col2Title}</div>
+                <div class="calc-box">${col2Body}</div>
+              </div>
+              <div>
+                <div class="step-col-title">${col3Title}</div>
+                <div class="calc-box">${col3Body}</div>
+              </div>
+            </div>
+          </div>`;
+        }
+
+        steps.push(
+          stepCard(
+            1,
+            "Verify Simpson's 2D Condition",
+            "nx Value",
+            `nx = <strong>${nx}</strong>`,
+            "ny Value",
+            `ny = <strong>${ny}</strong>`,
+            "Check",
+            "Both <strong>even</strong> ✓",
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            2,
+            "Calculate Step Sizes",
+            "hx Calculation",
+            `hx = (${fmt(b, 4)}−${fmt(a, 4)})/${nx}`,
+            "hy Calculation",
+            `hy = (${fmt(d, 4)}−${fmt(c, 4)})/${ny}`,
+            "Results",
+            `hx = <strong>${fmt(hx, 6)}</strong><br>hy = <strong>${fmt(hy, 6)}</strong>`,
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            3,
+            "Generate Grid Points",
+            "x Nodes",
+            xs
+              .map((x, i) => `x<sub>${i}</sub>=${fmt(x, 4)}`)
+              .slice(0, 3)
+              .join("<br>") + (xs.length > 3 ? "<br>..." : ""),
+            "y Nodes",
+            ys
+              .map((y, j) => `y<sub>${j}</sub>=${fmt(y, 4)}`)
+              .slice(0, 3)
+              .join("<br>") + (ys.length > 3 ? "<br>..." : ""),
+            "Grid Size",
+            `(${nx + 1}) × (${ny + 1})<br>= ${(nx + 1) * (ny + 1)} points`,
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            4,
+            "Assign 2D Weights",
+            "Wx Array",
+            `[${wx.slice(0, 5).join(",")}${wx.length > 5 ? "…]" : "]"}`,
+            "Wy Array",
+            `[${wy.slice(0, 5).join(",")}${wy.length > 5 ? "…]" : "]"}`,
+            "Pattern",
+            "1, 4, 2, 4, ..., 4, 1",
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            5,
+            "Evaluate f(xᵢ, yⱼ)",
+            "Function",
+            `f(x,y) = ${fn}`,
+            "Grid Eval",
+            `Compute f at all<br>${(nx + 1) * (ny + 1)} grid points`,
+            "Storage",
+            "Values stored<br>in 2-D matrix",
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            6,
+            "Double Weighted Sum",
+            "Formula",
+            `S = ΣᵢΣⱼ Wᵢ·Wⱼ·f(i,j)`,
+            "Computation",
+            `Sum over all<br>${(nx + 1) * (ny + 1)} terms`,
+            "Result",
+            `S = <strong style="color: var(--acc)">${fmt(S, 8)}</strong>`,
+          ),
+        );
+
+        steps.push(
+          stepCard(
+            7,
+            "Final Result",
+            "Formula",
+            `∬ f ≈ (hx/3)×(hy/3)×S`,
+            "Substitute",
+            `(${fmt(hx, 5)}/3) ×<br>(${fmt(hy, 5)}/3) × S`,
+            "Result",
+            `<strong style="color: #c026d3; font-size: 1.1rem">${fmt(result, 10)}</strong>`,
+          ),
+        );
+
+        const singleHTML = steps[0];
+        const allHTML = steps.join("");
+        return [singleHTML, allHTML];
+      }
+
+      /* ═══════════ DOUBLE TABLE ═══════════ */
+      function doubleTable(xs, ys, wx, wy, grid, hx, hy, result) {
+        document.getElementById("tHead").innerHTML =
+          `<tr><th class="d">i</th><th class="d">xᵢ</th><th class="d">Wx</th><th class="d">Inner Sum &nbsp;Σⱼ Wⱼ·f(xᵢ,yⱼ)</th><th class="d">Wx × Inner</th></tr>`;
+        const tb = document.getElementById("tBody");
+        tb.innerHTML = "";
+        let totalS = 0;
+        xs.forEach((x, i) => {
+          let inner = 0;
+          ys.forEach((y, j) => {
+            inner += wy[j] * grid[i][j];
+          });
+          const cont = wx[i] * inner;
+          totalS += cont;
+          const cc = wx[i] === 4 ? "cb4" : wx[i] === 2 ? "cb2" : "cb1";
+          const dc = wx[i] === 4 ? "c4" : wx[i] === 2 ? "c2" : "c1";
+          const tr = document.createElement("tr");
+          tr.id = "tr" + i;
+          tr.innerHTML = `<td>${i}</td><td style="color:var(--acc3)">${fmt(x, 6)}</td><td><span class="cb ${cc}">${wx[i]}</span></td><td class="c1">${fmt(inner, 8)}</td><td class="${dc}">${fmt(cont, 8)}</td>`;
+          tb.appendChild(tr);
+        });
+        const sr = document.createElement("tr");
+        sr.className = "sum-row";
+        sr.innerHTML = `<td colspan="4" style="text-align:right">Double Weighted Sum S =</td><td style="color:var(--acc)">${fmt(totalS, 10)}</td>`;
+        tb.appendChild(sr);
+        const fr = document.createElement("tr");
+        fr.className = "final-row";
+        fr.innerHTML = `<td colspan="4" style="text-align:right">∬ f(x,y) dx dy = (hx/3)·(hy/3)·S =</td><td style="color:#c026d3">${fmt(result, 10)}</td>`;
+        tb.appendChild(fr);
+      }
+
+      /* ═══════════ SINGLE GRAPH ═══════════ */
+      function drawGraph() {
+        if (!G) return;
+        const { fn, a, b, n, h, xs, ys, coeffs } = G;
+        const cv = document.getElementById("graphCanvas");
+        const dpr = window.devicePixelRatio || 1;
+        const W = cv.offsetWidth,
+          H = 360;
+        cv.width = W * dpr;
+        cv.height = H * dpr;
+        cv.style.height = H + "px";
+        const ctx = cv.getContext("2d");
+        ctx.scale(dpr, dpr);
+        const P = { t: 30, r: 18, b: 50, l: 60 };
+        const gW = W - P.l - P.r,
+          gH = H - P.t - P.b;
+
+        const pts = 300,
+          cxA = [],
+          cyA = [],
+          allY = [...ys];
+        for (let k = 0; k <= pts; k++) {
+          const cx = a + ((b - a) * k) / pts,
+            cy = evalF(fn, cx);
+          if (isFinite(cy)) {
+            cxA.push(cx);
+            cyA.push(cy);
+            allY.push(cy);
+          }
+        }
+        const yMin =
+          Math.min(0, ...allY) -
+          Math.abs(Math.max(...allY) - Math.min(...allY)) * 0.08;
+        const yMax =
+          Math.max(...allY) +
+          Math.abs(Math.max(...allY) - Math.min(...allY)) * 0.12;
+        const xR = b - a,
+          yR = yMax - yMin || 1;
+        function tp(x, y) {
+          return [P.l + ((x - a) / xR) * gW, P.t + (1 - (y - yMin) / yR) * gH];
+        }
+
+        ctx.fillStyle = "#0f1b2d";
+        ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = "rgba(26,48,80,.55)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 6; i++) {
+          const px = P.l + (i / 6) * gW;
+          ctx.beginPath();
+          ctx.moveTo(px, P.t);
+          ctx.lineTo(px, P.t + gH);
+          ctx.stroke();
+        }
+        for (let i = 0; i <= 5; i++) {
+          const py = P.t + (i / 5) * gH;
+          ctx.beginPath();
+          ctx.moveTo(P.l, py);
+          ctx.lineTo(P.l + gW, py);
+          ctx.stroke();
+        }
+
+        // Shaded panels
+        for (let p = 0; p < n; p += 2) {
+          const x0 = xs[p],
+            x1 = xs[p + 1],
+            x2 = xs[p + 2],
+            y0 = ys[p],
+            y1 = ys[p + 1],
+            y2 = ys[p + 2];
+          ctx.beginPath();
+          const [bx0, by0] = tp(x0, y0);
+          ctx.moveTo(bx0, P.t + gH);
+          ctx.lineTo(bx0, by0);
+          for (let s = 0; s <= 40; s++) {
+            const t = s / 40,
+              xp = x0 + t * (x2 - x0);
+            const L0 = ((xp - x1) * (xp - x2)) / ((x0 - x1) * (x0 - x2));
+            const L1 = ((xp - x0) * (xp - x2)) / ((x1 - x0) * (x1 - x2));
+            const L2 = ((xp - x0) * (xp - x1)) / ((x2 - x0) * (x2 - x1));
+            const [ppx, ppy] = tp(xp, y0 * L0 + y1 * L1 + y2 * L2);
+            ctx.lineTo(ppx, ppy);
+          }
+          const [bx2] = tp(x2, 0);
+          ctx.lineTo(bx2, P.t + gH);
+          ctx.closePath();
+          const pg = ctx.createLinearGradient(0, P.t, 0, P.t + gH);
+          pg.addColorStop(0, `rgba(0,212,255,${0.11 + (p / n) * 0.07})`);
+          pg.addColorStop(1, "rgba(0,212,255,.01)");
+          ctx.fillStyle = pg;
+          ctx.fill();
+        }
+
+        if (yMin < 0 && yMax > 0) {
+          const [, zy] = tp(a, 0);
+          ctx.strokeStyle = "rgba(255,255,255,.1)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(P.l, zy);
+          ctx.lineTo(P.l + gW, zy);
+          ctx.stroke();
+        }
+
+        const cg = ctx.createLinearGradient(P.l, 0, P.l + gW, 0);
+        cg.addColorStop(0, "#7c3aed");
+        cg.addColorStop(0.5, "#00d4ff");
+        cg.addColorStop(1, "#10b981");
+        ctx.beginPath();
+        let first = true;
+        cxA.forEach((cx, k) => {
+          const [ppx, ppy] = tp(cx, cyA[k]);
+          if (first) {
+            ctx.moveTo(ppx, ppy);
+            first = false;
+          } else ctx.lineTo(ppx, ppy);
+        });
+        ctx.strokeStyle = cg;
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+
+        xs.forEach((x, i) => {
+          const c = coeffs[i];
+          const col =
+            c === 4
+              ? "rgba(251,191,36,.2)"
+              : c === 2
+                ? "rgba(16,185,129,.2)"
+                : "rgba(196,181,253,.15)";
+          const [ppx, ppy] = tp(x, ys[i]);
+          const [, bpy] = tp(x, 0);
+          ctx.setLineDash([3, 4]);
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ppx, ppy);
+          ctx.lineTo(ppx, Math.min(bpy, P.t + gH));
+          ctx.stroke();
+          ctx.setLineDash([]);
+        });
+
+        gNodes = [];
+        xs.forEach((x, i) => {
+          const c = coeffs[i],
+            col = c === 4 ? "#fbbf24" : c === 2 ? "#10b981" : "#c4b5fd";
+          const [ppx, ppy] = tp(x, ys[i]);
+          ctx.beginPath();
+          ctx.arc(ppx, ppy, 10, 0, Math.PI * 2);
+          ctx.fillStyle =
+            c === 4
+              ? "rgba(251,191,36,.09)"
+              : c === 2
+                ? "rgba(16,185,129,.09)"
+                : "rgba(196,181,253,.09)";
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(ppx, ppy, 5.5, 0, Math.PI * 2);
+          ctx.fillStyle = col;
+          ctx.fill();
+          ctx.strokeStyle = "#07101f";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.fillStyle = col;
+          ctx.font = "bold 10px JetBrains Mono,monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("×" + c, ppx, ppy - 13);
+          ctx.fillStyle = "rgba(100,116,139,.65)";
+          ctx.font = "10px JetBrains Mono,monospace";
+          ctx.fillText("x" + i, ppx, P.t + gH + 18);
+          gNodes.push({
+            sx: ppx,
+            sy: ppy,
+            xi: x,
+            yi: ys[i],
+            coeff: c,
+            idx: i,
+            col,
+          });
+        });
+
+        ctx.fillStyle = "rgba(148,163,184,.6)";
+        ctx.font = "11px JetBrains Mono,monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("x", P.l + gW / 2, H - 4);
+        ctx.save();
+        ctx.translate(13, P.t + gH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("f(x)", 0, 0);
+        ctx.restore();
+        ctx.textAlign = "right";
+        ctx.font = "10px JetBrains Mono,monospace";
+        for (let i = 0; i <= 6; i++) {
+          const yv = yMin + (yMax - yMin) * (1 - i / 6);
+          const yp = P.t + (i / 6) * gH;
+          ctx.fillStyle = "rgba(100,116,139,.6)";
+          ctx.fillText(parseFloat(yv.toFixed(3)), P.l - 5, yp + 4);
+        }
+        ctx.fillStyle = "rgba(100,116,139,.6)";
+        ctx.font = "10px JetBrains Mono,monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("a=" + fmt(a, 3), P.l, P.t + gH + 32);
+        ctx.fillText("b=" + fmt(b, 3), P.l + gW, P.t + gH + 32);
+        ctx.fillStyle = "rgba(0,212,255,.42)";
+        ctx.font = "10px JetBrains Mono,monospace";
+        ctx.textAlign = "left";
+        ctx.fillText(
+          "f(x)=" + fn + "   [" + fmt(a, 3) + "," + fmt(b, 3) + "]   n=" + n,
+          P.l,
+          20,
+        );
+      }
+
+      /* ═══════════ DOUBLE HEATMAP ═══════════ */
+      function drawHeatmap(xs, ys, wx, wy, grid, a, b, c, d, fn, nx, ny) {
+        const cv = document.getElementById("heatCanvas");
+        const dpr = window.devicePixelRatio || 1;
+        const W = cv.offsetWidth || 800,
+          H = Math.round(W * 0.52);
+        cv.width = W * dpr;
+        cv.height = H * dpr;
+        cv.style.height = H + "px";
+        const ctx = cv.getContext("2d");
+        ctx.scale(dpr, dpr);
+        const P = { t: 35, r: 85, b: 52, l: 65 };
+        const gW = W - P.l - P.r,
+          gH = H - P.t - P.b;
+
+        ctx.fillStyle = "#0f1b2d";
+        ctx.fillRect(0, 0, W, H);
+
+        const allV = grid.flat();
+        const vMin = Math.min(...allV),
+          vMax = Math.max(...allV),
+          vR = vMax - vMin || 1;
+        function lerp(c1, c2, t) {
+          return c1.map((v, i) => Math.round(v + (c2[i] - v) * t));
+        }
+        function heatCol(v) {
+          const t = (v - vMin) / vR;
+          if (t < 0.25) return lerp([15, 45, 74], [124, 58, 237], t / 0.25);
+          if (t < 0.5)
+            return lerp([124, 58, 237], [192, 38, 211], (t - 0.25) / 0.25);
+          if (t < 0.75)
+            return lerp([192, 38, 211], [251, 191, 36], (t - 0.5) / 0.25);
+          return lerp([251, 191, 36], [255, 240, 140], (t - 0.75) / 0.25);
+        }
+
+        xs.forEach((_, i) =>
+          ys.forEach((_, j) => {
+            const rgb = heatCol(grid[i][j]);
+            ctx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.88)`;
+            ctx.fillRect(
+              P.l + (i / nx) * gW,
+              P.t + (j / ny) * gH,
+              Math.ceil(gW / nx) + 1,
+              Math.ceil(gH / ny) + 1,
+            );
+          }),
+        );
+
+        ctx.strokeStyle = "rgba(0,212,255,.1)";
+        ctx.lineWidth = 0.5;
+        xs.forEach((_, i) => {
+          const px = P.l + (i / nx) * gW;
+          ctx.beginPath();
+          ctx.moveTo(px, P.t);
+          ctx.lineTo(px, P.t + gH);
+          ctx.stroke();
+        });
+        ys.forEach((_, j) => {
+          const py = P.t + (j / ny) * gH;
+          ctx.beginPath();
+          ctx.moveTo(P.l, py);
+          ctx.lineTo(P.l + gW, py);
+          ctx.stroke();
+        });
+
+        xs.forEach((_, i) =>
+          ys.forEach((_, j) => {
+            const w = wx[i] * wy[j];
+            const col =
+              w === 16
+                ? "#fbbf24"
+                : w === 4
+                  ? "#10b981"
+                  : w === 1
+                    ? "#c4b5fd"
+                    : "#60a5fa";
+            const px = P.l + ((i + 0.5) / xs.length) * gW,
+              py = P.t + ((j + 0.5) / ys.length) * gH;
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fillStyle = col;
+            ctx.fill();
+          }),
+        );
+
+        ctx.fillStyle = "rgba(148,163,184,.65)";
+        ctx.font = "11px JetBrains Mono,monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("x  →", P.l + gW / 2, H - 6);
+        ctx.save();
+        ctx.translate(13, P.t + gH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("y  →", 0, 0);
+        ctx.restore();
+        ctx.font = "10px JetBrains Mono,monospace";
+        ctx.fillStyle = "rgba(100,116,139,.65)";
+        ctx.textAlign = "center";
+        [0, Math.floor(nx / 2), nx].forEach((i) => {
+          ctx.fillText(fmt(xs[i], 3), P.l + (i / nx) * gW, P.t + gH + 18);
+        });
+        ctx.textAlign = "right";
+        [0, Math.floor(ny / 2), ny].forEach((j) => {
+          ctx.fillText(fmt(ys[j], 3), P.l - 5, P.t + (j / ny) * gH + 4);
+        });
+
+        // Colorbar
+        const cbX = W - P.r + 14,
+          cbY = P.t,
+          cbH = gH,
+          cbW = 18;
+        const cbG = ctx.createLinearGradient(0, cbY + cbH, 0, cbY);
+        cbG.addColorStop(0, "rgb(15,45,74)");
+        cbG.addColorStop(0.33, "rgb(124,58,237)");
+        cbG.addColorStop(0.66, "rgb(192,38,211)");
+        cbG.addColorStop(1, "rgb(251,191,36)");
+        ctx.fillStyle = cbG;
+        ctx.fillRect(cbX, cbY, cbW, cbH);
+        ctx.strokeStyle = "rgba(100,116,139,.3)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cbX, cbY, cbW, cbH);
+        ctx.fillStyle = "rgba(100,116,139,.75)";
+        ctx.font = "9px JetBrains Mono,monospace";
+        ctx.textAlign = "left";
+        ctx.fillText(fmt(vMax, 3), cbX + cbW + 4, cbY + 6);
+        ctx.fillText(
+          fmt((vMin + vMax) / 2, 3),
+          cbX + cbW + 4,
+          cbY + cbH / 2 + 4,
+        );
+        ctx.fillText(fmt(vMin, 3), cbX + cbW + 4, cbY + cbH);
+
+        ctx.fillStyle = "rgba(196,181,253,.45)";
+        ctx.font = "10px JetBrains Mono,monospace";
+        ctx.textAlign = "left";
+        ctx.fillText("f(x,y)=" + fn + "   " + nx + "×" + ny + " grid", P.l, 22);
+      }
+
+      /* ═══════════ TOOLTIP ═══════════ */
+      function getPos(e) {
+        const c = document.getElementById("graphCanvas");
+        const r = c.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const sx = r.width / (c.width / dpr);
+        return { x: (e.clientX - r.left) / sx, y: (e.clientY - r.top) / sx };
+      }
+      function nearest(mx, my) {
+        let best = null,
+          bd = 9e9;
+        gNodes.forEach((n) => {
+          const dist = Math.hypot(n.sx - mx, n.sy - my);
+          if (dist < bd) {
+            bd = dist;
+            best = { ...n, dist };
+          }
+        });
+        return best && best.dist < 30 ? best : null;
+      }
+      function showTip(nd, ex, ey) {
+        const tt = document.getElementById("tooltip");
+        const cLbl =
+          nd.coeff === 4
+            ? "4 — odd index"
+            : nd.coeff === 2
+              ? "2 — even interior"
+              : "1 — endpoint";
+        document.getElementById("tdot").style.background = nd.col;
+        document.getElementById("tpLbl").textContent = "x" + nd.idx;
+        document.getElementById("tx").textContent = fmt(nd.xi, 8);
+        document.getElementById("ty").textContent = fmt(nd.yi, 8);
+        document.getElementById("tcdot").style.background = nd.col;
+        document.getElementById("tc").textContent = cLbl;
+        document.getElementById("tcon").textContent = fmt(nd.coeff * nd.yi, 8);
+        tt.style.display = "block";
+        const wr = document
+          .getElementById("graphCanvas")
+          .parentElement.getBoundingClientRect();
+        let lx = ex - wr.left + 16,
+          ly = ey - wr.top - 10;
+        if (lx + 210 > wr.width) lx = ex - wr.left - 220;
+        if (ly < 4) ly = ey - wr.top + 18;
+        tt.style.left = lx + "px";
+        tt.style.top = ly + "px";
+        document
+          .querySelectorAll("[id^=tr]")
+          .forEach((r) => r.classList.remove("hl-row"));
+        const row = document.getElementById("tr" + nd.idx);
+        if (row) row.classList.add("hl-row");
+      }
+      function hideTip() {
+        document.getElementById("tooltip").style.display = "none";
+        document
+          .querySelectorAll("[id^=tr]")
+          .forEach((r) => r.classList.remove("hl-row"));
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const cv = document.getElementById("graphCanvas");
+        cv.addEventListener("mousemove", (e) => {
+          if (!G || !gNodes.length) return;
+          const { x, y } = getPos(e);
+          const nd = nearest(x, y);
+          if (nd) {
+            showTip(nd, e.clientX, e.clientY);
+            cv.style.cursor = "pointer";
+          } else {
+            hideTip();
+            cv.style.cursor = "crosshair";
+          }
+        });
+        cv.addEventListener("mouseleave", hideTip);
+        cv.addEventListener("click", (e) => {
+          if (!G || !gNodes.length) return;
+          const { x, y } = getPos(e);
+          const nd = nearest(x, y);
+          if (nd) {
+            showTip(nd, e.clientX, e.clientY);
+            const row = document.getElementById("tr" + nd.idx);
+            if (row) {
+              row.style.background = "rgba(0,212,255,.16)";
+              setTimeout(() => {
+                row.style.background = "";
+              }, 700);
+              row.scrollIntoView({ block: "center", behavior: "smooth" });
+            }
+          }
+        });
+        let rt;
+        window.addEventListener("resize", () => {
+          clearTimeout(rt);
+          rt = setTimeout(() => {
+            if (G) drawGraph();
+          }, 200);
+        });
+      });
+
+      /* ═══════════ RESET ═══════════ */
+      function resetCalc() {
+        [
+          "fnS",
+          "aS",
+          "bS",
+          "nS",
+          "fnD",
+          "aD",
+          "bD",
+          "cD",
+          "dD",
+          "nxD",
+          "nyD",
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+        hide();
+        document.getElementById("results").classList.remove("show");
+        G = null;
+        gNodes = [];
+      }
+
+      /* ═══════════ BACKGROUND MOTION ═══════════ */
+      (() => {
+        const gridCv = document.getElementById("bgGrid");
+        const partCv = document.getElementById("bgParticles");
+        if (!gridCv || !partCv) return;
+
+        const gctx = gridCv.getContext("2d");
+        const pctx = partCv.getContext("2d");
+        const palette = ["#00d4ff", "#7c3aed", "#10b981"];
+        const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+        const particles = [];
+        const particleCount = 90;
+        let w = 0,
+          h = 0,
+          dpr = 1;
+
+        function resize() {
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          w = window.innerWidth;
+          h = window.innerHeight;
+          [gridCv, partCv].forEach((cv) => {
+            cv.width = Math.floor(w * dpr);
+            cv.height = Math.floor(h * dpr);
+            cv.style.width = w + "px";
+            cv.style.height = h + "px";
+          });
+          gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function seedParticles() {
+          particles.length = 0;
+          for (let i = 0; i < particleCount; i++) {
+            particles.push({
+              x: Math.random() * w,
+              y: Math.random() * h,
+              vx: (Math.random() - 0.5) * 0.35,
+              vy: (Math.random() - 0.5) * 0.35,
+              r: 1.5 + Math.random() * 2.3,
+              c: palette[(Math.random() * palette.length) | 0],
+            });
+          }
+        }
+
+        function drawGrid(t) {
+          gctx.clearRect(0, 0, w, h);
+          const gap = 56;
+          const ox = (t * 0.008) % gap;
+          const oy = (t * 0.005) % gap;
+
+          gctx.strokeStyle = "rgba(0,212,255,.11)";
+          gctx.lineWidth = 1;
+          for (let x = -gap; x < w + gap; x += gap) {
+            gctx.beginPath();
+            gctx.moveTo(x + ox, 0);
+            gctx.lineTo(x + ox, h);
+            gctx.stroke();
+          }
+          for (let y = -gap; y < h + gap; y += gap) {
+            gctx.beginPath();
+            gctx.moveTo(0, y + oy);
+            gctx.lineTo(w, y + oy);
+            gctx.stroke();
+          }
+
+          gctx.strokeStyle = "rgba(124,58,237,.08)";
+          for (let x = -h; x < w + h; x += gap * 1.5) {
+            gctx.beginPath();
+            gctx.moveTo(x - ox * 0.7, 0);
+            gctx.lineTo(x + h - oy * 0.7, h);
+            gctx.stroke();
+          }
+        }
+
+        function drawParticles() {
+          pctx.clearRect(0, 0, w, h);
+
+          for (const p of particles) {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0 || p.x > w) p.vx *= -1;
+            if (p.y < 0 || p.y > h) p.vy *= -1;
+          }
+
+          for (let i = 0; i < particles.length; i++) {
+            const a = particles[i];
+            for (let j = i + 1; j < particles.length; j++) {
+              const b = particles[j];
+              const dx = a.x - b.x,
+                dy = a.y - b.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist < 120) {
+                pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                pctx.lineWidth = 1;
+                pctx.beginPath();
+                pctx.moveTo(a.x, a.y);
+                pctx.lineTo(b.x, b.y);
+                pctx.stroke();
+              }
+            }
+
+            if (mouse.active) {
+              const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+              if (md < mouse.r) {
+                const alpha = (1 - md / mouse.r) * 0.45;
+                pctx.strokeStyle = `rgba(124,58,237,${alpha})`;
+                pctx.beginPath();
+                pctx.moveTo(a.x, a.y);
+                pctx.lineTo(mouse.x, mouse.y);
+                pctx.stroke();
+              }
+            }
+          }
+
+          for (const p of particles) {
+            const near = mouse.active
+              ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r
+              : false;
+            pctx.beginPath();
+            pctx.fillStyle = p.c;
+            pctx.globalAlpha = near ? 1 : 0.82;
+            pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+            pctx.fill();
+
+            if (near) {
+              pctx.beginPath();
+              pctx.globalAlpha = 0.15;
+              pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+              pctx.fill();
+            }
+          }
+          pctx.globalAlpha = 1;
+        }
+
+        function loop(t) {
+          drawGrid(t);
+          drawParticles();
+          requestAnimationFrame(loop);
+        }
+
+        window.addEventListener("mousemove", (e) => {
+          mouse.x = e.clientX;
+          mouse.y = e.clientY;
+          mouse.active = true;
+        });
+        window.addEventListener("mouseleave", () => {
+          mouse.active = false;
+        });
+        window.addEventListener("resize", resize);
+
+        resize();
+        seedParticles();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2684 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trapezoidal Rule Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+        position: relative;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+
+      /* Function input */
+      .func-input-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .func-input-wrap input[type="text"] {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-size: 1rem;
+        padding: 0.3rem 0;
+        width: 100%;
+      }
+      .func-input-wrap input[type="text"]:focus {
+        box-shadow: none;
+        border: none;
+      }
+      .func-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .func-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        margin-top: 0.4rem;
+        line-height: 1.7;
+      }
+      .func-hint span {
+        color: var(--accent3);
+      }
+      .field-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-top: 0.3rem;
+        padding: 0.3rem 0.5rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.2);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .field-desc .eg {
+        color: var(--accent3);
+      }
+      .field-desc .warn {
+        color: var(--accent2);
+      }
+
+      /* Examples */
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+
+      /* Buttons */
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      .full-width {
+        grid-column: 1/-1;
+      }
+
+      /* Info / tooltip */
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.61rem;
+        color: var(--text);
+        line-height: 1.75;
+        z-index: 99;
+        width: 260px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.64rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      /* Stats */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+
+      /* Result banner */
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+
+      /* Charts */
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 260px;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .final-chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+      }
+
+      /* Iteration table */
+      .iter-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        width: 100%;
+        min-width: 540px;
+      }
+      .iter-table th {
+        padding: 0.45rem 0.7rem;
+        text-align: right;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .iter-table th:first-child,
+      .iter-table th:nth-child(4) {
+        text-align: center;
+      }
+      .iter-table td {
+        padding: 0.3rem 0.7rem;
+        text-align: right;
+        border-bottom: 1px solid rgba(26, 53, 69, 0.4);
+        white-space: nowrap;
+      }
+      .iter-table td:first-child {
+        text-align: center;
+        color: var(--text-dim);
+      }
+      .iter-table td.x-col {
+        color: var(--accent);
+      }
+      .iter-table td.fx-col {
+        color: var(--text);
+      }
+      .iter-table td.coeff-col {
+        text-align: center;
+        color: var(--accent2);
+        font-weight: 700;
+      }
+      .iter-table td.area-col {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .iter-table tr.endpoint-row td {
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .iter-table tr.endpoint-row td.x-col {
+        color: var(--accent2);
+      }
+      .iter-table tr:last-child td {
+        border-bottom: none;
+      }
+      .iter-table tfoot td {
+        border-top: 2px solid var(--border);
+        padding-top: 0.6rem;
+        font-weight: 700;
+      }
+
+      /* Step card */
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 900px) {
+        .step-body {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .calc-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .calc-label {
+        color: var(--text-dim);
+        min-width: 76px;
+        flex-shrink: 0;
+      }
+      .calc-result {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .mini-val-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        width: 100%;
+      }
+      .mini-val-table td {
+        padding: 0.28rem 0.5rem;
+        border: 1px solid rgba(26, 53, 69, 0.6);
+      }
+      .mini-val-table td:first-child {
+        color: var(--text-dim);
+      }
+      .mini-val-table td:last-child {
+        color: var(--text);
+        text-align: right;
+        font-weight: 600;
+      }
+      .mini-val-table tr.highlight td:last-child {
+        color: var(--accent3);
+      }
+      .mini-val-table tr.pivRow td:last-child {
+        color: var(--accent);
+      }
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+
+      /* Steps nav */
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .all-steps-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      /* Alert */
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+
+      /* Empty state */
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+
+      /* Trap visualizer canvas */
+      .trap-canvas-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      .trap-canvas-wrap canvas {
+        width: 100%;
+        height: 220px;
+        display: block;
+      }
+
+      /* Accuracy bar */
+      .accuracy-bar-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .acc-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .acc-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        margin-bottom: 0.4rem;
+      }
+      .acc-label {
+        color: var(--text-dim);
+        min-width: 90px;
+      }
+      .acc-track {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .acc-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s;
+      }
+      .acc-val {
+        color: var(--accent3);
+        min-width: 100px;
+        text-align: right;
+      }
+
+      /* Background */
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      /* Footer */
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">
+          Numerical Methods &mdash; Numerical Integration
+        </div>
+        <h1>Trapezoidal Rule</h1>
+        <p>
+          Approximate the definite integral &nbsp; &int;<sub>a</sub
+          ><sup>b</sup> f(x) dx &nbsp;&asymp;&nbsp; (h/2) &middot;
+          [f(x<sub>0</sub>) + 2f(x<sub>1</sub>) + &hellip; + 2f(x<sub>n-1</sub>)
+          + f(x<sub>n</sub>)]
+        </p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── INPUT PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Function &amp; Limits</div>
+
+          <!-- f(x) -->
+          <div
+            class="func-label"
+            style="display: flex; align-items: center; gap: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 1</span> &mdash; Enter the
+            function f(x) to integrate
+            <span class="info-btn" onclick="togglePop('pop-fx')">?</span>
+            <div class="info-popup" id="pop-fx" style="z-index: 200">
+              <div class="pop-title">What is f(x)?</div>
+              This is the function you want to find the<br />
+              area under (the definite integral).<br /><br />
+              Example: <strong style="color: var(--accent3)">x^2</strong> means
+              &#x222B; x&sup2; dx<br />
+              Example:
+              <strong style="color: var(--accent3)">sin(x)</strong> means
+              &#x222B; sin(x) dx<br /><br />
+              The calculator slices the area into<br />
+              trapezoid shapes and adds them up.
+            </div>
+          </div>
+          <div class="func-input-wrap">
+            <input
+              type="text"
+              id="funcInput"
+              value="x^2"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="e.g. x^2"
+            />
+            <div class="func-hint">
+              <span style="color: var(--accent2)">Power:</span>
+              <span>x^2</span> &nbsp;
+              <span style="color: var(--accent2)">Math:</span>
+              <span>sqrt(x)</span> <span>sin(x)</span> <span>cos(x)</span>
+              <span>tan(x)</span> <span>exp(x)</span> <span>log(x)</span>
+              <span>abs(x)</span> <span>PI</span> <span>E</span>
+            </div>
+          </div>
+
+          <!-- Limits a and b -->
+          <div
+            class="func-label"
+            style="display: flex; align-items: center; gap: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 2</span> &mdash; Set the
+            integration limits [a, b]
+            <span class="info-btn" onclick="togglePop('pop-limits')">?</span>
+            <div class="info-popup" id="pop-limits" style="z-index: 200">
+              <div class="pop-title">Lower &amp; Upper Limits</div>
+              These are the start and end points of<br />
+              the area you want to calculate.<br /><br />
+              <strong>a</strong> = Lower limit (left boundary)<br />
+              <strong>b</strong> = Upper limit (right boundary)<br /><br />
+              Example: &#x222B;<sub>0</sub><sup>1</sup> x&sup2; dx means a=0,
+              b=1<br />
+              The exact answer is 1/3 = 0.333...
+            </div>
+          </div>
+          <div class="controls-row" style="margin-bottom: 0.4rem">
+            <div class="control-group">
+              <label
+                >Lower Limit &nbsp;<span
+                  style="color: var(--accent); font-size: 0.75rem"
+                  >a</span
+                ></label
+              >
+              <input
+                type="number"
+                id="limitA"
+                value="0"
+                step="any"
+                placeholder="e.g. 0"
+              />
+              <div class="field-desc">
+                Starting point of integration.
+                <span class="eg">Left boundary of area.</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label
+                >Upper Limit &nbsp;<span
+                  style="color: var(--accent); font-size: 0.75rem"
+                  >b</span
+                ></label
+              >
+              <input
+                type="number"
+                id="limitB"
+                value="1"
+                step="any"
+                placeholder="e.g. 1"
+              />
+              <div class="field-desc">
+                Ending point of integration.
+                <span class="eg">Right boundary of area. Must be &gt; a.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- n subintervals -->
+          <div class="controls-row" style="margin-top: 0.8rem">
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.3rem">
+                Number of Subintervals &nbsp;<span
+                  style="color: var(--accent); font-size: 0.75rem"
+                  >n</span
+                >
+                <span class="info-btn" onclick="togglePop('pop-n')">?</span>
+                <div class="info-popup" id="pop-n" style="z-index: 200">
+                  <div class="pop-title">Number of Subintervals (n)</div>
+                  How many trapezoids to use.<br /><br />
+                  More trapezoids = more accurate result<br />
+                  but more computation.<br /><br />
+                  n = 4 &rarr; 4 trapezoids (rough)<br />
+                  n = 100 &rarr; 100 trapezoids (very accurate)<br /><br />
+                  Step size: h = (b &minus; a) / n
+                </div>
+              </label>
+              <input
+                type="number"
+                id="nIntervals"
+                value="4"
+                min="1"
+                max="1000"
+                placeholder="e.g. 4"
+              />
+              <div class="field-desc">
+                More trapezoids = more accurate.
+                <span class="eg">Try 4, 8, 16 to see accuracy improve.</span>
+                <span class="warn">Max 1000.</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.3rem">
+                Decimal Places
+                <span class="info-btn" onclick="togglePop('pop-dec')">?</span>
+                <div class="info-popup" id="pop-dec" style="z-index: 200">
+                  <div class="pop-title">Decimal Places</div>
+                  How many digits to show after the<br />
+                  decimal point in the results table.<br /><br />
+                  This is display only &mdash; it does not<br />
+                  affect calculation accuracy.
+                </div>
+              </label>
+              <input type="number" id="decimals" value="6" min="2" max="12" />
+              <div class="field-desc">
+                Digits to show in result table.
+                <span class="eg">Display only, not accuracy.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Examples -->
+          <div
+            class="func-label"
+            style="margin-bottom: 0.4rem; margin-top: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 3</span> &mdash; Or pick a
+            ready example
+          </div>
+          <div class="examples-strip">
+            <span
+              class="ex-chip"
+              onclick="loadEx(0)"
+              title="Integral of x^2 from 0 to 1 = 1/3"
+              >x&sup2; [0,1]</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(1)"
+              title="Integral of sin(x) from 0 to PI = 2"
+              >sin(x) [0,&pi;]</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(2)"
+              title="Integral of e^x from 0 to 1 = e-1"
+              >e^x [0,1]</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(3)"
+              title="Integral of x^3 from 0 to 2 = 4"
+              >x&sup3; [0,2]</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(4)"
+              title="Integral of 1/x from 1 to 2 = ln(2)"
+              >1/x [1,2]</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(5)"
+              title="Integral of x*sin(x) from 0 to PI"
+              >x&middot;sin(x) [0,&pi;]</span
+            >
+          </div>
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.56rem;
+              color: var(--text-dim);
+              margin-top: 0.3rem;
+            "
+          >
+            Click any chip to auto-fill f(x) and limits &mdash; exact answer
+            shown in result for comparison
+          </div>
+        </div>
+
+        <!-- ── SETTINGS PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">How It Works</div>
+
+          <!-- Formula display -->
+          <div
+            style="
+              background: rgba(0, 0, 0, 0.25);
+              border: 1px solid var(--border);
+              border-radius: 10px;
+              padding: 1rem;
+              margin-bottom: 1.2rem;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.6rem;
+                color: var(--accent);
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                margin-bottom: 0.7rem;
+              "
+            >
+              TRAPEZOIDAL RULE FORMULA
+            </div>
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.8rem;
+                color: var(--text);
+                line-height: 2.2;
+              "
+            >
+              <span style="color: var(--accent3)">h</span> = (b &minus; a) / n
+              &nbsp;&nbsp;&nbsp;
+              <span style="color: var(--text-dim); font-size: 0.62rem"
+                >(step size = width of each trapezoid)</span
+              ><br />
+              <span style="color: var(--accent3)">x<sub>i</sub></span> = a + i
+              &times; h &nbsp;&nbsp;
+              <span style="color: var(--text-dim); font-size: 0.62rem"
+                >(for i = 0, 1, 2, &hellip;, n)</span
+              ><br /><br />
+              <span style="color: var(--accent)"
+                >&int;<sub>a</sub><sup>b</sup> f(x) dx</span
+              >
+              &asymp; <span style="color: var(--accent3)">h/2</span> &times;
+              [<span style="color: var(--accent2)">f(x<sub>0</sub>)</span> +
+              <span style="color: var(--text)"
+                >2f(x<sub>1</sub>) + 2f(x<sub>2</sub>) + &hellip; +
+                2f(x<sub>n-1</sub>)</span
+              >
+              +
+              <span style="color: var(--accent2)">f(x<sub>n</sub>)</span
+              >]<br /><br />
+              <span style="color: var(--text-dim); font-size: 0.62rem">
+                Coefficients: <span style="color: var(--accent2)">1</span> for
+                endpoints (x<sub>0</sub>, x<sub>n</sub>), &nbsp;
+                <span style="color: var(--text)">2</span> for interior points
+              </span>
+            </div>
+          </div>
+
+          <!-- What each input does -->
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.63rem;
+              color: var(--text-dim);
+              line-height: 2;
+              margin-bottom: 1rem;
+            "
+          >
+            <strong style="color: var(--accent)"
+              >How the calculation works:</strong
+            ><br />
+            <span style="color: var(--accent2)">①</span> Divide [a, b] into
+            <span style="color: var(--accent3)">n</span> equal parts of width
+            <span style="color: var(--accent3)">h = (b-a)/n</span><br />
+            <span style="color: var(--accent2)">②</span> Compute
+            <span style="color: var(--accent3)">f(x)</span> at each dividing
+            point x<sub>0</sub>, x<sub>1</sub>, &hellip;, x<sub>n</sub><br />
+            <span style="color: var(--accent2)">③</span> Multiply:
+            <span style="color: var(--accent3)">endpoints &times; 1</span>,
+            interior points <span style="color: var(--accent3)">&times; 2</span
+            ><br />
+            <span style="color: var(--accent2)">④</span> Add all up, then
+            multiply by <span style="color: var(--accent3)">h/2</span><br />
+            <span style="color: var(--accent2)">⑤</span> Result = approximate
+            area under the curve
+          </div>
+
+          <!-- Error formula -->
+          <div
+            style="
+              background: rgba(255, 107, 53, 0.06);
+              border: 1px solid rgba(255, 107, 53, 0.2);
+              border-radius: 8px;
+              padding: 0.75rem 1rem;
+              margin-bottom: 1rem;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.6rem;
+                color: var(--accent2);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                margin-bottom: 0.4rem;
+              "
+            >
+              ERROR ESTIMATE
+            </div>
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.72rem;
+                color: var(--text);
+                line-height: 1.9;
+              "
+            >
+              |E<sub>T</sub>| &le; (b&minus;a)<sup>3</sup> / (12 &times;
+              n<sup>2</sup>) &times; max|f&prime;&prime;(x)|<br />
+              <span style="color: var(--text-dim); font-size: 0.6rem"
+                >Doubling n reduces the error by factor of 4 (quadratic
+                convergence)</span
+              >
+            </div>
+          </div>
+
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runTrap()">
+              &#9654; Compute Integral
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+              &#10005; Reset
+            </button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+        </div>
+
+        <!-- ── RESULTS PANEL ── -->
+        <div class="panel full-width" style="animation-delay: 0.2s">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">&#x222B;</span>
+            Enter f(x), set limits [a, b] and number of subintervals n,<br />
+            then click <strong>Compute Integral</strong> to find the area.
+          </div>
+
+          <div id="resultsContent" style="display: none">
+            <!-- Stat cards -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="statResult">—</div>
+                <div class="stat-label">Integral Value</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statH">—</div>
+                <div class="stat-label">Step Size h</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statN">—</div>
+                <div class="stat-label">Subintervals n</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statExact">—</div>
+                <div class="stat-label">Exact Answer*</div>
+              </div>
+            </div>
+
+            <!-- Result banner -->
+            <div class="solution-display">
+              <div class="sol-title">
+                Integration Result &mdash; Area Under the Curve
+              </div>
+              <div class="sol-values" id="solutionDisplay"></div>
+            </div>
+
+            <!-- Visualizer canvas -->
+            <div class="chart-title">
+              Trapezoid Visualisation &mdash; Area Under f(x)
+            </div>
+            <div class="trap-canvas-wrap">
+              <canvas id="trapCanvas"></canvas>
+            </div>
+
+            <!-- Accuracy comparison bar -->
+            <div
+              class="accuracy-bar-wrap"
+              id="accBarWrap"
+              style="display: none"
+            >
+              <div class="acc-title">Accuracy Comparison vs Exact Answer</div>
+              <div class="acc-row">
+                <span class="acc-label">Trapezoidal</span>
+                <div class="acc-track">
+                  <div
+                    class="acc-fill"
+                    id="accFillTrap"
+                    style="background: var(--accent); width: 0%"
+                  ></div>
+                </div>
+                <span class="acc-val" id="accValTrap">—</span>
+              </div>
+              <div class="acc-row">
+                <span class="acc-label">Error %</span>
+                <div class="acc-track">
+                  <div
+                    class="acc-fill"
+                    id="accFillErr"
+                    style="background: var(--accent2); width: 0%"
+                  ></div>
+                </div>
+                <span
+                  class="acc-val"
+                  id="accValErr"
+                  style="color: var(--accent2)"
+                  >—</span
+                >
+              </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-row">
+              <div>
+                <div class="chart-title">
+                  f(x<sub>i</sub>) Values at Each Node
+                </div>
+                <div class="chart-wrap"><canvas id="fxChart"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title">
+                  Area Contribution of Each Trapezoid
+                </div>
+                <div class="chart-wrap"><canvas id="areaChart"></canvas></div>
+              </div>
+            </div>
+
+            <!-- Full iteration table -->
+            <div class="chart-title">Complete Computation Table</div>
+            <div class="final-chart-wrap">
+              <div id="iterTableWrap"></div>
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- Step-by-step cards -->
+            <div>
+              <div class="steps-header">
+                <div class="steps-header-title">
+                  Trapezoid-by-Trapezoid Breakdown
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.8rem;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <button
+                    class="step-all-btn"
+                    id="toggleAllBtn"
+                    onclick="toggleAllSteps()"
+                  >
+                    Show All Trapezoids
+                  </button>
+                  <div class="step-nav">
+                    <button id="prevBtn" onclick="changeStep(-1)" disabled>
+                      &#9664; Prev
+                    </button>
+                    <span class="step-counter" id="stepCounter"
+                      >Trap 1 / 1</span
+                    >
+                    <button id="nextBtn" onclick="changeStep(1)">
+                      Next &#9654;
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div id="singleStepView"><div id="stepCardContainer"></div></div>
+              <div id="allStepsView" style="display: none">
+                <div class="all-steps-wrap" id="allStepsContainer"></div>
+              </div>
+            </div>
+
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.58rem;
+                color: var(--text-dim);
+                margin-top: 1rem;
+                padding-top: 0.8rem;
+                border-top: 1px solid var(--border);
+              "
+            >
+              * Exact answer shown only for the built-in example functions. For
+              custom functions, exact answer may vary.
+            </div>
+          </div>
+          <!-- /resultsContent -->
+        </div>
+      </div>
+      <!-- /main-grid -->
+    </div>
+    <!-- /container -->
+
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">&#x222B;</span>Trapezoidal Rule Calculator &mdash;
+        Numerical Integration
+      </div>
+      <div class="foot-links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/gauss_seidel.html">Gauss-Seidel</a>
+        <a href="/gauss_jordan.html">Gauss-Jordan</a>
+        <a href="/lagrange.html">Lagrange Interpolation</a>
+        <a href="/power1.html">Power Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/Newton_divide.html">Newton's divide</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/simpson.html">Simpson's Rule</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/adam.html">Adam's Method</a>
+        <a href="/index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ── State ─────────────────────────────────────────────────────
+        let stepsData = [];
+        let currentStep = 0;
+        let showingAll = false;
+        let fxChartObj = null;
+        let areaChartObj = null;
+        let trapCanvasData = null;
+
+        // ── Examples ──────────────────────────────────────────────────
+        const EXAMPLES = [
+          {
+            f: "x^2",
+            a: 0,
+            b: 1,
+            n: 4,
+            exact: 1 / 3,
+            exactStr: "1/3 ≈ 0.333333",
+          },
+          {
+            f: "sin(x)",
+            a: 0,
+            b: Math.PI,
+            n: 8,
+            exact: 2,
+            exactStr: "2.000000",
+          },
+          {
+            f: "exp(x)",
+            a: 0,
+            b: 1,
+            n: 4,
+            exact: Math.E - 1,
+            exactStr: "e−1 ≈ 1.718282",
+          },
+          { f: "x^3", a: 0, b: 2, n: 4, exact: 4, exactStr: "4.000000" },
+          {
+            f: "1/x",
+            a: 1,
+            b: 2,
+            n: 8,
+            exact: Math.log(2),
+            exactStr: "ln(2) ≈ 0.693147",
+          },
+          {
+            f: "x*sin(x)",
+            a: 0,
+            b: Math.PI,
+            n: 8,
+            exact: Math.PI,
+            exactStr: "π ≈ 3.141593",
+          },
+        ];
+        let currentExactAnswer = null;
+
+        window.loadEx = function (i) {
+          const e = EXAMPLES[i];
+          document.getElementById("funcInput").value = e.f;
+          document.getElementById("limitA").value = parseFloat(e.a.toFixed(6));
+          document.getElementById("limitB").value = parseFloat(e.b.toFixed(6));
+          document.getElementById("nIntervals").value = e.n;
+          currentExactAnswer = e;
+        };
+
+        // ── Safe expression evaluator ─────────────────────────────────
+        function makeEval(expr) {
+          const s = expr
+            .replace(/\^/g, "**")
+            .replace(/\bsqrt\b/g, "Math.sqrt")
+            .replace(/\babs\b/g, "Math.abs")
+            .replace(/\bsin\b/g, "Math.sin")
+            .replace(/\bcos\b/g, "Math.cos")
+            .replace(/\btan\b/g, "Math.tan")
+            .replace(/\bexp\b/g, "Math.exp")
+            .replace(/\blog10\b/g, "Math.log10")
+            .replace(/\blog\b/g, "Math.log")
+            .replace(/\bPI\b/g, "Math.PI")
+            .replace(/\bE\b/g, "Math.E");
+          try {
+            return new Function("x", '"use strict"; return (' + s + ");");
+          } catch (e) {
+            throw new Error("Cannot parse expression: " + expr);
+          }
+        }
+
+        // ── TRAPEZOIDAL RULE CORE ─────────────────────────────────────
+        // Formula: ∫[a,b] f(x) dx ≈ (h/2) * [f(x0) + 2f(x1) + ... + 2f(x_{n-1}) + f(xn)]
+        // Where h = (b-a)/n,  xi = a + i*h
+        function trapezoidalRule(fExpr, a, b, n) {
+          const f = makeEval(fExpr);
+          const h = (b - a) / n; // step size (width of each trapezoid)
+          const nodes = [];
+
+          // Compute all nodes: x0, x1, ..., xn
+          for (let i = 0; i <= n; i++) {
+            const xi = a + i * h; // xi = a + i*h
+            const fxi = f(xi); // evaluate f at xi
+
+            if (!isFinite(fxi) || isNaN(fxi)) {
+              throw new Error(
+                "f(x) is undefined or infinite at x = " +
+                  xi.toFixed(6) +
+                  ". Try different limits or function.",
+              );
+            }
+
+            // Coefficient: 1 for endpoints (i=0 or i=n), 2 for interior
+            const coeff = i === 0 || i === n ? 1 : 2;
+            nodes.push({ i, xi, fxi, coeff });
+          }
+
+          // Weighted sum: 1*f(x0) + 2*f(x1) + ... + 2*f(x_{n-1}) + 1*f(xn)
+          const weightedSum = nodes.reduce(
+            (sum, nd) => sum + nd.coeff * nd.fxi,
+            0,
+          );
+
+          // Integral ≈ (h/2) * weightedSum
+          const integral = (h / 2) * weightedSum;
+
+          // Build trapezoid-by-trapezoid breakdown for step cards
+          const trapezoids = [];
+          for (let i = 0; i < n; i++) {
+            const left = nodes[i];
+            const right = nodes[i + 1];
+            // Area of one trapezoid = (h/2) * (f(x_i) + f(x_{i+1}))
+            const trapArea = (h / 2) * (left.fxi + right.fxi);
+            trapezoids.push({
+              idx: i,
+              xLeft: left.xi,
+              xRight: right.xi,
+              fLeft: left.fxi,
+              fRight: right.fxi,
+              h,
+              trapArea,
+              runningSum: 0, // filled below
+            });
+          }
+          // Running cumulative area
+          let running = 0;
+          trapezoids.forEach((t) => {
+            running += t.trapArea;
+            t.runningSum = running;
+          });
+
+          return { integral, h, n, a, b, nodes, trapezoids, weightedSum };
+        }
+
+        // ── RUN ───────────────────────────────────────────────────────
+        window.runTrap = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+
+          const fExpr = document.getElementById("funcInput").value.trim();
+          const a = parseFloat(document.getElementById("limitA").value);
+          const b = parseFloat(document.getElementById("limitB").value);
+          const n = parseInt(document.getElementById("nIntervals").value) || 4;
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 6;
+
+          if (!fExpr) {
+            showError("Please enter f(x).");
+            return;
+          }
+          if (isNaN(a)) {
+            showError("Lower limit a is invalid.");
+            return;
+          }
+          if (isNaN(b)) {
+            showError("Upper limit b is invalid.");
+            return;
+          }
+          if (b <= a) {
+            showError("Upper limit b must be greater than lower limit a.");
+            return;
+          }
+          if (n < 1 || n > 1000) {
+            showError("Number of subintervals must be between 1 and 1000.");
+            return;
+          }
+
+          let result;
+          try {
+            result = trapezoidalRule(fExpr, a, b, n);
+          } catch (e) {
+            showError(e.message);
+            return;
+          }
+
+          stepsData = result.trapezoids;
+          currentStep = 0;
+          showingAll = false;
+          document.getElementById("toggleAllBtn").textContent =
+            "Show All Trapezoids";
+          document.getElementById("singleStepView").style.display = "block";
+          document.getElementById("allStepsView").style.display = "none";
+
+          displayResults(result, decimals, fExpr);
+
+          const msg = `✓ Integral of f(x) from ${a} to ${b} with n=${n} subintervals: ≈ ${result.integral.toFixed(decimals)}  |  Step size h = ${result.h.toFixed(decimals)}`;
+          showSuccess(msg);
+        };
+
+        // ── DISPLAY RESULTS ───────────────────────────────────────────
+        function displayResults(result, decimals, fExpr) {
+          const fmt = (v, d) =>
+            typeof v === "number" && isFinite(v)
+              ? v.toFixed(d || decimals)
+              : "N/A";
+          const { integral, h, n, a, b, nodes, trapezoids, weightedSum } =
+            result;
+
+          document.getElementById("emptyState").style.display = "none";
+          document.getElementById("resultsContent").style.display = "block";
+
+          // Stat cards
+          document.getElementById("statResult").textContent = fmt(integral);
+          document.getElementById("statH").textContent = fmt(h);
+          document.getElementById("statN").textContent = n;
+
+          // Exact answer comparison
+          let exactVal = null;
+          const accWrap = document.getElementById("accBarWrap");
+          if (currentExactAnswer) {
+            exactVal = currentExactAnswer.exact;
+            document.getElementById("statExact").textContent =
+              currentExactAnswer.exactStr;
+            accWrap.style.display = "block";
+            const errPct = Math.abs(((integral - exactVal) / exactVal) * 100);
+            const trapPct = Math.min(100, (1 - errPct / 100) * 100);
+            document.getElementById("accFillTrap").style.width =
+              Math.max(0, trapPct) + "%";
+            document.getElementById("accValTrap").textContent = fmt(integral);
+            document.getElementById("accFillErr").style.width =
+              Math.min(100, errPct * 5) + "%";
+            document.getElementById("accValErr").textContent =
+              errPct.toFixed(4) + "%";
+          } else {
+            document.getElementById("statExact").textContent = "N/A";
+            accWrap.style.display = "none";
+          }
+
+          // Solution chips
+          const sol = document.getElementById("solutionDisplay");
+          sol.innerHTML = "";
+          const chips = [
+            {
+              val: `∫ f(x) dx ≈ ${fmt(integral)}`,
+              c: "#00d4ff",
+              bc: "#00d4ff44",
+              bg: "#00d4ff11",
+            },
+            {
+              val: `h = ${fmt(h)}`,
+              c: "#77dc1e",
+              bc: "#77dc1e44",
+              bg: "#77dc1e11",
+            },
+            {
+              val: `n = ${n} trapezoids`,
+              c: "#ff6b35",
+              bc: "#ff6b3544",
+              bg: "#ff6b3511",
+            },
+            ...(exactVal !== null
+              ? [
+                  {
+                    val: `Error = ${Math.abs(integral - exactVal).toExponential(3)}`,
+                    c: "#a78bfa",
+                    bc: "#a78bfa44",
+                    bg: "#a78bfa11",
+                  },
+                ]
+              : []),
+          ];
+          chips.forEach((ch) => {
+            const d = document.createElement("div");
+            d.className = "sol-chip";
+            d.style.cssText = `color:${ch.c};border-color:${ch.bc};background:${ch.bg};`;
+            d.textContent = ch.val;
+            sol.appendChild(d);
+          });
+
+          // ── Trap Canvas Visualizer ──
+          trapCanvasData = { nodes, trapezoids, a, b, n, fExpr };
+          drawTrapCanvas(nodes, trapezoids, a, b, n, fExpr);
+
+          // ── f(xi) Bar Chart ──
+          const labels = nodes.map((nd) => `x${nd.i}=${fmt(nd.xi, 3)}`);
+          const fxVals = nodes.map((nd) => nd.fxi);
+          const barColors = nodes.map((nd) =>
+            nd.i === 0 || nd.i === n
+              ? "rgba(255,107,53,0.85)"
+              : "rgba(0,212,255,0.75)",
+          );
+          if (fxChartObj) {
+            fxChartObj.destroy();
+            fxChartObj = null;
+          }
+          fxChartObj = new Chart(
+            document.getElementById("fxChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "f(xᵢ)",
+                    data: fxVals,
+                    backgroundColor: barColors,
+                    borderColor: barColors.map((c) =>
+                      c.replace("0.85", "1").replace("0.75", "1"),
+                    ),
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 9 },
+                    bodyFont: { family: "Space Mono", size: 9 },
+                    callbacks: {
+                      label: (ctx) =>
+                        ` f(x) = ${ctx.parsed.y.toFixed(decimals)}`,
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 7 },
+                      maxRotation: 60,
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                  y: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                },
+              },
+            },
+          );
+
+          // ── Area Bar Chart ──
+          const areaLabels = trapezoids.map((t) => `T${t.idx + 1}`);
+          const areaVals = trapezoids.map((t) => t.trapArea);
+          if (areaChartObj) {
+            areaChartObj.destroy();
+            areaChartObj = null;
+          }
+          areaChartObj = new Chart(
+            document.getElementById("areaChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: areaLabels,
+                datasets: [
+                  {
+                    label: "Trapezoid Area",
+                    data: areaVals,
+                    backgroundColor: "rgba(119,220,30,0.7)",
+                    borderColor: "#77dc1e",
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                  },
+                  {
+                    label: "Cumulative Area",
+                    data: trapezoids.map((t) => t.runningSum),
+                    type: "line",
+                    borderColor: "#ff6b35",
+                    backgroundColor: "transparent",
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: "#ff6b35",
+                    tension: 0.3,
+                    yAxisID: "y",
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: true,
+                    labels: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                      boxWidth: 10,
+                      padding: 6,
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 9 },
+                    bodyFont: { family: "Space Mono", size: 9 },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                  y: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                },
+              },
+            },
+          );
+
+          // ── Full Computation Table ──
+          buildIterTable(result, decimals);
+
+          // ── First step card ──
+          renderStep(0);
+          updateNav();
+        }
+
+        // ── COMPUTATION TABLE ─────────────────────────────────────────
+        function buildIterTable(result, decimals) {
+          const fmt = (v) =>
+            typeof v === "number" && isFinite(v) ? v.toFixed(decimals) : "N/A";
+          const { nodes, trapezoids, h } = result;
+
+          const wrap = document.getElementById("iterTableWrap");
+          wrap.innerHTML = "";
+          const tbl = document.createElement("table");
+          tbl.className = "iter-table";
+          tbl.innerHTML = `<thead><tr>
+    <th style="text-align:center;">i</th>
+    <th>x<sub>i</sub> = a + i&times;h</th>
+    <th>f(x<sub>i</sub>)</th>
+    <th style="text-align:center;">Coeff c<sub>i</sub></th>
+    <th>c<sub>i</sub> &times; f(x<sub>i</sub>)</th>
+    <th>Trap Area<br/><span style="font-size:0.55rem;font-weight:400;">(h/2)&times;[f(x<sub>i</sub>)+f(x<sub>i+1</sub>)]</span></th>
+    <th>Cumulative &int;</th>
+  </tr></thead>`;
+          const tbody = document.createElement("tbody");
+
+          nodes.forEach((nd, idx) => {
+            const tr = document.createElement("tr");
+            if (nd.i === 0 || nd.i === result.n) tr.className = "endpoint-row";
+            const trapArea =
+              idx < trapezoids.length ? trapezoids[idx].trapArea : null;
+            const cumul =
+              idx < trapezoids.length
+                ? trapezoids[idx].runningSum
+                : result.integral;
+            tr.innerHTML = `
+      <td>${nd.i}</td>
+      <td class="x-col">${fmt(nd.xi)}</td>
+      <td class="fx-col">${fmt(nd.fxi)}</td>
+      <td class="coeff-col">${nd.coeff}</td>
+      <td class="fx-col">${fmt(nd.coeff * nd.fxi)}</td>
+      <td class="area-col">${trapArea !== null ? fmt(trapArea) : "—"}</td>
+      <td class="area-col">${idx < trapezoids.length ? fmt(cumul) : fmt(result.integral)}</td>`;
+            tbody.appendChild(tr);
+          });
+
+          // Footer totals
+          const tfoot = document.createElement("tfoot");
+          tfoot.innerHTML = `<tr>
+    <td colspan="4" style="text-align:right;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text-dim);">
+      Weighted Sum = ${fmt(result.weightedSum)}
+    </td>
+    <td colspan="3" class="area-col" style="text-align:right;font-size:0.85rem;">
+      Total = (h/2) &times; ${fmt(result.weightedSum)} = <strong>${fmt(result.integral)}</strong>
+    </td>
+  </tr>`;
+          tbl.appendChild(tbody);
+          tbl.appendChild(tfoot);
+          wrap.appendChild(tbl);
+        }
+
+        // ── TRAP CANVAS VISUALIZER ────────────────────────────────────
+        function drawTrapCanvas(nodes, trapezoids, a, b, n, fExpr) {
+          const canvas = document.getElementById("trapCanvas");
+          const W = canvas.parentElement.clientWidth - 16;
+          const H = 220;
+          const DPR = window.devicePixelRatio || 1;
+          canvas.width = W * DPR;
+          canvas.height = H * DPR;
+          canvas.style.width = W + "px";
+          canvas.style.height = H + "px";
+          const ctx = canvas.getContext("2d");
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+          let f;
+          try {
+            f = makeEval(fExpr);
+          } catch (e) {
+            return;
+          }
+
+          const pad = { l: 45, r: 20, t: 15, b: 35 };
+          const pw = W - pad.l - pad.r;
+          const ph = H - pad.t - pad.b;
+
+          // Gather y range
+          const fxVals = nodes.map((nd) => nd.fxi);
+          const yMin = Math.min(...fxVals, 0);
+          const yMax = Math.max(...fxVals);
+          const yPad = (yMax - yMin) * 0.12 || 0.5;
+          const domYMin = yMin - yPad,
+            domYMax = yMax + yPad;
+
+          function toX(xd) {
+            return pad.l + ((xd - a) / (b - a)) * pw;
+          }
+          function toY(yd) {
+            return pad.t + (1 - (yd - domYMin) / (domYMax - domYMin)) * ph;
+          }
+
+          // Background
+          ctx.fillStyle = "#112230";
+          ctx.fillRect(0, 0, W, H);
+
+          // Draw filled trapezoids
+          const colors = [
+            "rgba(0,212,255,0.12)",
+            "rgba(119,220,30,0.10)",
+            "rgba(255,107,53,0.10)",
+            "rgba(167,139,250,0.10)",
+          ];
+          trapezoids.forEach((t, idx) => {
+            const x1 = toX(t.xLeft),
+              x2 = toX(t.xRight);
+            const y1 = toY(t.fLeft),
+              y2 = toY(t.fRight);
+            const y0 = toY(0);
+            ctx.beginPath();
+            ctx.moveTo(x1, y0);
+            ctx.lineTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x2, y0);
+            ctx.closePath();
+            ctx.fillStyle = colors[idx % colors.length];
+            ctx.fill();
+            ctx.strokeStyle = "rgba(0,212,255,0.35)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          });
+
+          // Draw smooth f(x) curve
+          const samples = Math.min(400, pw);
+          ctx.beginPath();
+          ctx.strokeStyle = "#00d4ff";
+          ctx.lineWidth = 2.5;
+          let first = true;
+          for (let i = 0; i <= samples; i++) {
+            const xd = a + (i / samples) * (b - a);
+            const yd = f(xd);
+            if (!isFinite(yd)) {
+              first = true;
+              continue;
+            }
+            const px = toX(xd),
+              py = toY(yd);
+            if (first) {
+              ctx.moveTo(px, py);
+              first = false;
+            } else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+
+          // x-axis line
+          const y0screen = toY(0);
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(122,154,170,0.5)";
+          ctx.lineWidth = 1;
+          ctx.moveTo(pad.l, y0screen);
+          ctx.lineTo(W - pad.r, y0screen);
+          ctx.stroke();
+
+          // Node markers and vertical lines
+          nodes.forEach((nd) => {
+            const nx = toX(nd.xi),
+              ny = toY(nd.fxi);
+            // vertical dashed line
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(0,212,255,0.18)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.moveTo(nx, ny);
+            ctx.lineTo(nx, toY(0));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            // circle on curve
+            ctx.beginPath();
+            ctx.fillStyle = nd.i === 0 || nd.i === n ? "#ff6b35" : "#77dc1e";
+            ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+
+          // Axis labels
+          ctx.fillStyle = "#7a9aaa";
+          ctx.font = `${Math.max(9, Math.min(11, pw / 40))}px Space Mono,monospace`;
+          ctx.textAlign = "center";
+
+          // x-axis ticks (show a, midpoints, b)
+          const tickCount = Math.min(n + 1, 8);
+          const tickStep = Math.ceil((n + 1) / tickCount);
+          for (let i = 0; i <= n; i += tickStep) {
+            const xd = a + (i * (b - a)) / n;
+            ctx.fillText(xd.toFixed(2), toX(xd), H - pad.b + 14);
+          }
+
+          // y-axis labels
+          ctx.textAlign = "right";
+          const yTicks = 4;
+          for (let i = 0; i <= yTicks; i++) {
+            const yd = domYMin + (i / yTicks) * (domYMax - domYMin);
+            ctx.fillText(yd.toFixed(2), pad.l - 5, toY(yd) + 4);
+          }
+
+          // Legend
+          ctx.textAlign = "left";
+          ctx.fillStyle = "#00d4ff";
+          ctx.fillRect(pad.l, pad.t, 12, 4);
+          ctx.fillStyle = "#7a9aaa";
+          ctx.fillText("f(x) curve", pad.l + 16, pad.t + 5);
+
+          ctx.fillStyle = "rgba(0,212,255,0.3)";
+          ctx.fillRect(pad.l + 80, pad.t - 2, 10, 8);
+          ctx.fillStyle = "#7a9aaa";
+          ctx.fillText("Trapezoids", pad.l + 94, pad.t + 5);
+        }
+
+        // ── STEP CARDS ────────────────────────────────────────────────
+        function buildStepCard(trap, decimals) {
+          const fmt = (v) =>
+            typeof v === "number" && isFinite(v) ? v.toFixed(decimals) : "N/A";
+          const fmtE = (v) =>
+            typeof v === "number" && isFinite(v) ? v.toExponential(4) : "N/A";
+
+          const card = document.createElement("div");
+          card.className = "step-card";
+
+          // Badge
+          const badge = document.createElement("div");
+          badge.className = "step-badge";
+          badge.innerHTML = `&#9645; &nbsp; TRAPEZOID ${trap.idx + 1} of ${stepsData.length} &nbsp;|&nbsp; x = [${fmt(trap.xLeft)}, ${fmt(trap.xRight)}]`;
+          card.appendChild(badge);
+
+          const body = document.createElement("div");
+          body.className = "step-body";
+
+          // LEFT: Formula applied
+          const left = document.createElement("div");
+          left.innerHTML = '<div class="step-col-title">Formula Applied</div>';
+          const calcBox = document.createElement("div");
+          calcBox.className = "calc-box";
+          const rows = [
+            {
+              label: "x_left  =",
+              val: fmt(trap.xLeft),
+              color: "var(--accent)",
+            },
+            {
+              label: "x_right =",
+              val: fmt(trap.xRight),
+              color: "var(--accent)",
+            },
+            { label: "", val: "", divider: true },
+            {
+              label: "f(x_left) =",
+              val: fmt(trap.fLeft),
+              color: "var(--text)",
+            },
+            {
+              label: "f(x_right)=",
+              val: fmt(trap.fRight),
+              color: "var(--text)",
+            },
+            { label: "", val: "", divider: true },
+            { label: "h =", val: fmt(trap.h), color: "var(--accent3)" },
+            {
+              label: "Area =",
+              val: fmt(trap.trapArea),
+              color: "var(--accent3)",
+            },
+          ];
+          rows.forEach((r) => {
+            if (r.divider) {
+              const d = document.createElement("div");
+              d.style.cssText =
+                "height:1px;background:var(--border);margin:0.4rem 0;";
+              calcBox.appendChild(d);
+              return;
+            }
+            const row = document.createElement("div");
+            row.className = "calc-row";
+            row.innerHTML = `<span class="calc-label">${r.label}</span><span style="color:${r.color};font-weight:${r.label === "Area =" ? "700" : "400"};">${r.val}</span>`;
+            calcBox.appendChild(row);
+          });
+          // Formula
+          const fmlaBox = document.createElement("div");
+          fmlaBox.style.cssText =
+            'margin-top:0.7rem;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:8px;padding:0.7rem;font-family:"Space Mono",monospace;font-size:0.68rem;color:var(--text-dim);line-height:2;';
+          fmlaBox.innerHTML = `
+    Area = (h/2) &times; [f(x<sub>L</sub>) + f(x<sub>R</sub>)]<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp; = (${fmt(trap.h)}/2) &times; [${fmt(trap.fLeft)} + ${fmt(trap.fRight)}]<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp; = <strong style="color:var(--accent3);">${fmt(trap.trapArea)}</strong>`;
+          calcBox.appendChild(fmlaBox);
+          left.appendChild(calcBox);
+          body.appendChild(left);
+
+          // MIDDLE: Value table
+          const mid = document.createElement("div");
+          mid.innerHTML = `<div class="step-col-title">Computed Values</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.5rem;">
+      Area = (h/2) &times; [f(x<sub>L</sub>) + f(x<sub>R</sub>)]
+    </div>`;
+          const tbl = document.createElement("table");
+          tbl.className = "mini-val-table";
+          const midRows = [
+            { label: "Trapezoid #", val: trap.idx + 1, cls: "" },
+            { label: "Left x (xL)", val: fmt(trap.xLeft), cls: "pivRow" },
+            { label: "Right x (xR)", val: fmt(trap.xRight), cls: "pivRow" },
+            { label: "f(xL)", val: fmt(trap.fLeft), cls: "" },
+            { label: "f(xR)", val: fmt(trap.fRight), cls: "" },
+            {
+              label: "f(xL)+f(xR)",
+              val: fmt(trap.fLeft + trap.fRight),
+              cls: "",
+            },
+            { label: "h", val: fmt(trap.h), cls: "" },
+            { label: "h/2", val: fmt(trap.h / 2), cls: "" },
+            { label: "Trap Area", val: fmt(trap.trapArea), cls: "highlight" },
+            {
+              label: "Running Total",
+              val: fmt(trap.runningSum),
+              cls: "highlight",
+            },
+          ];
+          midRows.forEach((r) => {
+            const tr = document.createElement("tr");
+            if (r.cls) tr.className = r.cls;
+            tr.innerHTML = `<td>${r.label}</td><td>${r.val}</td>`;
+            tbl.appendChild(tr);
+          });
+          mid.appendChild(tbl);
+          body.appendChild(mid);
+
+          // RIGHT: Progress
+          const right = document.createElement("div");
+          right.innerHTML =
+            '<div class="step-col-title">Integration Progress</div>';
+
+          // Progress bar
+          const totalIntegral = stepsData.reduce((s, t) => s + t.trapArea, 0);
+          const pct =
+            totalIntegral !== 0
+              ? Math.abs((trap.runningSum / totalIntegral) * 100)
+              : 0;
+          const progBox = document.createElement("div");
+          progBox.className = "calc-box";
+          progBox.style.marginBottom = "0.7rem";
+          progBox.innerHTML = `
+    <div class="calc-row"><span class="calc-label">This trap:</span><span style="color:var(--accent3);font-weight:700;">${fmt(trap.trapArea)}</span></div>
+    <div class="calc-row"><span class="calc-label">Running &sum;:</span><span style="color:var(--accent);font-weight:700;">${fmt(trap.runningSum)}</span></div>
+    <div style="height:1px;background:var(--border);margin:0.5rem 0;"></div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--text-dim);margin-bottom:0.3rem;">Progress through total area</div>
+    <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;">
+      <div style="width:${pct.toFixed(1)}%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:4px;transition:width 0.4s;"></div>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-top:0.3rem;text-align:right;">${pct.toFixed(1)}% of total</div>`;
+          right.appendChild(progBox);
+
+          // Trapezoid shape indicator
+          const shapeBox = document.createElement("div");
+          shapeBox.className = "calc-box";
+          const sh = 60,
+            sw = 100;
+          const s = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+          );
+          s.setAttribute("viewBox", `0 0 ${sw} ${sh}`);
+          s.setAttribute("width", "100%");
+          s.setAttribute("height", sh);
+          const maxF = Math.max(
+            Math.abs(trap.fLeft),
+            Math.abs(trap.fRight),
+            0.001,
+          );
+          const lh = (Math.abs(trap.fLeft) / maxF) * (sh - 10) + 2;
+          const rh = (Math.abs(trap.fRight) / maxF) * (sh - 10) + 2;
+          s.innerHTML = `
+    <polygon points="5,${sh - 2} 5,${sh - 2 - lh} 95,${sh - 2 - rh} 95,${sh - 2}" fill="rgba(0,212,255,0.12)" stroke="#00d4ff" stroke-width="1.5"/>
+    <line x1="5" y1="${sh - 2}" x2="95" y2="${sh - 2}" stroke="rgba(122,154,170,0.5)" stroke-width="1"/>
+    <text x="50" y="${sh / 2 + 4}" text-anchor="middle" font-family="Space Mono,monospace" font-size="7" fill="#7a9aaa">h=${fmt(trap.h).slice(0, 6)}</text>`;
+          shapeBox.innerHTML =
+            "<div style=\"font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.4rem;\">Trapezoid Shape</div>";
+          shapeBox.appendChild(s);
+          right.appendChild(shapeBox);
+          body.appendChild(right);
+          card.appendChild(body);
+
+          // Summary bar
+          const sum = document.createElement("div");
+          sum.className = "step-summary";
+          sum.innerHTML = `
+    <span style="color:var(--text-dim)">xL:</span><span style="color:var(--accent)">${fmt(trap.xLeft)}</span>
+    <span style="color:var(--accent2)">→</span>
+    <span style="color:var(--text-dim)">xR:</span><span style="color:var(--accent)">${fmt(trap.xRight)}</span>
+    <span style="color:var(--accent2)">|</span>
+    <span style="color:var(--text-dim)">f(xL):</span><span style="color:var(--text)">${fmt(trap.fLeft)}</span>
+    <span style="color:var(--accent2)">|</span>
+    <span style="color:var(--text-dim)">f(xR):</span><span style="color:var(--text)">${fmt(trap.fRight)}</span>
+    <span style="color:var(--accent2)">|</span>
+    <span style="color:var(--text-dim)">Area:</span><span style="color:var(--accent3);font-weight:700;">${fmt(trap.trapArea)}</span>`;
+          card.appendChild(sum);
+          return card;
+        }
+
+        // ── Step nav ──────────────────────────────────────────────────
+        function renderStep(idx) {
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 6;
+          const c = document.getElementById("stepCardContainer");
+          c.innerHTML = "";
+          if (stepsData[idx])
+            c.appendChild(buildStepCard(stepsData[idx], decimals));
+        }
+
+        window.changeStep = function (dir) {
+          currentStep = Math.max(
+            0,
+            Math.min(stepsData.length - 1, currentStep + dir),
+          );
+          renderStep(currentStep);
+          updateNav();
+        };
+
+        function updateNav() {
+          document.getElementById("prevBtn").disabled = currentStep === 0;
+          document.getElementById("nextBtn").disabled =
+            currentStep === stepsData.length - 1;
+          document.getElementById("stepCounter").textContent =
+            `Trap ${currentStep + 1} / ${stepsData.length}`;
+        }
+
+        window.toggleAllSteps = function () {
+          showingAll = !showingAll;
+          document.getElementById("toggleAllBtn").textContent = showingAll
+            ? "Show One Trapezoid"
+            : "Show All Trapezoids";
+          document.getElementById("singleStepView").style.display = showingAll
+            ? "none"
+            : "block";
+          document.getElementById("allStepsView").style.display = showingAll
+            ? "block"
+            : "none";
+          if (showingAll) {
+            const decimals =
+              parseInt(document.getElementById("decimals").value) || 6;
+            const c = document.getElementById("allStepsContainer");
+            c.innerHTML = "";
+            stepsData.forEach((s) => c.appendChild(buildStepCard(s, decimals)));
+          }
+        };
+
+        // ── Reset ─────────────────────────────────────────────────────
+        window.resetAll = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          document.getElementById("emptyState").style.display = "block";
+          document.getElementById("resultsContent").style.display = "none";
+          if (fxChartObj) {
+            fxChartObj.destroy();
+            fxChartObj = null;
+          }
+          if (areaChartObj) {
+            areaChartObj.destroy();
+            areaChartObj = null;
+          }
+          stepsData = [];
+          currentStep = 0;
+          showingAll = false;
+          currentExactAnswer = null;
+          document.getElementById("funcInput").value = "x^2";
+          document.getElementById("limitA").value = "0";
+          document.getElementById("limitB").value = "1";
+          document.getElementById("nIntervals").value = "4";
+        };
+
+        // ── Info popup ────────────────────────────────────────────────
+        window.togglePop = function (id) {
+          const p = document.getElementById(id);
+          if (!p) return;
+          const isOpen = p.classList.contains("show");
+          document
+            .querySelectorAll(".info-popup")
+            .forEach((x) => x.classList.remove("show"));
+          if (!isOpen) p.classList.add("show");
+        };
+        document.addEventListener("click", (e) => {
+          if (!e.target.classList.contains("info-btn"))
+            document
+              .querySelectorAll(".info-popup")
+              .forEach((p) => p.classList.remove("show"));
+        });
+
+        // ── Alerts ────────────────────────────────────────────────────
+        function showError(msg) {
+          const e = document.getElementById("errorAlert");
+          e.textContent = "✕ Error: " + msg;
+          e.style.display = "block";
+        }
+        function showSuccess(msg) {
+          const e = document.getElementById("successAlert");
+          e.textContent = msg;
+          e.style.display = "block";
+        }
+        function hideAlert(id) {
+          document.getElementById(id).style.display = "none";
+        }
+
+        // ── Background animation (same as original) ───────────────────
+        (() => {
+          const gridCv = document.getElementById("bgGrid");
+          const partCv = document.getElementById("bgParticles");
+          const symW = document.getElementById("bgSymbols");
+          if (!gridCv || !partCv || !symW) return;
+          const gctx = gridCv.getContext("2d"),
+            pctx = partCv.getContext("2d");
+          const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+          const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+          const particles = [];
+          const pc = 90;
+          let w = 0,
+            h = 0,
+            dpr = 1;
+          function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = window.innerWidth;
+            h = window.innerHeight;
+            [gridCv, partCv].forEach((cv) => {
+              cv.width = Math.floor(w * dpr);
+              cv.height = Math.floor(h * dpr);
+              cv.style.width = w + "px";
+              cv.style.height = h + "px";
+            });
+            gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          function seed() {
+            particles.length = 0;
+            for (let i = 0; i < pc; i++)
+              particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 1.5 + Math.random() * 2.3,
+                c: palette[(Math.random() * palette.length) | 0],
+              });
+          }
+          function seedSym() {
+            const syms = [
+              "∫",
+              "∑",
+              "f(x)",
+              "dx",
+              "h/2",
+              "a",
+              "b",
+              "Δx",
+              "Area",
+              "≈",
+              "n",
+            ];
+            symW.innerHTML = "";
+            for (let i = 0; i < 22; i++) {
+              const s = document.createElement("span");
+              const t = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+              s.className = "bg-symbol " + t;
+              s.textContent = syms[i % syms.length];
+              s.style.left = Math.random() * 98 + "%";
+              s.style.top = 80 + Math.random() * 50 + "%";
+              s.style.fontSize = 13 + Math.random() * 20 + "px";
+              s.style.animationDuration = 22 + Math.random() * 20 + "s";
+              s.style.animationDelay = -Math.random() * 26 + "s";
+              symW.appendChild(s);
+            }
+          }
+          function drawGrid(t) {
+            gctx.clearRect(0, 0, w, h);
+            const gap = 56,
+              ox = (t * 0.008) % gap,
+              oy = (t * 0.005) % gap;
+            gctx.strokeStyle = "rgba(0,212,255,.11)";
+            gctx.lineWidth = 1;
+            for (let x = -gap; x < w + gap; x += gap) {
+              gctx.beginPath();
+              gctx.moveTo(x + ox, 0);
+              gctx.lineTo(x + ox, h);
+              gctx.stroke();
+            }
+            for (let y = -gap; y < h + gap; y += gap) {
+              gctx.beginPath();
+              gctx.moveTo(0, y + oy);
+              gctx.lineTo(w, y + oy);
+              gctx.stroke();
+            }
+            gctx.strokeStyle = "rgba(124,58,237,.08)";
+            for (let x = -h; x < w + h; x += gap * 1.5) {
+              gctx.beginPath();
+              gctx.moveTo(x - ox * 0.7, 0);
+              gctx.lineTo(x + h - oy * 0.7, h);
+              gctx.stroke();
+            }
+          }
+          function drawPart() {
+            pctx.clearRect(0, 0, w, h);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > w) p.vx *= -1;
+              if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            for (let i = 0; i < particles.length; i++) {
+              const a = particles[i];
+              for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j],
+                  dx = a.x - b.x,
+                  dy = a.y - b.y,
+                  dist = Math.hypot(dx, dy);
+                if (dist < 120) {
+                  pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                  pctx.lineWidth = 1;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(b.x, b.y);
+                  pctx.stroke();
+                }
+              }
+              if (mouse.active) {
+                const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (md < mouse.r) {
+                  const al = (1 - md / mouse.r) * 0.45;
+                  pctx.strokeStyle = `rgba(124,58,237,${al})`;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(mouse.x, mouse.y);
+                  pctx.stroke();
+                }
+              }
+            }
+            for (const p of particles) {
+              const near = mouse.active
+                ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r
+                : false;
+              pctx.beginPath();
+              pctx.fillStyle = p.c;
+              pctx.globalAlpha = near ? 1 : 0.82;
+              pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+              pctx.fill();
+              if (near) {
+                pctx.beginPath();
+                pctx.globalAlpha = 0.15;
+                pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+                pctx.fill();
+              }
+            }
+            pctx.globalAlpha = 1;
+          }
+          function loop(t) {
+            drawGrid(t);
+            drawPart();
+            requestAnimationFrame(loop);
+          }
+          window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+          });
+          window.addEventListener("mouseleave", () => {
+            mouse.active = false;
+          });
+          window.addEventListener("resize", resize);
+          resize();
+          seed();
+          seedSym();
+          requestAnimationFrame(loop);
+        })();
+
+        window.addEventListener("resize", () => {
+          if (trapCanvasData) {
+            const { nodes, trapezoids, a, b, n, fExpr } = trapCanvasData;
+            drawTrapCanvas(nodes, trapezoids, a, b, n, fExpr);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2993 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Newton's Divided Difference Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+
+      /* ── Function Input ── */
+      .func-input-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .func-input-wrap input[type="text"] {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-size: 1rem;
+        padding: 0.3rem 0;
+        width: 100%;
+      }
+      .func-input-wrap input[type="text"]:focus {
+        box-shadow: none;
+        border: none;
+      }
+      .func-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+      }
+      .func-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        margin-top: 0.4rem;
+        line-height: 1.6;
+      }
+      .func-hint span {
+        color: var(--accent3);
+      }
+
+      /* Examples strip */
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+
+      /* ── Buttons ── */
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+      .btn-secondary:hover {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      .full-width {
+        grid-column: 1 / -1;
+      }
+
+      /* ── Stats ── */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+
+      /* ── Solution display ── */
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+
+      /* ── Charts ── */
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 250px;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .final-chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+      }
+
+      /* ── Iteration Table ── */
+      .iter-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        width: 100%;
+        min-width: 560px;
+      }
+      .iter-table th {
+        padding: 0.4rem 0.6rem;
+        text-align: right;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .iter-table td {
+        padding: 0.3rem 0.6rem;
+        text-align: right;
+        border-bottom: 1px solid rgba(26, 53, 69, 0.4);
+        white-space: nowrap;
+      }
+      .iter-table tr.coeff-row td {
+        color: var(--accent3);
+      }
+      .iter-table tr.current td {
+        color: var(--accent);
+        background: rgba(0, 212, 255, 0.05);
+      }
+      .iter-table td.n-col {
+        color: var(--text-dim);
+        text-align: center;
+      }
+      .iter-table td.root-col {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .iter-table td.err-col {
+        color: var(--accent2);
+      }
+      .iter-table td.converged-mark {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+
+      /* ── Steps ── */
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .all-steps-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      /* ── Step Card ── */
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 900px) {
+        .step-body {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        margin-bottom: 1rem;
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .calc-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .calc-label {
+        color: var(--text-dim);
+        min-width: 70px;
+        flex-shrink: 0;
+      }
+      .calc-result {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .calc-arrow {
+        color: var(--accent2);
+      }
+
+      /* small number table inside step card */
+      .mini-val-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        width: 100%;
+      }
+      .mini-val-table td {
+        padding: 0.28rem 0.5rem;
+        border: 1px solid rgba(26, 53, 69, 0.6);
+      }
+      .mini-val-table td:first-child {
+        color: var(--text-dim);
+      }
+      .mini-val-table td:last-child {
+        color: var(--text);
+        text-align: right;
+        font-weight: 600;
+      }
+      .mini-val-table tr.highlight td:last-child {
+        color: var(--accent3);
+      }
+      .mini-val-table tr.pivRow td:last-child {
+        color: var(--accent);
+      }
+
+      /* mini chart */
+      .step-chart-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .step-mini-chart-wrap {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.7rem;
+        flex: 1;
+        min-height: 160px;
+        position: relative;
+      }
+
+      /* step summary */
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+
+      /* ── Alert ── */
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+
+      /* ── Empty State ── */
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+
+      /* ── Background ── */
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      /* ── Field Hints ── */
+      .field-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-top: 0.3rem;
+        padding: 0.3rem 0.5rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.2);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .field-desc .eg {
+        color: var(--accent3);
+      }
+      .field-desc .warn {
+        color: var(--accent2);
+      }
+
+      /* ── Convergence Cards (repurposed as Info Cards) ── */
+      .conv-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .conv-card {
+        background: var(--surface2);
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        padding: 0.65rem 0.9rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        position: relative;
+      }
+      .conv-card:hover {
+        border-color: rgba(0, 212, 255, 0.4);
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .conv-card.selected {
+        border-color: var(--accent);
+        background: rgba(0, 212, 255, 0.07);
+        box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.15);
+      }
+      .conv-radio {
+        width: 14px;
+        height: 14px;
+        border: 1.5px solid var(--border);
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 3px;
+        transition: all 0.2s;
+        position: relative;
+      }
+      .conv-card.selected .conv-radio {
+        border-color: var(--accent);
+        background: var(--accent);
+        box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+      }
+      .conv-card.selected .conv-radio::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 5px;
+        height: 5px;
+        background: #000;
+        border-radius: 50%;
+      }
+      .conv-card-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .conv-title {
+        font-family: "Syne", sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .conv-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        background: rgba(119, 220, 30, 0.1);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+        border-radius: 4px;
+        padding: 0.05rem 0.4rem;
+      }
+      .conv-tag.recommended {
+        background: rgba(0, 212, 255, 0.1);
+        border-color: rgba(0, 212, 255, 0.25);
+        color: var(--accent);
+      }
+      .conv-formula {
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        color: var(--accent2);
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.03em;
+      }
+      .conv-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        line-height: 1.65;
+      }
+      .conv-desc .hl {
+        color: var(--accent3);
+      }
+
+      /* ── Tooltip / Info popup ── */
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        margin-left: 0.3rem;
+        vertical-align: middle;
+        line-height: 1;
+        user-select: none;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.7rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        color: var(--text);
+        line-height: 1.7;
+        z-index: 50;
+        width: 260px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.65rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      /* ── Section headers inside panels ── */
+      .section-head {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--accent);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin: 1rem 0 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .section-head::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* ── Input value badge ── */
+      .input-wrap {
+        position: relative;
+      }
+      .input-unit {
+        position: absolute;
+        right: 0.7rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        pointer-events: none;
+      }
+
+      /* ── Footer ── */
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">Numerical Methods</div>
+        <h1>Newton's Divided<br />Difference</h1>
+        <p>
+          Polynomial Interpolation — P(x) = f[x<sub>0</sub>] +
+          (x−x<sub>0</sub>)f[x<sub>0</sub>,x<sub>1</sub>] +
+          (x−x<sub>0</sub>)(x−x<sub>1</sub>)f[x<sub>0</sub>,x<sub>1</sub>,x<sub>2</sub>]
+          + ···
+        </p>
+      </header>
+
+      <div class="main-grid">
+        <!-- __ Input Panel __ -->
+        <div class="panel">
+          <div class="panel-title">Data Input</div>
+
+          <!-- x values -->
+          <div
+            class="func-label"
+            style="display: flex; align-items: center; gap: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 1</span> &mdash; Enter x
+            values (comma-separated)
+            <span class="info-btn" onclick="togglePop('pop-xvals')">?</span>
+            <div class="info-popup" id="pop-xvals">
+              <div class="pop-title">X Values (Nodes)</div>
+              The known x-coordinates of your data points.<br />
+              Enter as comma-separated numbers.<br /><br />
+              Example: 1, 2, 4, 5<br /><br />
+              <span style="color: var(--accent2)">Note:</span> All x values must
+              be distinct (no duplicates).
+            </div>
+          </div>
+          <div class="func-input-wrap">
+            <input
+              type="text"
+              id="xValuesInput"
+              value="1, 2, 4, 5"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="e.g. 1, 2, 4, 5"
+            />
+            <div class="func-hint">
+              <span style="color: var(--accent2)">Format:</span> comma-separated
+              &nbsp; <span>e.g. 0, 1, 2, 3</span> &nbsp; or &nbsp;
+              <span>1.0, 1.5, 2.0, 2.5</span>
+            </div>
+          </div>
+
+          <!-- y = f(x) values -->
+          <div
+            class="func-label"
+            style="display: flex; align-items: center; gap: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 2</span> &mdash; Enter y =
+            f(x) values (comma-separated)
+            <span class="info-btn" onclick="togglePop('pop-yvals')">?</span>
+            <div class="info-popup" id="pop-yvals">
+              <div class="pop-title">Y Values = f(x)</div>
+              The known function values at each x-node.<br />
+              Must have the same count as x values.<br /><br />
+              Example: for x = 1, 2, 4, 5<br />
+              enter y = 1, 4, 16, 25<br /><br />
+              These are the f(x) values at the given nodes.
+            </div>
+          </div>
+          <div class="func-input-wrap">
+            <input
+              type="text"
+              id="yValuesInput"
+              value="1, 4, 16, 25"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="e.g. 1, 4, 16, 25"
+            />
+            <div class="func-hint">
+              <span style="color: var(--accent2)"
+                >Count must match x values</span
+              >
+              — e.g. 4 x values → 4 y values
+            </div>
+          </div>
+
+          <!-- x to interpolate -->
+          <div
+            class="func-label"
+            style="display: flex; align-items: center; gap: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 3</span> &mdash; Value of x
+            to interpolate — find f(x)
+            <span class="info-btn" onclick="togglePop('pop-xi')">?</span>
+            <div class="info-popup" id="pop-xi">
+              <div class="pop-title">Interpolation Point x</div>
+              The x value at which you want to estimate f(x).<br /><br />
+              Example: if your data is at x = 1,2,4,5 and<br />
+              you want to estimate f(3), enter 3.<br /><br />
+              Best results when x is
+              <span style="color: var(--accent3)">between</span> your data
+              points (interpolation vs extrapolation).
+            </div>
+          </div>
+          <div class="func-input-wrap">
+            <input
+              type="text"
+              id="xiInput"
+              value="3"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="e.g. 3"
+            />
+            <div class="func-hint">
+              <span style="color: var(--accent2)">Interpolate:</span> x inside
+              data range &nbsp;
+              <span style="color: #ff6b35">Extrapolate:</span> x outside data
+              range (less accurate)
+            </div>
+          </div>
+
+          <!-- Examples -->
+          <div class="func-label" style="margin-bottom: 0.4rem">
+            <span style="color: var(--accent2)">STEP 4</span> &mdash; Or click a
+            ready-made example below
+          </div>
+          <div class="examples-strip">
+            <span
+              class="ex-chip"
+              onclick="loadEx(0)"
+              title="Classic polynomial example"
+              >x²: 4 pts</span
+            >
+            <span class="ex-chip" onclick="loadEx(1)" title="Exponential growth"
+              >2^x: 4 pts</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(2)"
+              title="Bessel function values"
+              >Bessel: 5 pts</span
+            >
+            <span class="ex-chip" onclick="loadEx(3)" title="Textbook example"
+              >Textbook: 4 pts</span
+            >
+            <span class="ex-chip" onclick="loadEx(4)" title="Sine function"
+              >sin(x): 5 pts</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(5)"
+              title="Higher degree example"
+              >Cubic: 5 pts</span
+            >
+          </div>
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.56rem;
+              color: var(--text-dim);
+              margin-top: 0.3rem;
+            "
+          >
+            Click any chip above to auto-fill with a pre-built example dataset
+          </div>
+        </div>
+
+        <!-- __ Parameters Panel __ -->
+        <div class="panel">
+          <div class="panel-title">Settings &amp; Method Info</div>
+
+          <div class="controls-row">
+            <div class="control-group" style="position: relative">
+              <label style="display: flex; align-items: center; gap: 0.3rem">
+                Decimal Places
+                <span class="info-btn" onclick="togglePop('pop-dec')">?</span>
+                <div class="info-popup" id="pop-dec">
+                  <div class="pop-title">Decimal Places</div>
+                  How many digits after the decimal point<br />
+                  to display in the result table.<br /><br />
+                  6 = show 1.234567<br />
+                  4 = show 1.2346<br />
+                  This is display only, not accuracy.
+                </div>
+              </label>
+              <div class="input-wrap">
+                <input type="number" id="decimals" value="6" min="2" max="12" />
+                <span class="input-unit">digits</span>
+              </div>
+              <div class="field-desc">
+                How many digits to show.
+                <span class="eg">Does not affect calculation accuracy.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <!-- Method Information Cards -->
+          <div class="func-label" style="margin-bottom: 0.6rem">
+            Understanding the Method
+          </div>
+          <div class="conv-cards">
+            <!-- Card 1: Divided Difference Formula -->
+            <div class="conv-card selected">
+              <div
+                class="conv-radio"
+                style="
+                  border-color: var(--accent);
+                  background: var(--accent);
+                  box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+                "
+              ></div>
+              <div class="conv-card-body">
+                <div class="conv-title">
+                  Divided Difference Formula
+                  <span class="conv-tag recommended">Core</span>
+                </div>
+                <div class="conv-formula">
+                  f[x<sub>i</sub>,x<sub>j</sub>] = (f[x<sub>j</sub>] −
+                  f[x<sub>i</sub>]) / (x<sub>j</sub> − x<sub>i</sub>)
+                </div>
+                <div class="conv-desc">
+                  Higher orders:
+                  <span class="hl"
+                    >f[x<sub>i</sub>,...,x<sub>i+k</sub>] =
+                    (f[x<sub>i+1</sub>,...,x<sub>i+k</sub>] −
+                    f[x<sub>i</sub>,...,x<sub>i+k−1</sub>]) / (x<sub>i+k</sub> −
+                    x<sub>i</sub>)</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Newton Polynomial -->
+            <div class="conv-card">
+              <div class="conv-radio"></div>
+              <div class="conv-card-body">
+                <div class="conv-title">
+                  Newton's Polynomial
+                  <span class="conv-tag">Interpolation</span>
+                </div>
+                <div class="conv-formula">
+                  P(x) = c<sub>0</sub> + c<sub>1</sub>(x−x<sub>0</sub>) +
+                  c<sub>2</sub>(x−x<sub>0</sub>)(x−x<sub>1</sub>) + ···
+                </div>
+                <div class="conv-desc">
+                  Coefficients:
+                  <span class="hl"
+                    >c<sub>k</sub> = f[x<sub>0</sub>, x<sub>1</sub>, ...,
+                    x<sub>k</sub>]</span
+                  >
+                  — the diagonal of the DD table.<br />
+                  The polynomial passes exactly through all given data points.
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Properties -->
+            <div class="conv-card">
+              <div class="conv-radio"></div>
+              <div class="conv-card-body">
+                <div class="conv-title">
+                  Key Properties
+                  <span class="conv-tag">Reference</span>
+                </div>
+                <div class="conv-formula">
+                  Degree = n−1 &nbsp;(for n data points)
+                </div>
+                <div class="conv-desc">
+                  Divided differences are <span class="hl">symmetric</span> in
+                  their arguments.<br />
+                  If f(x) is a polynomial of degree k, then (k+1)th DD = 0.<br />
+                  Horner's method gives efficient evaluation.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runNDD()">
+              &#9654; Interpolate
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+              &#10005; Reset
+            </button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+          <div class="sep"></div>
+
+          <!-- Algorithm box -->
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.65rem;
+              color: var(--text-dim);
+              line-height: 1.9;
+            "
+          >
+            <strong style="color: var(--accent)"
+              >Newton's Divided Difference Formula</strong
+            ><br />
+            Goal: Estimate <span style="color: var(--accent3)">f(x)</span> from
+            known data pairs (x<sub>i</sub>, y<sub>i</sub>)<br />
+            <span style="color: var(--accent2)">Algorithm:</span><br />
+            &nbsp;&nbsp;1. Build divided difference
+            <span style="color: var(--accent3)">table[i][j]</span><br />
+            &nbsp;&nbsp;2. Extract coefficients:
+            <span style="color: var(--accent)">c<sub>k</sub> = table[0][k]</span
+            ><br />
+            &nbsp;&nbsp;3. Evaluate:
+            <span style="color: var(--accent2)"
+              >P(x) = c<sub>0</sub> + c<sub>1</sub>(x−x<sub>0</sub>) + ...</span
+            ><br />
+            &nbsp;&nbsp;4.
+            <span style="color: var(--accent3)">Result: f(x) ≈ P(x)</span>
+          </div>
+        </div>
+
+        <!-- ── Results (full width) ── -->
+        <div class="panel full-width">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">∑</span>
+            Enter data points and x value to interpolate, then click
+            Interpolate.
+          </div>
+
+          <div id="resultsContent" style="display: none">
+            <!-- Stats -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="rootDisplay">—</div>
+                <div class="stat-label">f(x) Estimated</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="iterDisplay">—</div>
+                <div class="stat-label">Data Points n</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="fxDisplay">—</div>
+                <div class="stat-label">Polynomial Degree</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="convDisplay">—</div>
+                <div class="stat-label">Status</div>
+              </div>
+            </div>
+
+            <!-- Solution display -->
+            <div class="solution-display">
+              <div class="sol-title">
+                Interpolation Result — P(x) passes through all data points
+              </div>
+              <div class="sol-values" id="solutionDisplay"></div>
+            </div>
+
+            <!-- Charts row -->
+            <div class="charts-row">
+              <div>
+                <div class="chart-title">
+                  Interpolation Curve — Polynomial passing through data points
+                </div>
+                <div class="chart-wrap"><canvas id="convChart"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title">
+                  Divided Difference Coefficients by Order
+                </div>
+                <div class="chart-wrap"><canvas id="errChart"></canvas></div>
+              </div>
+            </div>
+
+            <!-- Full divided difference table -->
+            <div class="chart-title">Complete Divided Difference Table</div>
+            <div class="final-chart-wrap">
+              <div id="iterTableWrap"></div>
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- Step-by-step -->
+            <div>
+              <div class="steps-header">
+                <div class="steps-header-title">
+                  Step-by-Step Construction Log
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.8rem;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <button
+                    class="step-all-btn"
+                    id="toggleAllBtn"
+                    onclick="toggleAllSteps()"
+                  >
+                    Show All Steps
+                  </button>
+                  <div class="step-nav">
+                    <button id="prevBtn" onclick="changeStep(-1)" disabled>
+                      ◀ Prev
+                    </button>
+                    <span class="step-counter" id="stepCounter"
+                      >Step 1 / 1</span
+                    >
+                    <button id="nextBtn" onclick="changeStep(1)">Next ▶</button>
+                  </div>
+                </div>
+              </div>
+              <div id="singleStepView">
+                <div id="stepCardContainer"></div>
+              </div>
+              <div id="allStepsView" style="display: none">
+                <div class="all-steps-wrap" id="allStepsContainer"></div>
+              </div>
+            </div>
+          </div>
+          <!-- /resultsContent -->
+        </div>
+      </div>
+      <!-- /main-grid -->
+    </div>
+    <!-- /container -->
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">∑</span>Newton's Divided Difference Calculator &mdash;
+        Numerical Methods
+      </div>
+      <div class="foot-links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/gauss_seidel.html">Gauss-Seidel</a>
+        <a href="/gauss_jordan.html">Gauss-Jordan</a>
+        <a href="/lagrange.html">Lagrange Interpolation</a>
+        <a href="/power1.html">Power Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/adam.html">Adam's Method</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/simpson.html">Simpson's Rule</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/trapezoidel.html">Trapezoidal Rule</a>
+        <a href="/index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        // ── State ─────────────────────────────────────────────────
+        let stepsData = [];
+        let currentStep = 0;
+        let showingAll = false;
+        let convChartObj = null,
+          errChartObj = null;
+        let stepChartCounter = 0;
+        const stepChartRegistry = {};
+        const COLORS = [
+          "#00d4ff",
+          "#ff6b35",
+          "#77dc1e",
+          "#a78bfa",
+          "#f59e0b",
+          "#ec4899",
+        ];
+
+        // ── Quick Examples ────────────────────────────────────────
+        const EXAMPLES = [
+          { x: "1, 2, 4, 5", y: "1, 4, 16, 25", xi: "3" },
+          { x: "0, 1, 2, 3", y: "1, 2, 4, 8", xi: "1.5" },
+          {
+            x: "1.0, 1.3, 1.6, 1.9, 2.2",
+            y: "0.7651976, 0.6200860, 0.4554022, 0.2818186, 0.1103623",
+            xi: "1.5",
+          },
+          { x: "5, 7, 11, 13, 17", y: "150, 392, 1452, 2366, 5765", xi: "9" },
+          {
+            x: "0, 0.5236, 0.7854, 1.0472, 1.5708",
+            y: "0, 0.5, 0.7071, 0.8660, 1.0",
+            xi: "0.6981",
+          },
+          { x: "1, 2, 3, 4, 5", y: "1, 8, 27, 64, 125", xi: "2.5" },
+        ];
+
+        function loadEx(i) {
+          const e = EXAMPLES[i];
+          document.getElementById("xValuesInput").value = e.x;
+          document.getElementById("yValuesInput").value = e.y;
+          document.getElementById("xiInput").value = e.xi;
+        }
+
+        // ── Core: Build Divided Difference Table ─────────────────
+        // table[i][j] = j-th order divided difference starting at x_i
+        // Coefficients: table[0][0], table[0][1], ..., table[0][n-1]
+        function computeDividedDifferences(xs, ys) {
+          const n = xs.length;
+          const table = Array.from({ length: n }, () => new Array(n).fill(0));
+          for (let i = 0; i < n; i++) table[i][0] = ys[i];
+          for (let j = 1; j < n; j++) {
+            for (let i = 0; i < n - j; i++) {
+              table[i][j] =
+                (table[i + 1][j - 1] - table[i][j - 1]) / (xs[i + j] - xs[i]);
+            }
+          }
+          return table;
+        }
+
+        // ── Evaluate Newton polynomial using Horner's method ─────
+        function evalNewton(coeffs, xs, x) {
+          const n = coeffs.length;
+          let result = coeffs[n - 1];
+          for (let i = n - 2; i >= 0; i--) {
+            result = result * (x - xs[i]) + coeffs[i];
+          }
+          return result;
+        }
+
+        // ── Evaluate partial polynomial (first k+1 coefficients) ─
+        function evalNewtonPartial(coeffs, xs, x, k) {
+          let result = coeffs[0];
+          let prod = 1.0;
+          for (let i = 1; i <= k; i++) {
+            prod *= x - xs[i - 1];
+            result += coeffs[i] * prod;
+          }
+          return result;
+        }
+
+        // ── Generate polynomial curve points ─────────────────────
+        function generateCurve(coeffs, xs, numPts) {
+          const xMin = Math.min(...xs);
+          const xMax = Math.max(...xs);
+          const range = xMax - xMin;
+          const lo = xMin - range * 0.1;
+          const hi = xMax + range * 0.1;
+          const pts = [];
+          for (let i = 0; i < numPts; i++) {
+            const xv = lo + (i / (numPts - 1)) * (hi - lo);
+            const yv = evalNewton(coeffs, xs, xv);
+            pts.push({ x: xv, y: yv });
+          }
+          return pts;
+        }
+
+        // ── Format helpers ────────────────────────────────────────
+        function fmt(v, d) {
+          const dp = d || 6;
+          return typeof v === "number" && isFinite(v) ? v.toFixed(dp) : "N/A";
+        }
+        function fmtE(v) {
+          return typeof v === "number" && isFinite(v)
+            ? v.toExponential(4)
+            : "N/A";
+        }
+        function fmtShort(v) {
+          if (!isFinite(v)) return "N/A";
+          return Math.abs(v) < 0.001 || Math.abs(v) > 9999
+            ? v.toExponential(3)
+            : parseFloat(v.toPrecision(5)).toString();
+        }
+
+        // ── Run NDD ───────────────────────────────────────────────
+        function runNDD() {
+          document.getElementById("errorAlert").style.display = "none";
+          document.getElementById("successAlert").style.display = "none";
+
+          const xRaw = document.getElementById("xValuesInput").value.trim();
+          const yRaw = document.getElementById("yValuesInput").value.trim();
+          const xiRaw = document.getElementById("xiInput").value.trim();
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 6;
+
+          if (!xRaw) {
+            showError("Please enter x values.");
+            return;
+          }
+          if (!yRaw) {
+            showError("Please enter y values.");
+            return;
+          }
+          if (!xiRaw) {
+            showError("Please enter the interpolation point x.");
+            return;
+          }
+
+          const xs = xRaw
+            .split(",")
+            .map((v) => parseFloat(v.trim()))
+            .filter((v) => !isNaN(v));
+          const ys = yRaw
+            .split(",")
+            .map((v) => parseFloat(v.trim()))
+            .filter((v) => !isNaN(v));
+          const xi = parseFloat(xiRaw);
+
+          if (xs.length < 2) {
+            showError("At least 2 data points required.");
+            return;
+          }
+          if (xs.length !== ys.length) {
+            showError(
+              `x has ${xs.length} values but y has ${ys.length} values. They must match.`,
+            );
+            return;
+          }
+          if (isNaN(xi)) {
+            showError("Invalid interpolation point x.");
+            return;
+          }
+
+          // Duplicate x check
+          const xSet = new Set(xs.map((v) => v.toString()));
+          if (xSet.size !== xs.length) {
+            showError(
+              "Duplicate x values found. All x values must be distinct.",
+            );
+            return;
+          }
+
+          // Compute
+          const table = computeDividedDifferences(xs, ys);
+          const n = xs.length;
+          const coeffs = table[0].slice(0, n); // Newton coefficients c0..cn-1
+          const result = evalNewton(coeffs, xs, xi);
+
+          if (!isFinite(result)) {
+            showError(
+              "Computation produced non-finite result. Check your data.",
+            );
+            return;
+          }
+
+          // Build stepsData: one per order (0..n-1) + 1 final evaluation step
+          stepsData = [];
+          for (let order = 0; order < n; order++) {
+            const count = n - order;
+            const values = [];
+            for (let i = 0; i < count; i++) {
+              values.push({ i, val: table[i][order] });
+            }
+
+            // Computations for order > 0
+            const computations = [];
+            if (order > 0) {
+              for (let i = 0; i < count; i++) {
+                const num = table[i + 1][order - 1] - table[i][order - 1];
+                const den = xs[i + order] - xs[i];
+                computations.push({
+                  i,
+                  label: `f[x${i}..x${i + order}]`,
+                  xLo: xs[i],
+                  xHi: xs[i + order],
+                  num,
+                  den,
+                  result: table[i][order],
+                });
+              }
+            }
+
+            stepsData.push({
+              kind: "order",
+              order,
+              values,
+              computations,
+              coeff: table[0][order], // the Newton coefficient for this order
+              xs,
+              ys,
+              table,
+              coeffs,
+              xi,
+              n,
+              partialResult: evalNewtonPartial(coeffs, xs, xi, order),
+            });
+          }
+
+          // Final evaluation step
+          const termContribs = [];
+          let prod = 1.0;
+          for (let i = 0; i < n; i++) {
+            if (i > 0) prod *= xi - xs[i - 1];
+            const termVal = coeffs[i] * prod;
+            termContribs.push({
+              i,
+              coeff: coeffs[i],
+              prod,
+              termVal,
+              cumulative: evalNewtonPartial(coeffs, xs, xi, i),
+            });
+          }
+          stepsData.push({
+            kind: "eval",
+            xs,
+            ys,
+            coeffs,
+            xi,
+            result,
+            n,
+            termContribs,
+          });
+
+          currentStep = 0;
+          showingAll = false;
+          document.getElementById("toggleAllBtn").textContent =
+            "Show All Steps";
+          document.getElementById("singleStepView").style.display = "block";
+          document.getElementById("allStepsView").style.display = "none";
+
+          displayResults({ xs, ys, table, coeffs, xi, result, n }, decimals);
+
+          const xInRange = xi >= Math.min(...xs) && xi <= Math.max(...xs);
+          const msg = `✓ P(${xi}) = ${result.toFixed(decimals)} computed using ${n - 1} degree polynomial through ${n} points. ${xInRange ? "(Interpolation)" : "⚠ Extrapolation — less accurate outside data range."}`;
+          document.getElementById("successAlert").textContent = msg;
+          document.getElementById("successAlert").style.display = "block";
+        }
+
+        // ── Display Results ───────────────────────────────────────
+        function displayResults(res, decimals) {
+          const { xs, ys, table, coeffs, xi, result, n } = res;
+          const dp = decimals;
+
+          document.getElementById("emptyState").style.display = "none";
+          document.getElementById("resultsContent").style.display = "block";
+
+          // Stats
+          document.getElementById("rootDisplay").textContent = parseFloat(
+            result.toFixed(dp),
+          ).toString();
+          document.getElementById("iterDisplay").textContent = n;
+          document.getElementById("fxDisplay").textContent = n - 1;
+          const convEl = document.getElementById("convDisplay");
+          convEl.textContent = "✓ Done";
+          convEl.style.color = "var(--accent3)";
+
+          // Solution chips
+          const sol = document.getElementById("solutionDisplay");
+          sol.innerHTML = "";
+          const chips = [
+            { text: `P(${xi}) = ${fmt(result, dp)}`, c: "#00d4ff" },
+            { text: `n = ${n} pts`, c: "#ff6b35" },
+            { text: `Degree ${n - 1}`, c: "#77dc1e" },
+            { text: `c₀ = ${fmt(coeffs[0], dp)}`, c: "#a78bfa" },
+          ];
+          chips.forEach((ch) => {
+            const d = document.createElement("div");
+            d.className = "sol-chip";
+            d.style.color = ch.c;
+            d.style.borderColor = ch.c + "44";
+            d.style.background = ch.c + "11";
+            d.innerHTML = ch.text;
+            sol.appendChild(d);
+          });
+
+          // ── Chart 1: Interpolation Curve ──────────────────────
+          const curvePts = generateCurve(coeffs, xs, 200);
+          const scatterData = xs.map((x, i) => ({ x, y: ys[i] }));
+          const interpPt = [{ x: xi, y: result }];
+
+          if (convChartObj) {
+            convChartObj.destroy();
+            convChartObj = null;
+          }
+          convChartObj = new Chart(
+            document.getElementById("convChart").getContext("2d"),
+            {
+              type: "scatter",
+              data: {
+                datasets: [
+                  {
+                    label: "Polynomial P(x)",
+                    data: curvePts,
+                    type: "line",
+                    borderColor: "#00d4ff",
+                    backgroundColor: "rgba(0,212,255,0.05)",
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0,
+                    fill: true,
+                    showLine: true,
+                    order: 3,
+                  },
+                  {
+                    label: "Data Points",
+                    data: scatterData,
+                    backgroundColor: "#ff6b35",
+                    borderColor: "#050a0e",
+                    borderWidth: 2,
+                    pointRadius: 6,
+                    pointStyle: "circle",
+                    order: 1,
+                  },
+                  {
+                    label: `P(${xi}) = ${fmt(result, 4)}`,
+                    data: interpPt,
+                    backgroundColor: "#77dc1e",
+                    borderColor: "#050a0e",
+                    borderWidth: 2,
+                    pointRadius: 9,
+                    pointStyle: "star",
+                    order: 0,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: true,
+                    labels: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                      boxWidth: 10,
+                      padding: 8,
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 9 },
+                    bodyFont: { family: "Space Mono", size: 9 },
+                    callbacks: {
+                      label: (ctx) =>
+                        ` (${fmt(ctx.parsed.x, 4)}, ${fmt(ctx.parsed.y, 4)})`,
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                  y: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                },
+              },
+            },
+          );
+
+          // ── Chart 2: Divided Difference Coefficients Bar ──────
+          const coeffLabels = coeffs.map((_, k) => `c${k} (ord ${k})`);
+          const coeffVals = coeffs.map((c) => Math.abs(c));
+          if (errChartObj) {
+            errChartObj.destroy();
+            errChartObj = null;
+          }
+          errChartObj = new Chart(
+            document.getElementById("errChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: coeffLabels,
+                datasets: [
+                  {
+                    label: "|Coefficient|",
+                    data: coeffVals,
+                    backgroundColor: coeffs.map(
+                      (_, i) => COLORS[i % COLORS.length] + "bb",
+                    ),
+                    borderColor: coeffs.map(
+                      (_, i) => COLORS[i % COLORS.length],
+                    ),
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                  y: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    type: "logarithmic",
+                  },
+                },
+              },
+            },
+          );
+
+          // ── Full Divided Difference Table ─────────────────────
+          const wrap = document.getElementById("iterTableWrap");
+          wrap.innerHTML = "";
+          const tbl = document.createElement("table");
+          tbl.className = "iter-table";
+
+          // Header row
+          let hdr =
+            '<thead><tr><th style="text-align:center;">i</th><th>x</th><th>0th f[x]</th>';
+          for (let j = 1; j < n; j++) {
+            hdr += `<th>${j}${j === 1 ? "st" : j === 2 ? "nd" : j === 3 ? "rd" : "th"} Diff</th>`;
+          }
+          hdr += "</tr></thead>";
+          tbl.innerHTML = hdr;
+
+          const tbody = document.createElement("tbody");
+          for (let i = 0; i < n; i++) {
+            const tr = document.createElement("tr");
+            if (i === 0) tr.className = "coeff-row"; // first row = all coefficients
+            let row = `<td class="n-col">${i}</td>`;
+            row += `<td class="root-col">${fmt(xs[i], dp)}</td>`;
+            for (let j = 0; j < n; j++) {
+              if (j > n - 1 - i) {
+                // Out of triangle — empty
+                row += `<td style="color:rgba(122,154,170,0.2);">—</td>`;
+              } else {
+                const v = table[i][j];
+                const isCoeff = i === 0;
+                const cls = isCoeff
+                  ? "converged-mark"
+                  : j === 0
+                    ? ""
+                    : "err-col";
+                row += `<td class="${cls}" ${isCoeff ? 'title="Newton coefficient c' + j + '"' : ""}>${fmt(v, dp)}</td>`;
+              }
+            }
+            tr.innerHTML = row;
+            tbody.appendChild(tr);
+          }
+          tbl.appendChild(tbody);
+          wrap.appendChild(tbl);
+
+          // Highlighted note
+          const note = document.createElement("div");
+          note.style.cssText =
+            'font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--accent3);margin-top:0.5rem;';
+          note.textContent =
+            "★ First row (highlighted) contains the Newton coefficients c₀, c₁, ..., cₙ₋₁ used in the polynomial.";
+          wrap.appendChild(note);
+
+          // ── First step card ──
+          renderStep(0);
+          updateNav();
+        }
+
+        // ── Build Step Card ───────────────────────────────────────
+        function buildStepCard(step, decimals) {
+          const dp = decimals || 6;
+          return step.kind === "order"
+            ? buildOrderCard(step, dp)
+            : buildEvalCard(step, dp);
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // ORDER CARD: Shows computation of k-th order divided diffs
+        // ─────────────────────────────────────────────────────────
+        function buildOrderCard(step, dp) {
+          const {
+            order,
+            values,
+            computations,
+            coeff,
+            xs,
+            ys,
+            coeffs,
+            xi,
+            n,
+            partialResult,
+          } = step;
+          const orderNames = [
+            "0th (Input Data)",
+            "1st Divided Differences",
+            "2nd Divided Differences",
+            "3rd Divided Differences",
+            "4th Divided Differences",
+            "5th Divided Differences",
+          ];
+          const ordName = orderNames[order] || `${order}th Divided Differences`;
+
+          const card = document.createElement("div");
+          card.className = "step-card";
+
+          // Badge
+          const badge = document.createElement("div");
+          badge.className = "step-badge";
+          badge.innerHTML = `▶ &nbsp;ORDER ${order} &nbsp;
+      <span style="color:var(--accent2)">|</span> &nbsp;
+      ${ordName} &nbsp;
+      <span style="color:var(--accent2)">|</span> &nbsp;
+      <span style="color:var(--accent3)">${values.length} value${values.length !== 1 ? "s" : ""} computed</span>
+      ${order === 0 ? '&nbsp;<span style="color:var(--accent3)">★ Coefficients: c₀ = f[x₀] = ' + fmt(coeff, dp) + "</span>" : '&nbsp;<span style="color:var(--accent3)">★ c' + order + " = " + fmt(coeff, dp) + "</span>"}`;
+          card.appendChild(badge);
+
+          const body = document.createElement("div");
+          body.className = "step-body";
+
+          // ── LEFT: Formula + Computations ─────────────────────────
+          const left = document.createElement("div");
+          if (order === 0) {
+            left.innerHTML = `<div class="step-col-title">Step 1 — 0th Order (Raw Data)</div>`;
+            const calcBox = document.createElement("div");
+            calcBox.className = "calc-box";
+            calcBox.innerHTML = `<div class="calc-row" style="font-size:0.65rem;color:var(--text-dim);">f[xᵢ] = yᵢ (the given y values)</div>
+        <div style="height:1px;background:var(--border);margin:0.5rem 0;"></div>`;
+            xs.forEach((x, i) => {
+              const row = document.createElement("div");
+              row.className = "calc-row";
+              row.innerHTML = `<span class="calc-label">f[x${i}] =</span>
+          <span style="color:var(--accent);font-weight:600;">${fmt(ys[i], dp)}</span>
+          <span style="color:var(--text-dim);font-size:0.62rem;">&nbsp;(x${i}=${fmt(x, dp)})</span>`;
+              calcBox.appendChild(row);
+            });
+            left.appendChild(calcBox);
+          } else {
+            left.innerHTML = `<div class="step-col-title">Step ${order + 1} — ${ordName}</div>`;
+            const formulaBox = document.createElement("div");
+            formulaBox.className = "calc-box";
+            formulaBox.style.marginBottom = "0.6rem";
+            formulaBox.innerHTML = `<div style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--accent2);line-height:1.8;">
+        f[xᵢ,...,xᵢ₊${order}] =<br>
+        &nbsp;&nbsp;(f[xᵢ₊₁,...,xᵢ₊${order}] − f[xᵢ,...,xᵢ₊${order - 1}])<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;÷ (xᵢ₊${order} − xᵢ)
+      </div>`;
+            left.appendChild(formulaBox);
+
+            const calcBox = document.createElement("div");
+            calcBox.className = "calc-box";
+            const maxShow = Math.min(computations.length, 6); // show at most 6 computations
+            for (let ci = 0; ci < maxShow; ci++) {
+              const c = computations[ci];
+              const numStr = fmt(c.num, Math.min(dp, 6));
+              const denStr = fmt(c.den, Math.min(dp, 6));
+              const row = document.createElement("div");
+              row.className = "calc-row";
+              row.style.flexDirection = "column";
+              row.style.gap = "0.15rem";
+              row.innerHTML = `
+          <span style="color:var(--text-dim);font-size:0.62rem;">${c.label}:</span>
+          <span style="font-size:0.64rem;">(${numStr}) ÷ (${denStr})</span>
+          <span style="color:var(--accent3);font-weight:700;">&nbsp;= ${fmt(c.result, dp)}</span>`;
+              calcBox.appendChild(row);
+              if (ci < maxShow - 1) {
+                const sep = document.createElement("div");
+                sep.style.cssText =
+                  "height:1px;background:rgba(26,53,69,0.5);margin:0.3rem 0;";
+                calcBox.appendChild(sep);
+              }
+            }
+            if (computations.length > maxShow) {
+              const more = document.createElement("div");
+              more.style.cssText =
+                'font-family:"Space Mono",monospace;font-size:0.58rem;color:var(--text-dim);margin-top:0.4rem;';
+              more.textContent = `... and ${computations.length - maxShow} more`;
+              calcBox.appendChild(more);
+            }
+            left.appendChild(calcBox);
+          }
+
+          // Coefficient highlight box
+          const coeffBox = document.createElement("div");
+          coeffBox.style.marginTop = "0.7rem";
+          const cbInner = document.createElement("div");
+          cbInner.className = "calc-box";
+          cbInner.innerHTML = `<div class="calc-row">
+      <span class="calc-label">c${order} =</span>
+      <span style="color:var(--accent3);font-weight:700;font-size:0.85rem;">${fmt(coeff, dp)}</span>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--text-dim);margin-top:0.3rem;">
+      Newton coefficient for (x−x₀)···(x−x${order - 1}) term
+    </div>`;
+          coeffBox.appendChild(cbInner);
+          left.appendChild(coeffBox);
+          body.appendChild(left);
+
+          // ── MIDDLE: Values Table ──────────────────────────────────
+          const mid = document.createElement("div");
+          mid.innerHTML = `<div class="step-col-title">Order ${order} Values</div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.5rem;">
+        ${values.length} value${values.length !== 1 ? "s" : ""} — first value ★ becomes coefficient c${order}
+      </div>`;
+
+          const tbl = document.createElement("table");
+          tbl.className = "mini-val-table";
+          const thead = document.createElement("tr");
+          thead.innerHTML = `<td style="color:var(--accent);font-weight:700;">Index i</td>
+      <td style="color:var(--accent);font-weight:700;text-align:right;">f[xᵢ${order > 0 ? ",...,xᵢ₊" + order : ""}]</td>`;
+          tbl.appendChild(thead);
+
+          values.forEach((v, idx) => {
+            const tr = document.createElement("tr");
+            if (idx === 0) {
+              tr.className = "highlight";
+              tr.innerHTML = `<td>i=${v.i} ★ c${order}</td><td>${fmt(v.val, dp)}</td>`;
+            } else {
+              tr.innerHTML = `<td>i=${v.i}</td><td>${fmt(v.val, dp)}</td>`;
+            }
+            tbl.appendChild(tr);
+          });
+          mid.appendChild(tbl);
+
+          // Partial polynomial value
+          const partBox = document.createElement("div");
+          partBox.style.marginTop = "0.7rem";
+          const pbInner = document.createElement("div");
+          pbInner.className = "calc-box";
+          pbInner.innerHTML = `<div class="step-col-title" style="font-size:0.58rem;">Partial P(${xi}) using c₀…c${order}</div>
+      <div class="calc-row">
+        <span class="calc-label" style="font-size:0.7rem;">P(${xi}) ≈</span>
+        <span style="color:var(--accent);font-weight:700;font-size:0.85rem;">${fmt(partialResult, dp)}</span>
+      </div>`;
+          partBox.appendChild(pbInner);
+          mid.appendChild(partBox);
+          body.appendChild(mid);
+
+          // ── RIGHT: Mini Polynomial Chart ──────────────────────────
+          const chartPanel = document.createElement("div");
+          chartPanel.className = "step-chart-panel";
+
+          const chartColTitle = document.createElement("div");
+          chartColTitle.className = "step-col-title";
+          chartColTitle.textContent =
+            order === 0 ? "Data Points" : `Degree-${order} Polynomial So Far`;
+          chartPanel.appendChild(chartColTitle);
+
+          const chartSub = document.createElement("div");
+          chartSub.style.cssText =
+            'font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.4rem;';
+          chartSub.textContent =
+            order === 0
+              ? "Given data points to interpolate"
+              : `Using c₀…c${order} (${order + 1} coefficients)`;
+          chartPanel.appendChild(chartSub);
+
+          const miniChartWrap = document.createElement("div");
+          miniChartWrap.className = "step-mini-chart-wrap";
+          miniChartWrap.style.height = "155px";
+          const miniCanvas = document.createElement("canvas");
+          const cid = "sc_" + ++stepChartCounter;
+          miniCanvas.id = cid;
+          miniCanvas.style.cssText = "width:100%;height:155px;display:block;";
+          miniChartWrap.appendChild(miniCanvas);
+          chartPanel.appendChild(miniChartWrap);
+
+          // Coefficient magnitude bars
+          const barTitle2 = document.createElement("div");
+          barTitle2.className = "step-col-title";
+          barTitle2.style.marginTop = "0.6rem";
+          barTitle2.textContent = `Coefficients So Far (c₀…c${order})`;
+          chartPanel.appendChild(barTitle2);
+
+          const barWrap = document.createElement("div");
+          const maxShow2 = Math.min(order + 1, 5);
+          for (let ci = 0; ci <= Math.min(order, 4); ci++) {
+            const v = Math.abs(coeffs[ci]);
+            const maxV = Math.max(
+              ...Array.from({ length: order + 1 }, (_, k) =>
+                Math.abs(coeffs[k]),
+              ),
+              1e-30,
+            );
+            const pct = Math.min(100, (v / maxV) * 100);
+            const barItem = document.createElement("div");
+            barItem.style.marginBottom = "0.45rem";
+            const lbl = document.createElement("div");
+            lbl.style.cssText =
+              'display:flex;justify-content:space-between;font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:2px;';
+            lbl.innerHTML = `<span>c${ci}</span><span style="color:${COLORS[ci % COLORS.length]};">${fmtShort(coeffs[ci])}</span>`;
+            const track = document.createElement("div");
+            track.style.cssText =
+              "height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;";
+            const fill = document.createElement("div");
+            fill.style.cssText = `width:${pct}%;height:100%;background:${COLORS[ci % COLORS.length]};border-radius:3px;transition:width 0.4s;`;
+            track.appendChild(fill);
+            barItem.appendChild(lbl);
+            barItem.appendChild(track);
+            barWrap.appendChild(barItem);
+          }
+          chartPanel.appendChild(barWrap);
+          body.appendChild(chartPanel);
+          card.appendChild(body);
+
+          // ── Render mini chart ─────────────────────────────────────
+          setTimeout(() => {
+            const ctx = miniCanvas.getContext("2d");
+            const scatterPts = xs.map((x, i) => ({ x, y: ys[i] }));
+
+            const datasets = [
+              {
+                label: "Data Points",
+                data: scatterPts,
+                type: "scatter",
+                backgroundColor: "#ff6b35",
+                borderColor: "#050a0e",
+                borderWidth: 2,
+                pointRadius: 5,
+                order: 0,
+              },
+            ];
+
+            if (order > 0) {
+              const partialCoeffs = coeffs.slice(0, order + 1);
+              const partialCurve = generateCurve(
+                partialCoeffs,
+                xs.slice(0, order + 1),
+                80,
+              );
+              datasets.unshift({
+                label: `P${order}(x)`,
+                data: partialCurve,
+                type: "line",
+                borderColor: "#00d4ff",
+                backgroundColor: "rgba(0,212,255,0.07)",
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: true,
+                showLine: true,
+                tension: 0,
+                order: 1,
+              });
+            }
+
+            // Interpolation point
+            const partPt = evalNewtonPartial(coeffs, xs, xi, order);
+            datasets.push({
+              label: `P(${xi})`,
+              data: [{ x: xi, y: partPt }],
+              backgroundColor: "#77dc1e",
+              borderColor: "#050a0e",
+              borderWidth: 2,
+              pointRadius: 7,
+              pointStyle: "star",
+              order: -1,
+            });
+
+            const miniCfg = {
+              type: "scatter",
+              data: { datasets },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 300 },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 8 },
+                    bodyFont: { family: "Space Mono", size: 8 },
+                  },
+                },
+                scales: {
+                  x: {
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                    },
+                  },
+                  y: {
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    ticks: {
+                      color: "#00d4ff",
+                      font: { family: "Space Mono", size: 8 },
+                      maxTicksLimit: 5,
+                    },
+                  },
+                },
+              },
+            };
+            if (stepChartRegistry[cid]) {
+              stepChartRegistry[cid].destroy();
+            }
+            stepChartRegistry[cid] = new Chart(ctx, miniCfg);
+          }, 0);
+
+          // ── Summary bar ───────────────────────────────────────────
+          const summary = document.createElement("div");
+          summary.className = "step-summary";
+          summary.innerHTML = `
+      <span style="color:var(--text-dim)">Order:</span>
+      <span style="color:var(--accent)">${order}</span>
+      <span style="color:var(--accent2)">→</span>
+      <span style="color:var(--text-dim)">c${order}:</span>
+      <span style="color:var(--accent3)">${fmt(coeff, dp)}</span>
+      <span style="color:var(--accent2)">|</span>
+      <span style="color:var(--text-dim)">Values:</span>
+      <span style="color:var(--text)">${values.length}</span>
+      <span style="color:var(--accent2)">|</span>
+      <span style="color:var(--text-dim)">Partial P(${xi}):</span>
+      <span style="color:var(--accent)">${fmt(partialResult, Math.min(dp, 6))}</span>`;
+          card.appendChild(summary);
+
+          return card;
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // EVAL CARD: Shows final polynomial evaluation at xi
+        // ─────────────────────────────────────────────────────────
+        function buildEvalCard(step, dp) {
+          const { xs, ys, coeffs, xi, result, n, termContribs } = step;
+
+          const card = document.createElement("div");
+          card.className = "step-card";
+
+          // Badge
+          const badge = document.createElement("div");
+          badge.className = "step-badge";
+          badge.innerHTML = `★ &nbsp;EVALUATION &nbsp;
+      <span style="color:var(--accent2)">|</span> &nbsp;
+      Substituting x = ${xi} &nbsp;
+      <span style="color:var(--accent2)">|</span> &nbsp;
+      <span style="color:var(--accent3)">P(${xi}) = ${fmt(result, dp)}</span>`;
+          card.appendChild(badge);
+
+          const body = document.createElement("div");
+          body.className = "step-body";
+
+          // ── LEFT: Term-by-term computation ───────────────────────
+          const left = document.createElement("div");
+          left.innerHTML = `<div class="step-col-title">Step ${n + 1} — Polynomial Evaluation</div>`;
+
+          const formulaBox = document.createElement("div");
+          formulaBox.className = "calc-box";
+          formulaBox.style.marginBottom = "0.6rem";
+          formulaBox.innerHTML = `<div style="font-family:'Space Mono',monospace;font-size:0.63rem;color:var(--accent2);line-height:1.9;">
+      P(x) = c₀<br>
+      &nbsp;&nbsp;+ c₁·(x−x₀)<br>
+      &nbsp;&nbsp;+ c₂·(x−x₀)(x−x₁)<br>
+      &nbsp;&nbsp;+ ···
+    </div>`;
+          left.appendChild(formulaBox);
+
+          const calcBox = document.createElement("div");
+          calcBox.className = "calc-box";
+          const showTerms = Math.min(termContribs.length, 7);
+          for (let i = 0; i < showTerms; i++) {
+            const t = termContribs[i];
+            const row = document.createElement("div");
+            row.className = "calc-row";
+            row.style.flexDirection = "column";
+            row.style.gap = "0.1rem";
+
+            let prodLabel = "";
+            if (i === 0) prodLabel = `c₀ = ${fmtShort(t.coeff)}`;
+            else
+              prodLabel = `c${i}·∏(x−xⱼ) = ${fmtShort(t.coeff)}·${fmtShort(t.prod)}`;
+
+            row.innerHTML = `<span style="color:var(--text-dim);font-size:0.6rem;">Term ${i}: ${prodLabel}</span>
+        <span style="color:${i === 0 ? "var(--accent)" : "var(--accent3)"};font-weight:600;font-size:0.7rem;">&nbsp;= ${fmt(t.termVal, dp)}</span>`;
+            calcBox.appendChild(row);
+            if (i < showTerms - 1) {
+              const sep = document.createElement("div");
+              sep.style.cssText =
+                "height:1px;background:rgba(26,53,69,0.5);margin:0.25rem 0;";
+              calcBox.appendChild(sep);
+            }
+          }
+          if (termContribs.length > showTerms) {
+            const more = document.createElement("div");
+            more.style.cssText =
+              'font-family:"Space Mono",monospace;font-size:0.58rem;color:var(--text-dim);margin-top:0.3rem;';
+            more.textContent = `... ${termContribs.length - showTerms} more terms`;
+            calcBox.appendChild(more);
+          }
+          left.appendChild(calcBox);
+          body.appendChild(left);
+
+          // ── MIDDLE: Cumulative values + result ────────────────────
+          const mid = document.createElement("div");
+          mid.innerHTML = `<div class="step-col-title">Cumulative Sum per Term</div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.5rem;">
+        Running total as terms are added
+      </div>`;
+
+          const tbl = document.createElement("table");
+          tbl.className = "mini-val-table";
+          const hdrRow = document.createElement("tr");
+          hdrRow.innerHTML = `<td style="color:var(--accent);font-weight:700;">Term</td>
+      <td style="color:var(--accent);font-weight:700;text-align:right;">P(x) Running Total</td>`;
+          tbl.appendChild(hdrRow);
+
+          termContribs.forEach((t, idx) => {
+            const tr = document.createElement("tr");
+            if (idx === termContribs.length - 1) tr.className = "highlight";
+            tr.innerHTML = `<td>+c${idx}</td><td>${fmt(t.cumulative, dp)}</td>`;
+            tbl.appendChild(tr);
+          });
+          mid.appendChild(tbl);
+
+          // Final result box
+          const resBox = document.createElement("div");
+          resBox.style.marginTop = "0.7rem";
+          const rbInner = document.createElement("div");
+          rbInner.className = "calc-box";
+          rbInner.style.borderColor = "var(--accent3)";
+          rbInner.innerHTML = `<div class="step-col-title" style="color:var(--accent3);">Final Result</div>
+      <div class="calc-row">
+        <span class="calc-label">P(${xi}) =</span>
+        <span style="color:var(--accent3);font-weight:700;font-size:1.1rem;">${fmt(result, dp)}</span>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--text-dim);margin-top:0.4rem;">
+        f(${xi}) ≈ ${fmt(result, dp)} via degree-${n - 1} polynomial
+      </div>`;
+          resBox.appendChild(rbInner);
+          mid.appendChild(resBox);
+          body.appendChild(mid);
+
+          // ── RIGHT: Final interpolation chart ──────────────────────
+          const chartPanel = document.createElement("div");
+          chartPanel.className = "step-chart-panel";
+
+          const chartColTitle = document.createElement("div");
+          chartColTitle.className = "step-col-title";
+          chartColTitle.textContent = `Final Interpolation at x = ${xi}`;
+          chartPanel.appendChild(chartColTitle);
+
+          const chartSub = document.createElement("div");
+          chartSub.style.cssText =
+            'font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.4rem;';
+          chartSub.textContent =
+            "Full polynomial curve with highlighted result";
+          chartPanel.appendChild(chartSub);
+
+          const miniChartWrap = document.createElement("div");
+          miniChartWrap.className = "step-mini-chart-wrap";
+          miniChartWrap.style.height = "155px";
+          const miniCanvas = document.createElement("canvas");
+          const cid = "sc_" + ++stepChartCounter;
+          miniCanvas.id = cid;
+          miniCanvas.style.cssText = "width:100%;height:155px;display:block;";
+          miniChartWrap.appendChild(miniCanvas);
+          chartPanel.appendChild(miniChartWrap);
+
+          // Term contribution bars
+          const barTitle2 = document.createElement("div");
+          barTitle2.className = "step-col-title";
+          barTitle2.style.marginTop = "0.6rem";
+          barTitle2.textContent = "Term Contributions";
+          chartPanel.appendChild(barTitle2);
+
+          const barWrap = document.createElement("div");
+          const maxTermShow = Math.min(termContribs.length, 5);
+          const maxTermV = Math.max(
+            ...termContribs
+              .slice(0, maxTermShow)
+              .map((t) => Math.abs(t.termVal)),
+            1e-30,
+          );
+          termContribs.slice(0, maxTermShow).forEach((t, idx) => {
+            const pct = Math.min(100, (Math.abs(t.termVal) / maxTermV) * 100);
+            const barItem = document.createElement("div");
+            barItem.style.marginBottom = "0.45rem";
+            const lbl = document.createElement("div");
+            lbl.style.cssText =
+              'display:flex;justify-content:space-between;font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:2px;';
+            lbl.innerHTML = `<span>t${idx}</span><span style="color:${COLORS[idx % COLORS.length]};">${fmtShort(t.termVal)}</span>`;
+            const track = document.createElement("div");
+            track.style.cssText =
+              "height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;";
+            const fill = document.createElement("div");
+            fill.style.cssText = `width:${pct}%;height:100%;background:${COLORS[idx % COLORS.length]};border-radius:3px;transition:width 0.4s;`;
+            track.appendChild(fill);
+            barItem.appendChild(lbl);
+            barItem.appendChild(track);
+            barWrap.appendChild(barItem);
+          });
+          chartPanel.appendChild(barWrap);
+          body.appendChild(chartPanel);
+          card.appendChild(body);
+
+          // Render eval mini chart
+          setTimeout(() => {
+            const ctx = miniCanvas.getContext("2d");
+            const curvePts = generateCurve(coeffs, xs, 100);
+            const scatterPts = xs.map((x, i) => ({ x, y: ys[i] }));
+            const miniCfg = {
+              type: "scatter",
+              data: {
+                datasets: [
+                  {
+                    label: "P(x)",
+                    data: curvePts,
+                    type: "line",
+                    borderColor: "#00d4ff",
+                    backgroundColor: "rgba(0,212,255,0.06)",
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    showLine: true,
+                    tension: 0,
+                    fill: true,
+                    order: 2,
+                  },
+                  {
+                    label: "Data",
+                    data: scatterPts,
+                    backgroundColor: "#ff6b35",
+                    borderColor: "#050a0e",
+                    borderWidth: 2,
+                    pointRadius: 5,
+                    order: 1,
+                  },
+                  {
+                    label: `P(${xi})`,
+                    data: [{ x: xi, y: result }],
+                    backgroundColor: "#77dc1e",
+                    borderColor: "#050a0e",
+                    borderWidth: 2,
+                    pointRadius: 9,
+                    pointStyle: "star",
+                    order: 0,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 300 },
+                plugins: {
+                  legend: {
+                    display: true,
+                    labels: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 7 },
+                      boxWidth: 8,
+                      padding: 5,
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 8 },
+                    bodyFont: { family: "Space Mono", size: 8 },
+                  },
+                },
+                scales: {
+                  x: {
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                    },
+                  },
+                  y: {
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    ticks: {
+                      color: "#00d4ff",
+                      font: { family: "Space Mono", size: 8 },
+                      maxTicksLimit: 5,
+                    },
+                  },
+                },
+              },
+            };
+            if (stepChartRegistry[cid]) {
+              stepChartRegistry[cid].destroy();
+            }
+            stepChartRegistry[cid] = new Chart(ctx, miniCfg);
+          }, 0);
+
+          // Summary bar
+          const summary = document.createElement("div");
+          summary.className = "step-summary";
+          summary.innerHTML = `
+      <span style="color:var(--text-dim)">x:</span>
+      <span style="color:var(--accent)">${xi}</span>
+      <span style="color:var(--accent2)">→</span>
+      <span style="color:var(--text-dim)">P(x):</span>
+      <span style="color:var(--accent3)">${fmt(result, dp)}</span>
+      <span style="color:var(--accent2)">|</span>
+      <span style="color:var(--text-dim)">Terms:</span>
+      <span style="color:var(--text)">${n}</span>
+      <span style="color:var(--accent2)">|</span>
+      <span style="color:var(--text-dim)">Degree:</span>
+      <span style="color:var(--accent)">${n - 1}</span>
+      <span style="color:var(--accent3);margin-left:0.5rem;">★ Final Answer</span>`;
+          card.appendChild(summary);
+
+          return card;
+        }
+
+        // ── Step Navigation ───────────────────────────────────────
+        function destroyStepCharts(container) {
+          container.querySelectorAll("canvas").forEach((cv) => {
+            if (stepChartRegistry[cv.id]) {
+              stepChartRegistry[cv.id].destroy();
+              delete stepChartRegistry[cv.id];
+            }
+          });
+        }
+
+        function renderStep(idx) {
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 6;
+          const c = document.getElementById("stepCardContainer");
+          destroyStepCharts(c);
+          c.innerHTML = "";
+          c.appendChild(buildStepCard(stepsData[idx], decimals));
+        }
+
+        function changeStep(dir) {
+          currentStep = Math.max(
+            0,
+            Math.min(stepsData.length - 1, currentStep + dir),
+          );
+          renderStep(currentStep);
+          updateNav();
+        }
+
+        function updateNav() {
+          document.getElementById("prevBtn").disabled = currentStep === 0;
+          document.getElementById("nextBtn").disabled =
+            currentStep === stepsData.length - 1;
+          document.getElementById("stepCounter").textContent =
+            `Step ${currentStep + 1} / ${stepsData.length}`;
+        }
+
+        function toggleAllSteps() {
+          showingAll = !showingAll;
+          document.getElementById("toggleAllBtn").textContent = showingAll
+            ? "Show One Step"
+            : "Show All Steps";
+          document.getElementById("singleStepView").style.display = showingAll
+            ? "none"
+            : "block";
+          document.getElementById("allStepsView").style.display = showingAll
+            ? "block"
+            : "none";
+          if (showingAll) {
+            const decimals =
+              parseInt(document.getElementById("decimals").value) || 6;
+            const c = document.getElementById("allStepsContainer");
+            destroyStepCharts(c);
+            c.innerHTML = "";
+            stepsData.forEach((s) => c.appendChild(buildStepCard(s, decimals)));
+          }
+        }
+
+        function showError(msg) {
+          const el = document.getElementById("errorAlert");
+          el.textContent = "✕ Error: " + msg;
+          el.style.display = "block";
+        }
+
+        function resetAll() {
+          document.getElementById("errorAlert").style.display = "none";
+          document.getElementById("successAlert").style.display = "none";
+          document.getElementById("emptyState").style.display = "block";
+          document.getElementById("resultsContent").style.display = "none";
+          if (convChartObj) {
+            convChartObj.destroy();
+            convChartObj = null;
+          }
+          if (errChartObj) {
+            errChartObj.destroy();
+            errChartObj = null;
+          }
+          destroyStepCharts(document.getElementById("stepCardContainer"));
+          destroyStepCharts(document.getElementById("allStepsContainer"));
+          stepsData = [];
+          currentStep = 0;
+          showingAll = false;
+          stepChartCounter = 0;
+          document.getElementById("xValuesInput").value = "1, 2, 4, 5";
+          document.getElementById("yValuesInput").value = "1, 4, 16, 25";
+          document.getElementById("xiInput").value = "3";
+        }
+
+        // ── Background Animation ──────────────────────────────────
+        (() => {
+          const gridCv = document.getElementById("bgGrid");
+          const partCv = document.getElementById("bgParticles");
+          const symbolsWrap = document.getElementById("bgSymbols");
+          if (!gridCv || !partCv || !symbolsWrap) return;
+          const gctx = gridCv.getContext("2d");
+          const pctx = partCv.getContext("2d");
+          const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+          const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+          const particles = [];
+          const particleCount = 90;
+          let w = 0,
+            h = 0,
+            dpr = 1;
+
+          function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = window.innerWidth;
+            h = window.innerHeight;
+            [gridCv, partCv].forEach((cv) => {
+              cv.width = Math.floor(w * dpr);
+              cv.height = Math.floor(h * dpr);
+              cv.style.width = w + "px";
+              cv.style.height = h + "px";
+            });
+            gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+
+          function seedParticles() {
+            particles.length = 0;
+            for (let i = 0; i < particleCount; i++)
+              particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 1.5 + Math.random() * 2.3,
+                c: palette[(Math.random() * palette.length) | 0],
+              });
+          }
+
+          function seedSymbols() {
+            const symbols = [
+              "∑",
+              "f[x]",
+              "Δ",
+              "x₀",
+              "P(x)",
+              "→",
+              "c₀",
+              "f[xᵢ,xⱼ]",
+              "NDD",
+              "∫",
+              "c₁",
+            ];
+            symbolsWrap.innerHTML = "";
+            for (let i = 0; i < 22; i++) {
+              const s = document.createElement("span");
+              const type = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+              s.className = "bg-symbol " + type;
+              s.textContent = symbols[i % symbols.length];
+              s.style.left = Math.random() * 98 + "%";
+              s.style.top = 80 + Math.random() * 50 + "%";
+              s.style.fontSize = 13 + Math.random() * 20 + "px";
+              s.style.animationDuration = 22 + Math.random() * 20 + "s";
+              s.style.animationDelay = -Math.random() * 26 + "s";
+              symbolsWrap.appendChild(s);
+            }
+          }
+
+          function drawGrid(t) {
+            gctx.clearRect(0, 0, w, h);
+            const gap = 56,
+              ox = (t * 0.008) % gap,
+              oy = (t * 0.005) % gap;
+            gctx.strokeStyle = "rgba(0,212,255,.11)";
+            gctx.lineWidth = 1;
+            for (let x = -gap; x < w + gap; x += gap) {
+              gctx.beginPath();
+              gctx.moveTo(x + ox, 0);
+              gctx.lineTo(x + ox, h);
+              gctx.stroke();
+            }
+            for (let y = -gap; y < h + gap; y += gap) {
+              gctx.beginPath();
+              gctx.moveTo(0, y + oy);
+              gctx.lineTo(w, y + oy);
+              gctx.stroke();
+            }
+            gctx.strokeStyle = "rgba(124,58,237,.08)";
+            for (let x = -h; x < w + h; x += gap * 1.5) {
+              gctx.beginPath();
+              gctx.moveTo(x - ox * 0.7, 0);
+              gctx.lineTo(x + h - oy * 0.7, h);
+              gctx.stroke();
+            }
+          }
+
+          function drawParticles() {
+            pctx.clearRect(0, 0, w, h);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > w) p.vx *= -1;
+              if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            for (let i = 0; i < particles.length; i++) {
+              const a = particles[i];
+              for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j],
+                  dx = a.x - b.x,
+                  dy = a.y - b.y,
+                  dist = Math.hypot(dx, dy);
+                if (dist < 120) {
+                  pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                  pctx.lineWidth = 1;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(b.x, b.y);
+                  pctx.stroke();
+                }
+              }
+              if (mouse.active) {
+                const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (md < mouse.r) {
+                  const alpha = (1 - md / mouse.r) * 0.45;
+                  pctx.strokeStyle = `rgba(124,58,237,${alpha})`;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(mouse.x, mouse.y);
+                  pctx.stroke();
+                }
+              }
+            }
+            for (const p of particles) {
+              const near = mouse.active
+                ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r
+                : false;
+              pctx.beginPath();
+              pctx.fillStyle = p.c;
+              pctx.globalAlpha = near ? 1 : 0.82;
+              pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+              pctx.fill();
+              if (near) {
+                pctx.beginPath();
+                pctx.globalAlpha = 0.15;
+                pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+                pctx.fill();
+              }
+            }
+            pctx.globalAlpha = 1;
+          }
+
+          function loop(t) {
+            drawGrid(t);
+            drawParticles();
+            requestAnimationFrame(loop);
+          }
+          window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+          });
+          window.addEventListener("mouseleave", () => {
+            mouse.active = false;
+          });
+          window.addEventListener("resize", resize);
+          resize();
+          seedParticles();
+          seedSymbols();
+          requestAnimationFrame(loop);
+        })();
+
+        // ── Info popup toggle ────────────────────────────────────
+        window.togglePop = function (id) {
+          const popup = document.getElementById(id);
+          if (!popup) return;
+          const isOpen = popup.classList.contains("show");
+          document
+            .querySelectorAll(".info-popup")
+            .forEach((p) => p.classList.remove("show"));
+          if (!isOpen) popup.classList.add("show");
+        };
+        document.addEventListener("click", function (e) {
+          if (!e.target.classList.contains("info-btn")) {
+            document
+              .querySelectorAll(".info-popup")
+              .forEach((p) => p.classList.remove("show"));
+          }
+        });
+
+        // ── Card selection handler (for understanding method cards) ────
+        document.querySelectorAll(".conv-card").forEach((card) => {
+          card.addEventListener("click", function () {
+            // Remove selected class from all cards
+            document.querySelectorAll(".conv-card").forEach((c) => {
+              c.classList.remove("selected");
+              const radio = c.querySelector(".conv-radio");
+              if (radio) {
+                radio.style.borderColor = "var(--border)";
+                radio.style.background = "transparent";
+                radio.style.boxShadow = "none";
+              }
+            });
+
+            // Add selected class to clicked card
+            this.classList.add("selected");
+            const radio = this.querySelector(".conv-radio");
+            if (radio) {
+              radio.style.borderColor = "var(--accent)";
+              radio.style.background = "var(--accent)";
+              radio.style.boxShadow = "0 0 6px rgba(0, 212, 255, 0.4)";
+            }
+          });
+        });
+
+        // ── Expose globals ────────────────────────────────────────
+        window.runNDD = runNDD;
+        window.resetAll = resetAll;
+        window.loadEx = loadEx;
+        window.changeStep = changeStep;
+        window.toggleAllSteps = toggleAllSteps;
+      })();
+    </script>
+  </body>
+</html>

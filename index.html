@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Numerical Methods Lab</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ════════════════════════════════════════
+   RESET & VARS
+═══════════════════════════════════════ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #020c18;
+        --bg2: #061222;
+        --border: rgba(255, 255, 255, 0.07);
+        --border-h: rgba(255, 255, 255, 0.14);
+        --tp: #e8f4ff;
+        --tm: #4a6a8a;
+        --td: #7a9ab8;
+        --a1: #00d4ff; /* cyan   – Power Method  */
+        --a2: #7c5cfc; /* violet – Simpson       */
+        --a3: #00e5a0; /* mint   – RK4           */
+        --about: #f59e0b; /* amber  – About         */
+        --glow1: rgba(0, 212, 255, 0.15);
+        --glow2: rgba(124, 92, 252, 0.15);
+        --glow3: rgba(0, 229, 160, 0.15);
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow-x: hidden;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: var(--bg);
+        color: var(--tp);
+      }
+
+      /* ════════════════════════════════════════
+   CANVAS BG
+═══════════════════════════════════════ */
+      #bgCanvas {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      /* ════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+      .page {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 24px 80px;
+      }
+
+      /* ════════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+      nav {
+        width: 100%;
+        max-width: 1100px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 28px 0 0;
+        margin-bottom: 0;
+      }
+      .nav-logo {
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        color: var(--a1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav-logo::before {
+        content: "∞";
+        font-size: 20px;
+        animation: pulse 2.5s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+      .nav-tag {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--tm);
+        letter-spacing: 0.1em;
+      }
+
+      /* ════════════════════════════════════════
+   HERO
+═══════════════════════════════════════ */
+      .hero {
+        text-align: center;
+        padding: 72px 0 64px;
+        max-width: 780px;
+      }
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--a1);
+        background: rgba(0, 212, 255, 0.07);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 100px;
+        padding: 6px 18px;
+        margin-bottom: 28px;
+        animation: fadeUp 0.7s ease both;
+      }
+      .hero-eyebrow::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--a1);
+        animation: blink 1.4s ease-in-out infinite;
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.2;
+        }
+      }
+
+      h1 {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(3.5rem, 9vw, 7rem);
+        line-height: 0.95;
+        letter-spacing: 0.03em;
+        margin-bottom: 24px;
+        animation: fadeUp 0.8s 0.1s ease both;
+      }
+      h1 span.line1 {
+        display: block;
+        color: var(--tp);
+      }
+      h1 span.line2 {
+        display: block;
+        background: linear-gradient(90deg, var(--a1), var(--a2), var(--a3));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200%;
+        animation:
+          fadeUp 0.8s 0.1s ease both,
+          gradShift 4s linear infinite;
+      }
+      @keyframes gradShift {
+        0% {
+          background-position: 0%;
+        }
+        100% {
+          background-position: 200%;
+        }
+      }
+
+      .hero-desc {
+        font-size: 17px;
+        font-weight: 300;
+        color: var(--td);
+        line-height: 1.7;
+        margin-bottom: 0;
+        animation: fadeUp 0.9s 0.2s ease both;
+      }
+      .hero-desc strong {
+        color: var(--tp);
+        font-weight: 500;
+      }
+
+      /* ════════════════════════════════════════
+   SECTION LABEL
+═══════════════════════════════════════ */
+      .section-wrap {
+        width: 100%;
+        max-width: 1100px;
+      }
+
+      .section-label {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--tm);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .section-label::before {
+        content: "//";
+      }
+      .section-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, var(--border), transparent);
+      }
+
+      /* ════════════════════════════════════════
+   CARDS GRID
+═══════════════════════════════════════ */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        width: 100%;
+        margin-bottom: 40px;
+      }
+
+      .card {
+        position: relative;
+        background: rgba(6, 18, 34, 0.8);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px 28px 28px;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        overflow: hidden;
+        transition:
+          border-color 0.3s,
+          transform 0.3s,
+          box-shadow 0.3s;
+        animation: fadeUp 0.6s ease both;
+      }
+      .card:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .card:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .card:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.4s;
+        border-radius: 20px;
+      }
+      .card-1::before {
+        background: radial-gradient(
+          ellipse 80% 60% at 20% 30%,
+          var(--glow1),
+          transparent
+        );
+      }
+      .card-2::before {
+        background: radial-gradient(
+          ellipse 80% 60% at 20% 30%,
+          var(--glow2),
+          transparent
+        );
+      }
+      .card-3::before {
+        background: radial-gradient(
+          ellipse 80% 60% at 20% 30%,
+          var(--glow3),
+          transparent
+        );
+      }
+
+      .card:hover {
+        transform: translateY(-6px);
+        border-color: var(--border-h);
+      }
+      .card-1:hover {
+        box-shadow: 0 20px 60px rgba(0, 212, 255, 0.12);
+      }
+      .card-2:hover {
+        box-shadow: 0 20px 60px rgba(124, 92, 252, 0.12);
+      }
+      .card-3:hover {
+        box-shadow: 0 20px 60px rgba(0, 229, 160, 0.12);
+      }
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      /* card number */
+      .card-num {
+        position: absolute;
+        top: 20px;
+        right: 22px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--tm);
+        letter-spacing: 0.1em;
+      }
+
+      /* icon */
+      .card-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-bottom: 22px;
+        transition: transform 0.3s;
+        position: relative;
+        z-index: 1;
+      }
+      .card:hover .card-icon {
+        transform: scale(1.08) rotate(-4deg);
+      }
+      .ic-1 {
+        background: rgba(0, 212, 255, 0.12);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+      }
+      .ic-2 {
+        background: rgba(124, 92, 252, 0.12);
+        border: 1px solid rgba(124, 92, 252, 0.2);
+      }
+      .ic-3 {
+        background: rgba(0, 229, 160, 0.12);
+        border: 1px solid rgba(0, 229, 160, 0.2);
+      }
+
+      .card-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 28px;
+        letter-spacing: 0.04em;
+        margin-bottom: 10px;
+        line-height: 1;
+        position: relative;
+        z-index: 1;
+      }
+      .card-1 .card-title {
+        color: var(--a1);
+      }
+      .card-2 .card-title {
+        color: var(--a2);
+      }
+      .card-3 .card-title {
+        color: var(--a3);
+      }
+
+      .card-desc {
+        font-size: 13.5px;
+        font-weight: 300;
+        color: var(--td);
+        line-height: 1.65;
+        margin-bottom: 28px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .card-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        transition: gap 0.25s;
+        position: relative;
+        z-index: 1;
+      }
+      .card-1 .card-cta {
+        color: var(--a1);
+      }
+      .card-2 .card-cta {
+        color: var(--a2);
+      }
+      .card-3 .card-cta {
+        color: var(--a3);
+      }
+      .card:hover .card-cta {
+        gap: 14px;
+      }
+
+      .card-cta .arrow {
+        font-size: 16px;
+        transition: transform 0.25s;
+      }
+      .card:hover .card-cta .arrow {
+        transform: translateX(4px);
+      }
+
+      /* corner accent */
+      .card-corner {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 80px;
+        height: 80px;
+        opacity: 0.06;
+        border-top-left-radius: 80px;
+        transition:
+          opacity 0.3s,
+          width 0.3s,
+          height 0.3s;
+      }
+      .card:hover .card-corner {
+        opacity: 0.12;
+        width: 110px;
+        height: 110px;
+      }
+      .cc-1 {
+        background: var(--a1);
+      }
+      .cc-2 {
+        background: var(--a2);
+      }
+      .cc-3 {
+        background: var(--a3);
+      }
+
+      /* ════════════════════════════════════════
+   ABOUT SECTION
+═══════════════════════════════════════ */
+      .about-box {
+        width: 100%;
+        background: rgba(6, 18, 34, 0.7);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 36px 40px;
+        margin-bottom: 20px;
+        animation: fadeUp 0.7s 0.4s ease both;
+        position: relative;
+        overflow: hidden;
+      }
+      .about-box::before {
+        content: "";
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(
+          circle,
+          rgba(245, 158, 11, 0.06),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      .about-inner {
+        display: grid;
+        gap: 32px;
+      }
+      @media (min-width: 700px) {
+        .about-inner {
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+        }
+      }
+
+      .about-left {
+      }
+      .about-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 32px;
+        letter-spacing: 0.06em;
+        color: var(--about);
+        margin-bottom: 14px;
+      }
+      .about-text {
+        font-size: 14px;
+        font-weight: 300;
+        color: var(--td);
+        line-height: 1.75;
+      }
+      .about-text strong {
+        color: var(--tp);
+        font-weight: 500;
+      }
+
+      .about-right {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .topic-chip {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 14px 16px;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      .topic-chip:hover {
+        background: rgba(255, 255, 255, 0.055);
+        border-color: rgba(255, 255, 255, 0.11);
+      }
+      .chip-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 5px;
+      }
+      .chip-body {
+      }
+      .chip-name {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      .chip-desc {
+        font-size: 12.5px;
+        color: var(--tm);
+        line-height: 1.5;
+        font-weight: 300;
+      }
+
+      /* ════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+      footer {
+        width: 100%;
+        max-width: 1100px;
+        margin-top: 40px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .ft-left {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--tm);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ft-left::before {
+        content: "∞";
+        color: var(--a1);
+        font-size: 16px;
+      }
+      .ft-right {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .ft-right a {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--tm);
+        text-decoration: none;
+        letter-spacing: 0.06em;
+        transition: color 0.2s;
+      }
+      .ft-right a:hover {
+        color: var(--td);
+      }
+
+      /* ════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════ */
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(22px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      /* scrollbar */
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── Animated Canvas Background ── -->
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="page">
+      <!-- Nav -->
+      <nav>
+        <div class="nav-logo">Numerical Methods Lab</div>
+        <div class="nav-tag">Mathematics · Computation · Precision</div>
+      </nav>
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-eyebrow">Advanced Calculator Suite</div>
+        <h1>
+          <span class="line1">NUMERICAL</span>
+          <span class="line2">METHODS LAB</span>
+        </h1>
+        <p class="hero-desc">
+          Three powerful calculators — <strong>step-by-step</strong> formula
+          substitution, full iteration breakdown, and interactive graphs.<br />
+          Built for engineering &amp; mathematics students.
+        </p>
+      </div>
+
+      <!-- UNIT 1: Algebraic & Matrix Methods -->
+      <div class="section-wrap">
+        <div class="section-label">Unit 1 — Algebraic & Matrix Methods</div>
+        <p
+          style="
+            color: var(--td);
+            font-size: 14px;
+            margin-bottom: 28px;
+            max-width: 900px;
+            line-height: 1.7;
+          "
+        >
+          Methods for solving nonlinear equations, matrix systems, and
+          eigenvalue problems with step-by-step formula substitution.
+        </p>
+
+        <div class="cards">
+          <!-- 1.1 Newton Raphson -->
+          <a class="card card-1" href="newton_raphson.html">
+            <div class="card-num">1.1</div>
+            <div class="card-icon ic-1">≈</div>
+            <div class="card-title">Newton-Raphson</div>
+            <p class="card-desc">
+              Find roots of nonlinear equations using tangent line approximation
+              with iteration tracking and convergence visualization.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-1"></div>
+          </a>
+
+          <!-- 1.2 Gauss Elimination -->
+          <a class="card card-2" href="gauss_elimination.html">
+            <div class="card-num">1.2</div>
+            <div class="card-icon ic-2">⊞</div>
+            <div class="card-title">Gauss Elimination</div>
+            <p class="card-desc">
+              Solve linear systems using forward elimination and back
+              substitution with complete row reduction visualization.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-2"></div>
+          </a>
+
+          <!-- 1.3 Gauss Jordan -->
+          <a class="card card-3" href="gauss_jordan (1).html">
+            <div class="card-num">1.3</div>
+            <div class="card-icon ic-1">⟹</div>
+            <div class="card-title">Gauss-Jordan</div>
+            <p class="card-desc">
+              Transform matrices to reduced row echelon form for solving linear
+              systems and finding matrix inverses with full row operations.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-1"></div>
+          </a>
+
+          <!-- 1.4 Gauss Seidel -->
+          <a class="card card-2" href="gauss_seidel.html">
+            <div class="card-num">1.4</div>
+            <div class="card-icon ic-2">⟲</div>
+            <div class="card-title">Gauss-Seidel</div>
+            <p class="card-desc">
+              Iteratively solve linear systems using improved approximations at
+              each step with convergence criterion checking.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-2"></div>
+          </a>
+
+          <!-- 1.5 Power Method -->
+          <a class="card card-3" href="power1.html">
+            <div class="card-num">1.5</div>
+            <div class="card-icon ic-3">⚡</div>
+            <div class="card-title">Power Method</div>
+            <p class="card-desc">
+              Find the dominant eigenvalue and eigenvector of a matrix through
+              iterative vector multiplication with convergence tracking.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-3"></div>
+          </a>
+        </div>
+      </div>
+
+      <!-- UNIT 2: Numerical Integration & Interpolation -->
+      <div class="section-wrap">
+        <div class="section-label">
+          Unit 2 — Numerical Integration & Interpolation
+        </div>
+        <p
+          style="
+            color: var(--td);
+            font-size: 14px;
+            margin-bottom: 28px;
+            max-width: 900px;
+            line-height: 1.7;
+          "
+        >
+          Methods for numerical integration of definite integrals and polynomial
+          interpolation through given data points.
+        </p>
+
+        <div class="cards">
+          <!-- 2.1 Trapezoidal Rule -->
+          <a class="card card-1" href="trapezoidel.html">
+            <div class="card-num">2.1</div>
+            <div class="card-icon ic-1">⊥</div>
+            <div class="card-title">Trapezoidal Rule</div>
+            <p class="card-desc">
+              Numerically integrate functions using trapezoid approximation with
+              composite intervals and error bounds calculation.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-1"></div>
+          </a>
+
+          <!-- 2.2 Lagrange Interpolation -->
+          <a class="card card-2" href="lagrange.html">
+            <div class="card-num">2.2</div>
+            <div class="card-icon ic-2">∏</div>
+            <div class="card-title">Lagrange Interpolation</div>
+            <p class="card-desc">
+              Construct polynomial approximations through data points using
+              Lagrange basis functions with evaluation at any point.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-2"></div>
+          </a>
+
+          <!-- 2.3 Simpson's Rule -->
+          <a class="card card-3" href="simpson.html">
+            <div class="card-num">2.3</div>
+            <div class="card-icon ic-3">∫</div>
+            <div class="card-title">Simpson's 1/3 Rule</div>
+            <p class="card-desc">
+              Numerically integrate functions using parabolic arc approximation
+              with step-by-step substitution and error estimation.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-3"></div>
+          </a>
+
+          <!-- 2.4 Newton Divided Difference -->
+          <a class="card card-1" href="Newton_divide.html">
+            <div class="card-num">2.4</div>
+            <div class="card-icon ic-1">Δ</div>
+            <div class="card-title">Newton's Divided Difference</div>
+            <p class="card-desc">
+              Build interpolating polynomials using divided difference tables
+              for unequally spaced data with efficient evaluation.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-1"></div>
+          </a>
+        </div>
+      </div>
+
+      <!-- UNIT 3: Differential Equation Methods -->
+      <div class="section-wrap">
+        <div class="section-label">Unit 3 — Differential Equation Methods</div>
+        <p
+          style="
+            color: var(--td);
+            font-size: 14px;
+            margin-bottom: 28px;
+            max-width: 900px;
+            line-height: 1.7;
+          "
+        >
+          Methods for solving ordinary differential equations with precise
+          approximations and interactive solution visualization.
+        </p>
+
+        <div class="cards">
+          <!-- 3.1 Fourth Order R-K Method -->
+          <a class="card card-2" href="rk method.html">
+            <div class="card-num">3.1</div>
+            <div class="card-icon ic-2">∿</div>
+            <div class="card-title">Runge-Kutta (RK4)</div>
+            <p class="card-desc">
+              Solve ODEs with 4th-order accuracy. Every k₁ k₂ k₃ k₄ formula
+              substituted with actual values, plus an interactive solution
+              graph.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-2"></div>
+          </a>
+
+          <!-- 3.2 Adam Bashforth -->
+          <a class="card card-3" href="adam.html">
+            <div class="card-num">3.2</div>
+            <div class="card-icon ic-3">⟹</div>
+            <div class="card-title">Adam-Bashforth Method</div>
+            <p class="card-desc">
+              Multi-step explicit method for solving differential equations
+              using weighted sum of previous function values.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-3"></div>
+          </a>
+
+          <!-- 3.3 Euler Method -->
+          <a class="card card-1" href="euler.html">
+            <div class="card-num">3.3</div>
+            <div class="card-icon ic-1">⟳</div>
+            <div class="card-title">Euler's Method</div>
+            <p class="card-desc">
+              Simple iterative approach to solving ODEs using tangent line
+              approximation with step-by-step solution progression and
+              visualization.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-1"></div>
+          </a>
+
+          <!-- 3.4 Taylor Series -->
+          <a class="card card-2" href="taylor.html">
+            <div class="card-num">3.4</div>
+            <div class="card-icon ic-2">∑</div>
+            <div class="card-title">Taylor Series</div>
+            <p class="card-desc">
+              Approximate function values using Taylor polynomial expansions
+              with coefficient calculations and convergence analysis.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-2"></div>
+          </a>
+
+          <!-- 3.5 Milne's Method -->
+          <a class="card card-3" href="milins.html">
+            <div class="card-num">3.5</div>
+            <div class="card-icon ic-3">⟲</div>
+            <div class="card-title">Milne's Method</div>
+            <p class="card-desc">
+              Implicit predictor-corrector method for differential equations
+              combining Milne's predictor and Simpson's corrector formulas.
+            </p>
+            <div class="card-cta">
+              Open Calculator <span class="arrow">→</span>
+            </div>
+            <div class="card-corner cc-3"></div>
+          </a>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="section-wrap">
+        <div class="section-label">About This Suite</div>
+
+        <div class="about-box">
+          <div class="about-inner">
+            <div class="about-left">
+              <div class="about-title">What is this?</div>
+              <p class="about-text">
+                A
+                <strong>premium numerical methods calculator suite</strong>
+                organized into three comprehensive units covering algebraic
+                equations, matrix methods, numerical integration, interpolation,
+                and differential equations. Each tool goes beyond simple answers
+                — it shows
+                <strong
+                  >every formula substituted with your actual input
+                  values</strong
+                >, step-by-step, so you can follow along, learn, and verify your
+                hand calculations.<br /><br />
+                Designed for
+                <strong>engineering and mathematics students</strong> tackling
+                complex problems in linear algebra, calculus, and differential
+                equations. Built using <strong>math.js</strong> for safe
+                expression parsing, <strong>Chart.js</strong>
+                for solution visualization, and pure HTML/CSS/JS — no
+                frameworks, no install.
+              </p>
+            </div>
+            <div class="about-right">
+              <div class="topic-chip">
+                <div class="chip-dot" style="background: var(--a1)"></div>
+                <div class="chip-body">
+                  <div class="chip-name" style="color: var(--a1)">
+                    Unit 1: Algebraic & Matrix
+                  </div>
+                  <div class="chip-desc">
+                    5 methods for nonlinear equations, linear systems, and
+                    eigenvalue problems. Newton-Raphson, Gauss elimination,
+                    Gauss-Jordan, Gauss-Seidel, Power Method.
+                  </div>
+                </div>
+              </div>
+              <div class="topic-chip">
+                <div class="chip-dot" style="background: var(--a2)"></div>
+                <div class="chip-body">
+                  <div class="chip-name" style="color: var(--a2)">
+                    Unit 2: Integration & Interpolation
+                  </div>
+                  <div class="chip-desc">
+                    4 methods for numerical integration and polynomial
+                    interpolation. Trapezoidal, Lagrange, Simpson's 1/3, Newton
+                    Divided Difference.
+                  </div>
+                </div>
+              </div>
+              <div class="topic-chip">
+                <div class="chip-dot" style="background: var(--a3)"></div>
+                <div class="chip-body">
+                  <div class="chip-name" style="color: var(--a3)">
+                    Unit 3: Differential Equations
+                  </div>
+                  <div class="chip-desc">
+                    5 methods for solving ODEs with precision. Runge-Kutta 4th
+                    order, Adam-Bashforth, Euler, Taylor Series, Milne's Method.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer>
+        <div class="ft-left">
+          Numerical Methods Calculator &nbsp;|&nbsp; Mathematics Assignment
+        </div>
+        <div class="ft-right">
+          <<a href="/euler.html">Euler's Method</a>
+          <a href="/gauss_elimination.html">Gauss Elimination</a>
+          <a href="/gauss_seidel.html">Gauss-Seidel</a>
+          <a href="/gauss_jordan.html">Gauss-Jordan</a>
+          <a href="/lagrange.html">Lagrange Interpolation</a>
+          <a href="/power1.html">Power Method</a>
+          <a href="/milins.html">Milne's Method</a>
+          <a href="/Newton_divide.html">Newton's divide</a>
+          <a href="/newton_raphson.html">Newton-Raphson</a>
+          <a href="/rk method.html">RK4 Method</a>
+          <a href="/simpson.html">Simpson's Rule</a>
+          <a href="/taylor.html">Taylor's Method</a>
+          <a href="/trapezoidel.html">Trapezoidal Rule</a>
+          <a href="/adam.html">Adam's Method</a>
+        </div>
+      </footer>
+    </div>
+
+    <!-- ════════ CANVAS ANIMATION ════════ -->
+    <script>
+      (function () {
+        var canvas = document.getElementById("bgCanvas");
+        var ctx = canvas.getContext("2d");
+        var W,
+          H,
+          particles = [],
+          lines = [],
+          mouseX = 0,
+          mouseY = 0;
+        var PARTICLE_COUNT = 90;
+        var LINE_DIST = 130;
+
+        function resize() {
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+        }
+
+        /* ── Particle ── */
+        function Particle() {
+          this.reset();
+        }
+        Particle.prototype.reset = function () {
+          this.x = Math.random() * W;
+          this.y = Math.random() * H;
+          this.vx = (Math.random() - 0.5) * 0.35;
+          this.vy = (Math.random() - 0.5) * 0.35;
+          this.r = Math.random() * 1.6 + 0.4;
+          // assign a color family
+          var pick = Math.floor(Math.random() * 3);
+          this.color =
+            pick === 0 ? "0,212,255" : pick === 1 ? "124,92,252" : "0,229,160";
+          this.alpha = Math.random() * 0.5 + 0.15;
+          this.pulse = Math.random() * Math.PI * 2;
+          this.pulseSpeed = 0.012 + Math.random() * 0.018;
+        };
+        Particle.prototype.update = function () {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.pulse += this.pulseSpeed;
+          if (
+            this.x < -10 ||
+            this.x > W + 10 ||
+            this.y < -10 ||
+            this.y > H + 10
+          )
+            this.reset();
+        };
+        Particle.prototype.draw = function () {
+          var a = this.alpha * (0.6 + 0.4 * Math.sin(this.pulse));
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(" + this.color + "," + a + ")";
+          ctx.fill();
+        };
+
+        /* ── Floating math symbols ── */
+        var symbols = [
+          "∫",
+          "∑",
+          "∂",
+          "∇",
+          "λ",
+          "π",
+          "∞",
+          "Δ",
+          "√",
+          "≈",
+          "k₁",
+          "k₂",
+          "eˣ",
+          "dy/dx",
+          "RK4",
+        ];
+        var floaters = [];
+        function Floater(i) {
+          this.sym = symbols[i % symbols.length];
+          this.x = Math.random() * W;
+          this.y = Math.random() * H;
+          this.vx = (Math.random() - 0.5) * 0.2;
+          this.vy = (Math.random() - 0.5) * 0.2;
+          this.alpha = Math.random() * 0.06 + 0.02;
+          this.size = Math.random() * 12 + 9;
+          this.rot = Math.random() * Math.PI * 2;
+          this.rotV = (Math.random() - 0.5) * 0.003;
+        }
+        Floater.prototype.update = function () {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.rot += this.rotV;
+          if (this.x < -40) this.x = W + 40;
+          if (this.x > W + 40) this.x = -40;
+          if (this.y < -40) this.y = H + 40;
+          if (this.y > H + 40) this.y = -40;
+        };
+        Floater.prototype.draw = function () {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.rot);
+          ctx.font = this.size + 'px "DM Mono", monospace';
+          ctx.fillStyle = "rgba(0,212,255," + this.alpha + ")";
+          ctx.fillText(this.sym, 0, 0);
+          ctx.restore();
+        };
+
+        function init() {
+          resize();
+          particles = [];
+          for (var i = 0; i < PARTICLE_COUNT; i++)
+            particles.push(new Particle());
+          floaters = [];
+          for (var j = 0; j < 20; j++) floaters.push(new Floater(j));
+        }
+
+        function drawLines() {
+          for (var i = 0; i < particles.length; i++) {
+            for (var j = i + 1; j < particles.length; j++) {
+              var dx = particles[i].x - particles[j].x;
+              var dy = particles[i].y - particles[j].y;
+              var dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < LINE_DIST) {
+                var a = (1 - dist / LINE_DIST) * 0.18;
+                ctx.beginPath();
+                ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y);
+                ctx.strokeStyle = "rgba(0,180,255," + a + ")";
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+              }
+            }
+            // mouse connection
+            var mdx = particles[i].x - mouseX;
+            var mdy = particles[i].y - mouseY;
+            var md = Math.sqrt(mdx * mdx + mdy * mdy);
+            if (md < 180) {
+              var ma = (1 - md / 180) * 0.35;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(mouseX, mouseY);
+              ctx.strokeStyle = "rgba(0,212,255," + ma + ")";
+              ctx.lineWidth = 0.7;
+              ctx.stroke();
+            }
+          }
+        }
+
+        /* ── Animated grid ── */
+        var gridOffset = 0;
+        function drawGrid() {
+          gridOffset = (gridOffset + 0.15) % 60;
+          ctx.strokeStyle = "rgba(0,30,60,0.9)";
+          ctx.lineWidth = 1;
+          for (var gx = gridOffset; gx < W; gx += 60) {
+            ctx.beginPath();
+            ctx.moveTo(gx, 0);
+            ctx.lineTo(gx, H);
+            ctx.stroke();
+          }
+          for (var gy = gridOffset; gy < H; gy += 60) {
+            ctx.beginPath();
+            ctx.moveTo(0, gy);
+            ctx.lineTo(W, gy);
+            ctx.stroke();
+          }
+        }
+
+        /* ── Radial vignette ── */
+        function drawVignette() {
+          var grad = ctx.createRadialGradient(
+            W / 2,
+            H / 2,
+            H * 0.3,
+            W / 2,
+            H / 2,
+            H * 0.9,
+          );
+          grad.addColorStop(0, "transparent");
+          grad.addColorStop(1, "rgba(2,12,24,0.7)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        function loop() {
+          ctx.clearRect(0, 0, W, H);
+
+          // background
+          ctx.fillStyle = "#020c18";
+          ctx.fillRect(0, 0, W, H);
+
+          drawGrid();
+
+          // subtle glow blobs
+          var b1 = ctx.createRadialGradient(
+            W * 0.15,
+            H * 0.2,
+            0,
+            W * 0.15,
+            H * 0.2,
+            W * 0.35,
+          );
+          b1.addColorStop(0, "rgba(0,212,255,0.04)");
+          b1.addColorStop(1, "transparent");
+          ctx.fillStyle = b1;
+          ctx.fillRect(0, 0, W, H);
+
+          var b2 = ctx.createRadialGradient(
+            W * 0.85,
+            H * 0.75,
+            0,
+            W * 0.85,
+            H * 0.75,
+            W * 0.3,
+          );
+          b2.addColorStop(0, "rgba(124,92,252,0.05)");
+          b2.addColorStop(1, "transparent");
+          ctx.fillStyle = b2;
+          ctx.fillRect(0, 0, W, H);
+
+          var b3 = ctx.createRadialGradient(
+            W * 0.5,
+            H * 0.5,
+            0,
+            W * 0.5,
+            H * 0.5,
+            W * 0.2,
+          );
+          b3.addColorStop(0, "rgba(0,229,160,0.025)");
+          b3.addColorStop(1, "transparent");
+          ctx.fillStyle = b3;
+          ctx.fillRect(0, 0, W, H);
+
+          // floaters
+          for (var f = 0; f < floaters.length; f++) {
+            floaters[f].update();
+            floaters[f].draw();
+          }
+
+          drawLines();
+          for (var p = 0; p < particles.length; p++) {
+            particles[p].update();
+            particles[p].draw();
+          }
+
+          drawVignette();
+          requestAnimationFrame(loop);
+        }
+
+        window.addEventListener("resize", function () {
+          resize();
+          init();
+        });
+        window.addEventListener("mousemove", function (e) {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+        });
+
+        init();
+        loop();
+      })();
+    </script>
+  </body>
+</html>

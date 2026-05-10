@@ -1,0 +1,2133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Power Method Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+      }
+
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      input[type="number"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+
+      .matrix-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .matrix-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.2rem;
+        width: 100%;
+      }
+      .matrix-bracket {
+        color: var(--accent);
+        font-size: 3rem;
+        font-weight: 100;
+        line-height: 1;
+        opacity: 0.7;
+      }
+      .matrix-grid {
+        display: grid;
+        gap: 0.4rem;
+        flex: 1;
+      }
+      .matrix-cell {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.5rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        text-align: center;
+        outline: none;
+        width: 100%;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s,
+          background 0.2s;
+      }
+      .matrix-cell:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+        background: rgba(0, 212, 255, 0.05);
+      }
+
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+      .btn-secondary:hover {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.3rem;
+        margin-bottom: 1.2rem;
+        background: var(--surface2);
+        padding: 0.3rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      .tab {
+        flex: 1;
+        padding: 0.5rem;
+        text-align: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+        user-select: none;
+      }
+      .tab.active {
+        background: var(--accent);
+        color: #000;
+        font-weight: 700;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      .equation-area {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .equation-area textarea {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        width: 100%;
+        resize: vertical;
+        outline: none;
+        min-height: 80px;
+        line-height: 1.6;
+      }
+      .equation-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-top: 0.5rem;
+      }
+
+      .full-width {
+        grid-column: 1/-1;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+
+      .eigenvector-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .ev-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .ev-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .ev-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        color: var(--accent);
+      }
+
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 250px;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 1rem 0;
+      }
+
+      /* ── Step-by-step ── */
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.35rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        min-width: 80px;
+        text-align: center;
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.9rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 800px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+
+      .step-single-view {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.5rem;
+        position: relative;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+      .step-row-content {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 12px;
+        padding-top: 10px;
+      }
+      @media (max-width: 900px) {
+        .step-row-content {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-calcs {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .step-mini-chart-wrap {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 12px;
+        position: relative;
+        height: 250px;
+        position: sticky;
+        top: 20px;
+      }
+      .step-mini-title {
+        font-size: 9px;
+        color: var(--accent);
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        font-family: "Space Mono", monospace;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .step-calc-box {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .step-calc-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 0.25rem;
+      }
+      .step-calc-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .step-calc-table td {
+        padding: 2px 4px;
+        vertical-align: top;
+      }
+      .step-calc-table td:first-child {
+        color: rgba(255, 255, 255, 0.4);
+        width: 70px;
+        text-align: right;
+        padding-right: 8px;
+      }
+
+      .vec-cell {
+        background: rgba(0, 212, 255, 0.07);
+        border: 1px solid rgba(0, 212, 255, 0.15);
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--accent3);
+        text-align: center;
+        min-width: 60px;
+      }
+      .vec-cell.y {
+        color: var(--accent2);
+        border-color: rgba(255, 107, 53, 0.3);
+        background: rgba(255, 107, 53, 0.07);
+      }
+
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+
+      .all-steps-wrap {
+        max-height: 600px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .alert {
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+        display: none;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid #ff3355;
+        color: #ff6680;
+      }
+      .alert-success {
+        background: rgba(127, 255, 110, 0.08);
+        border: 1px solid rgba(127, 255, 110, 0.3);
+        color: var(--accent3);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+      }
+      .empty-state .icon {
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 0.8rem;
+        opacity: 0.4;
+      }
+
+      /* ── FOOTER BAR ── */
+      .site-footer {
+        position: sticky;
+        left: 14px;
+        right: 14px;
+        bottom: 12px;
+        z-index: 4;
+        background: rgba(6, 16, 31, 0.82);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 14px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+      }
+      .site-footer .foot-left {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .site-footer .foot-left .inf {
+        color: var(--accent);
+        font-weight: 700;
+        margin-right: 6px;
+      }
+      .site-footer .foot-links {
+        display: flex;
+        gap: 26px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .site-footer .foot-links a {
+        color: #8aa8c7;
+        text-decoration: none;
+        font-family: "Space Mono", monospace;
+        font-size: 8px;
+        transition: color 0.2s ease;
+      }
+      .site-footer .foot-links a:hover {
+        color: var(--accent);
+      }
+
+      @media (max-width: 900px) {
+        .site-footer {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        .site-footer .foot-links {
+          gap: 16px;
+          justify-content: flex-start;
+        }
+      }
+
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      /* ── BACKGROUND MOTION LAYERS ── */
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #bgGrid {
+        opacity: 0.56;
+      }
+      #bgParticles {
+        opacity: 0.95;
+      }
+
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        color: rgba(0, 212, 255, 0.24);
+        font-family: "Space Mono", monospace;
+        text-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+        -webkit-user-select: none;
+        user-select: none;
+        animation: floatMath linear infinite;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.25);
+        text-shadow: 0 0 16px rgba(124, 58, 237, 0.18);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.24);
+        text-shadow: 0 0 16px rgba(119, 220, 30, 0.18);
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(26px);
+        opacity: 0.34;
+        mix-blend-mode: screen;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .blob.b1 {
+        width: 320px;
+        height: 320px;
+        left: -70px;
+        top: 10%;
+        background: radial-gradient(
+          circle,
+          rgba(0, 212, 255, 0.55),
+          transparent 70%
+        );
+        animation-delay: 0s;
+      }
+      .blob.b2 {
+        width: 340px;
+        height: 340px;
+        right: -80px;
+        top: 45%;
+        background: radial-gradient(
+          circle,
+          rgba(124, 58, 237, 0.52),
+          transparent 70%
+        );
+        animation-delay: 1.4s;
+      }
+      .blob.b3 {
+        width: 300px;
+        height: 300px;
+        left: 30%;
+        bottom: -90px;
+        background: radial-gradient(
+          circle,
+          rgba(119, 220, 30, 0.5),
+          transparent 70%
+        );
+        animation-delay: 2.6s;
+      }
+
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+    <div class="container">
+      <header>
+        <div class="header-tag">Numerical methods</div>
+        <h1>Power Method</h1>
+        <p>Dominant Eigenvalue &amp; Eigenvector — Step-by-Step Solution</p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── Input Panel ── -->
+        <div class="panel">
+          <div class="panel-title">Matrix Input</div>
+
+          <div class="tabs">
+            <div class="tab active" data-tab="matrix">Matrix Mode</div>
+            <div class="tab" data-tab="equation">Equation Mode</div>
+          </div>
+
+          <div class="tab-content active" id="tab-matrix">
+            <div class="controls-row">
+              <div class="control-group">
+                <label>Size (n×n)</label>
+                <input type="number" id="matSize" value="3" min="2" max="6" />
+              </div>
+              <div
+                class="control-group"
+                style="justify-content: flex-end; align-items: flex-end"
+              >
+                <button class="btn btn-secondary" onclick="generateMatrix()">
+                  Generate Grid
+                </button>
+              </div>
+            </div>
+            <div class="matrix-label">Matrix A</div>
+            <div class="matrix-container">
+              <span class="matrix-bracket">[</span>
+              <div class="matrix-grid" id="matrixGrid"></div>
+              <span class="matrix-bracket">]</span>
+            </div>
+            <div class="matrix-label">Initial Vector X₀</div>
+            <div class="matrix-container">
+              <span class="matrix-bracket">[</span>
+              <div class="vector-grid" id="vectorGrid" style="flex: 1"></div>
+              <span class="matrix-bracket">]</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+              <button
+                class="btn btn-secondary"
+                style="font-size: 0.7rem; padding: 0.4rem 0.8rem"
+                onclick="loadExample()"
+              >
+                Load Example
+              </button>
+              <button
+                class="btn btn-secondary"
+                style="font-size: 0.7rem; padding: 0.4rem 0.8rem"
+                onclick="randomMatrix()"
+              >
+                Random
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-content" id="tab-equation">
+            <div class="equation-area">
+              <textarea
+                id="equationInput"
+                placeholder="Enter matrix rows (comma-separated), one row per line:&#10;4, 1, 2&#10;1, 3, 1&#10;2, 1, 5"
+              ></textarea>
+            </div>
+            <div class="equation-hint">
+              Each row on a new line, values separated by commas
+            </div>
+            <div class="sep"></div>
+            <label>Initial Vector X₀ (comma-separated)</label>
+            <div class="equation-area" style="margin-top: 0.5rem">
+              <textarea
+                id="vectorInput"
+                placeholder="1, 1, 1"
+                style="min-height: 40px"
+              ></textarea>
+            </div>
+            <button
+              class="btn btn-secondary"
+              style="margin-top: 0.5rem; font-size: 0.7rem"
+              onclick="parseEquation()"
+            >
+              Parse &amp; Preview
+            </button>
+            <div id="parsePreview"></div>
+          </div>
+        </div>
+
+        <!-- ── Parameters Panel ── -->
+        <div class="panel">
+          <div class="panel-title">Parameters</div>
+
+          <div class="controls-row">
+            <div class="control-group">
+              <label>Number of Iterations</label>
+              <input type="number" id="maxIter" value="6" min="1" max="100" />
+            </div>
+            <div class="control-group">
+              <label>Decimal Places</label>
+              <input type="number" id="decimals" value="4" min="2" max="10" />
+            </div>
+          </div>
+
+          <div class="controls-row">
+            <div class="control-group">
+              <label>Normalization Method</label>
+              <select id="normType">
+                <option value="max">Max Absolute Value</option>
+                <option value="l2">L2 (Euclidean Norm)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runPowerMethod()">
+              ▶ Compute
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">✕ Reset</button>
+          </div>
+
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+
+          <div class="sep"></div>
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.65rem;
+              color: var(--text-dim);
+              line-height: 1.9;
+            "
+          >
+            <strong style="color: var(--accent)"> Power Method Algorithm</strong
+            ><br />
+            Given A (n×n) and X₀:<br />
+            <span style="color: var(--accent2)">for</span> k = 1, 2, … n
+            iterations:<br />
+            &nbsp;&nbsp;Y<sub>k</sub> = A · X<sub>k-1</sub><br />
+            &nbsp;&nbsp;λ<sub>k</sub> = norm(Y<sub>k</sub>)<br />
+            &nbsp;&nbsp;X<sub>k</sub> = Y<sub>k</sub> / λ<sub>k</sub><br />
+            λ → dominant eigenvalue<br />
+            X<sub>n</sub> → dominant eigenvector
+          </div>
+        </div>
+
+        <!-- ── Results (full width) ── -->
+        <div class="panel full-width">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">⚡</span>
+            Configure your matrix and parameters, then click Compute.
+          </div>
+
+          <div id="resultsContent" style="display: none">
+            <!-- Summary stats -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="eigenvalueDisplay">—</div>
+                <div class="stat-label">Dominant Eigenvalue λ</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="iterDisplay">—</div>
+                <div class="stat-label">Iterations Run</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="deltaDisplay">—</div>
+                <div class="stat-label">Final Δλ</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="normDisplay">—</div>
+                <div class="stat-label">Norm Method</div>
+              </div>
+            </div>
+
+            <!-- Eigenvector -->
+            <div class="eigenvector-display">
+              <div class="ev-title">
+                Dominant Eigenvector — Final Normalized X
+              </div>
+              <div class="ev-values" id="eigenvectorDisplay"></div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-row">
+              <div>
+                <div class="chart-title">Eigenvalue λ Convergence</div>
+                <div class="chart-wrap"><canvas id="eigenChart"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title">Δλ Per Iteration</div>
+                <div class="chart-wrap"><canvas id="errorChart"></canvas></div>
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- Step-by-step -->
+            <div>
+              <div class="steps-header">
+                <div class="steps-header-title">Step-by-Step Iteration Log</div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.8rem;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <button
+                    class="step-all-btn"
+                    id="toggleAllBtn"
+                    onclick="toggleAllSteps()"
+                  >
+                    Show All Steps
+                  </button>
+                  <div class="step-nav">
+                    <button id="prevBtn" onclick="changeStep(-1)" disabled>
+                      ◀ Prev
+                    </button>
+                    <span class="step-counter" id="stepCounter"
+                      >Step 1 / 1</span
+                    >
+                    <button id="nextBtn" onclick="changeStep(1)">Next ▶</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="singleStepView">
+                <div id="stepCardContainer"></div>
+              </div>
+              <div id="allStepsView" style="display: none">
+                <div class="all-steps-wrap" id="allStepsContainer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer" aria-label="Site navigation footer">
+      <div class="foot-left">
+        <span class="inf">∞</span> Numerical Methods Calculator &nbsp;|&nbsp;
+        Mathematics Assignment
+      </div>
+      <nav class="foot-links" aria-label="Footer links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/gauss_seidel.html">Gauss-Seidel</a>
+        <a href="/gauss_jordan.html">Gauss-Jordan</a>
+        <a href="/lagrange.html">Lagrange Interpolation</a>
+        <a href="/adam.html">Adam's Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/Newton_divide.html">Newton's divide</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/simpson.html">Simpson's Rule</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/trapezoidel.html">Trapezoidal Rule</a>
+        <a href="/index.html">Home</a>
+      </nav>
+    </footer>
+
+    <script>
+      // ── State ─────────────────────────────────────────────────
+      let currentSize = 3;
+      let eigenChart = null,
+        errorChart = null;
+      let stepsData = [],
+        currentStep = 0,
+        showingAll = false;
+
+      // ── Init ──────────────────────────────────────────────────
+      window.addEventListener("DOMContentLoaded", () => {
+        generateMatrix();
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            document
+              .querySelectorAll(".tab")
+              .forEach((t) => t.classList.remove("active"));
+            document
+              .querySelectorAll(".tab-content")
+              .forEach((c) => c.classList.remove("active"));
+            tab.classList.add("active");
+            document
+              .getElementById("tab-" + tab.dataset.tab)
+              .classList.add("active");
+          });
+        });
+      });
+
+      // ── Matrix helpers ────────────────────────────────────────
+      function generateMatrix() {
+        const n = Math.min(
+          Math.max(parseInt(document.getElementById("matSize").value) || 3, 2),
+          6,
+        );
+        currentSize = n;
+        document.getElementById("matSize").value = n;
+
+        const grid = document.getElementById("matrixGrid");
+        grid.style.gridTemplateColumns = `repeat(${n},1fr)`;
+        grid.innerHTML = "";
+        for (let i = 0; i < n; i++)
+          for (let j = 0; j < n; j++) {
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.className = "matrix-cell";
+            inp.id = `m_${i}_${j}`;
+            inp.value = i === j ? 4 : 1;
+            inp.step = "any";
+            grid.appendChild(inp);
+          }
+        const vg = document.getElementById("vectorGrid");
+        vg.style.gridTemplateColumns = "1fr";
+        vg.innerHTML = "";
+        for (let i = 0; i < n; i++) {
+          const inp = document.createElement("input");
+          inp.type = "number";
+          inp.className = "matrix-cell";
+          inp.id = `v_${i}`;
+          inp.value = 1;
+          inp.step = "any";
+          vg.appendChild(inp);
+        }
+      }
+
+      function readMatrix() {
+        const n = currentSize,
+          A = [];
+        for (let i = 0; i < n; i++) {
+          A.push([]);
+          for (let j = 0; j < n; j++) {
+            const v = parseFloat(document.getElementById(`m_${i}_${j}`).value);
+            if (isNaN(v))
+              throw new Error(`Invalid value at A[${i + 1}][${j + 1}]`);
+            A[i].push(v);
+          }
+        }
+        return A;
+      }
+
+      function readVector() {
+        const n = currentSize,
+          x = [];
+        for (let i = 0; i < n; i++) {
+          const v = parseFloat(document.getElementById(`v_${i}`).value);
+          if (isNaN(v)) throw new Error(`Invalid value at X₀[${i + 1}]`);
+          x.push(v);
+        }
+        return x;
+      }
+
+      function parseEquation() {
+        try {
+          const text = document.getElementById("equationInput").value.trim();
+          const rows = text.split("\n").filter((r) => r.trim());
+          const A = rows.map((row, i) =>
+            row.split(",").map((v) => {
+              const n = parseFloat(v.trim());
+              if (isNaN(n)) throw new Error(`Row ${i + 1}: invalid`);
+              return n;
+            }),
+          );
+          const n = A.length;
+          for (let i = 0; i < n; i++)
+            if (A[i].length !== n)
+              throw new Error(`Row ${i + 1} length mismatch`);
+          document.getElementById("matSize").value = n;
+          currentSize = n;
+          generateMatrix();
+          for (let i = 0; i < n; i++)
+            for (let j = 0; j < n; j++)
+              document.getElementById(`m_${i}_${j}`).value = A[i][j];
+          const vt = document.getElementById("vectorInput").value.trim();
+          if (vt) {
+            const vv = vt.split(",").map((v) => parseFloat(v.trim()));
+            for (let i = 0; i < Math.min(vv.length, n); i++)
+              document.getElementById(`v_${i}`).value = vv[i];
+          }
+          document.getElementById("parsePreview").innerHTML =
+            `<div class="alert alert-success" style="display:block;margin-top:0.5rem;">✓ Parsed ${n}×${n} matrix. Switch to Matrix Mode to verify.</div>`;
+        } catch (e) {
+          document.getElementById("parsePreview").innerHTML =
+            `<div class="alert alert-error" style="display:block;margin-top:0.5rem;">✕ ${e.message}</div>`;
+        }
+      }
+
+      function loadExample() {
+        const ex = [
+          {
+            A: [
+              [4, 1, 2],
+              [1, 3, 1],
+              [2, 1, 5],
+            ],
+            x: [1, 1, 1],
+          },
+          {
+            A: [
+              [5, 4],
+              [1, 2],
+            ],
+            x: [1, 0],
+          },
+          {
+            A: [
+              [2, 1, 0],
+              [1, 3, 1],
+              [0, 1, 2],
+            ],
+            x: [1, 1, 1],
+          },
+          {
+            A: [
+              [6, 5, 0],
+              [0, 3, 0],
+              [1, 0, 4],
+            ],
+            x: [1, 1, 1],
+          },
+        ][Math.floor(Math.random() * 4)];
+        const n = ex.A.length;
+        document.getElementById("matSize").value = n;
+        currentSize = n;
+        generateMatrix();
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++)
+            document.getElementById(`m_${i}_${j}`).value = ex.A[i][j];
+          document.getElementById(`v_${i}`).value = ex.x[i];
+        }
+      }
+
+      function randomMatrix() {
+        const n = currentSize;
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++) {
+            const s = Math.round((Math.random() * 6 - 1) * 10) / 10;
+            document.getElementById(`m_${i}_${j}`).value = i === j ? s + n : s;
+          }
+          document.getElementById(`v_${i}`).value = Math.round(
+            Math.random() * 4 + 1,
+          );
+        }
+      }
+
+      // ── Math ──────────────────────────────────────────────────
+      function matVecMul(A, x) {
+        return A.map((row) => row.reduce((s, a, j) => s + a * x[j], 0));
+      }
+      function normMax(v) {
+        return Math.max(...v.map(Math.abs));
+      }
+      function normL2(v) {
+        return Math.sqrt(v.reduce((s, vi) => s + vi * vi, 0));
+      }
+
+      // ── Power Method ──────────────────────────────────────────
+      function powerMethod(A, x0, maxIter, normType) {
+        // Normalize initial vector
+        const initN = normType === "l2" ? normL2(x0) : normMax(x0);
+        let x = x0.map((v) => v / initN);
+        const iters = [];
+        let prevR = NaN;
+
+        for (let k = 1; k <= maxIter; k++) {
+          const Y = matVecMul(A, x);
+          const lam = normType === "l2" ? normL2(Y) : normMax(Y);
+          const xNew = Y.map((v) => v / lam);
+
+          // Rayleigh quotient
+          const xTAx = Y.reduce((s, v, i) => s + x[i] * v, 0);
+          const xTx = x.reduce((s, v) => s + v * v, 0);
+          const rayleigh = xTAx / xTx;
+
+          const delta = isNaN(prevR) ? null : Math.abs(rayleigh - prevR);
+
+          // Full multiplication detail for each output row
+          const mulDetail = A.map((row, ri) => {
+            const terms = row.map((aij, j) => ({
+              aij,
+              xj: x[j],
+              prod: aij * x[j],
+            }));
+            return { terms, sum: Y[ri] };
+          });
+
+          iters.push({
+            k,
+            xPrev: [...x],
+            Y: [...Y],
+            lam,
+            rayleigh,
+            xNew: [...xNew],
+            delta,
+            mulDetail,
+          });
+          prevR = rayleigh;
+          x = xNew;
+        }
+        return {
+          lambda: iters[iters.length - 1].rayleigh,
+          eigenvector: x,
+          iterations: iters,
+        };
+      }
+
+      // ── Run ───────────────────────────────────────────────────
+      function runPowerMethod() {
+        document.getElementById("errorAlert").style.display = "none";
+        document.getElementById("successAlert").style.display = "none";
+
+        if (document.querySelector(".tab.active").dataset.tab === "equation") {
+          try {
+            parseEquation();
+          } catch (e) {}
+        }
+
+        let A, x0;
+        try {
+          A = readMatrix();
+          x0 = readVector();
+        } catch (e) {
+          showError(e.message);
+          return;
+        }
+        if (x0.every((v) => v === 0)) {
+          showError("Initial vector cannot be all zeros.");
+          return;
+        }
+
+        const maxIter = parseInt(document.getElementById("maxIter").value) || 6;
+        const decimals =
+          parseInt(document.getElementById("decimals").value) || 4;
+        const normType = document.getElementById("normType").value;
+
+        let result;
+        try {
+          result = powerMethod(A, x0, maxIter, normType);
+        } catch (e) {
+          showError(e.message);
+          return;
+        }
+
+        stepsData = [...result.iterations];
+        currentStep = 0;
+        showingAll = false;
+        displayResults(result, decimals, normType);
+
+        document.getElementById("successAlert").textContent =
+          `✓ Completed ${result.iterations.length} iteration(s). Dominant eigenvalue ≈ ${result.lambda.toFixed(decimals)}`;
+        document.getElementById("successAlert").style.display = "block";
+      }
+
+      // ── Display ───────────────────────────────────────────────
+      function displayResults(result, decimals, normType) {
+        const fmt = (v) => v.toFixed(decimals);
+        document.getElementById("emptyState").style.display = "none";
+        document.getElementById("resultsContent").style.display = "block";
+
+        document.getElementById("eigenvalueDisplay").textContent = fmt(
+          result.lambda,
+        );
+        document.getElementById("iterDisplay").textContent =
+          result.iterations.length;
+        const last = result.iterations[result.iterations.length - 1];
+        document.getElementById("deltaDisplay").textContent =
+          last.delta !== null ? last.delta.toExponential(2) : "—";
+        document.getElementById("normDisplay").textContent =
+          normType === "l2" ? "L2" : "MAX";
+
+        document.getElementById("eigenvectorDisplay").innerHTML =
+          result.eigenvector
+            .map(
+              (v, i) =>
+                `<div class="ev-chip">x<sub>${i + 1}</sub> = ${fmt(v)}</div>`,
+            )
+            .join("");
+
+        renderCharts(result);
+
+        document.getElementById("toggleAllBtn").textContent = "Show All Steps";
+        document.getElementById("singleStepView").style.display = "block";
+        document.getElementById("allStepsView").style.display = "none";
+        showingAll = false;
+        renderStep(0);
+        updateNav();
+      }
+
+      // ── Charts ────────────────────────────────────────────────
+      function renderCharts(result) {
+        const labels = result.iterations.map((r) => `k=${r.k}`);
+        const lambdas = result.iterations.map((r) => r.rayleigh);
+        const deltas = result.iterations
+          .filter((r) => r.delta !== null)
+          .map((r) => r.delta);
+        const dLabels = result.iterations
+          .filter((r) => r.delta !== null)
+          .map((r) => `k=${r.k}`);
+
+        const base = {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 600 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#0d1a22",
+              borderColor: "#1a3545",
+              borderWidth: 1,
+              titleColor: "#00d4ff",
+              bodyColor: "#e8f4f8",
+              titleFont: { family: "Space Mono", size: 10 },
+              bodyFont: { family: "Space Mono", size: 10 },
+            },
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(26,53,69,0.5)" },
+              ticks: {
+                color: "#7a9aaa",
+                font: { family: "Space Mono", size: 9 },
+              },
+            },
+            y: {
+              grid: { color: "rgba(26,53,69,0.5)" },
+              ticks: {
+                color: "#7a9aaa",
+                font: { family: "Space Mono", size: 9 },
+              },
+            },
+          },
+        };
+
+        if (eigenChart) eigenChart.destroy();
+        eigenChart = new Chart(document.getElementById("eigenChart"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                data: lambdas,
+                borderColor: "#00d4ff",
+                backgroundColor: "rgba(0,212,255,0.08)",
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: "#00d4ff",
+                fill: true,
+                tension: 0.3,
+              },
+            ],
+          },
+          options: base,
+        });
+
+        if (errorChart) errorChart.destroy();
+        errorChart = new Chart(document.getElementById("errorChart"), {
+          type: "line",
+          data: {
+            labels: dLabels,
+            datasets: [
+              {
+                data: deltas,
+                borderColor: "#ff6b35",
+                backgroundColor: "rgba(255,107,53,0.08)",
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: "#ff6b35",
+                fill: true,
+                tension: 0.3,
+              },
+            ],
+          },
+          options: {
+            ...base,
+            scales: {
+              ...base.scales,
+              y: {
+                ...base.scales.y,
+                type: deltas.some((d) => d > 0) ? "logarithmic" : "linear",
+              },
+            },
+          },
+        });
+      }
+
+      // ── Step cards ────────────────────────────────────────────
+      function buildStepCard(step) {
+        const decimals = parseInt(document.getElementById("decimals").value);
+        const fmt = (v) => (typeof v === "number" ? v.toFixed(decimals) : v);
+        const n = step.xPrev.length;
+
+        const card = document.createElement("div");
+        card.className = "step-single-view";
+
+        // Badge
+        const badge = document.createElement("div");
+        badge.className = "step-badge";
+        badge.innerHTML = `⚙ &nbsp;ITERATION &nbsp; k = ${step.k}`;
+        card.appendChild(badge);
+
+        // Row content (1.5fr 1fr grid)
+        const rowContent = document.createElement("div");
+        rowContent.className = "step-row-content";
+
+        // Left side math steps
+        const leftCalcs = document.createElement("div");
+        leftCalcs.className = "step-calcs";
+
+        // ─── Header showing X_prev ───────────────────────────────────
+        const xPrevStr = step.xPrev.map(fmt).join(", ");
+        const step1Header = document.createElement("div");
+        step1Header.innerHTML = `
+    <div class="step-col-title">Step 1 &mdash; Compute Y = A &middot; X<sub>${step.k - 1}</sub></div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.67rem;color:var(--text-dim);margin-bottom:0.5rem;">
+      X<sub>${step.k - 1}</sub> = [&thinsp;<span style="color:var(--accent3)">${xPrevStr}</span>&thinsp;]
+    </div>`;
+        leftCalcs.appendChild(step1Header);
+
+        const calcBox = document.createElement("div");
+        calcBox.className = "step-calc-box";
+        calcBox.innerHTML =
+          '<div class="step-calc-label">Vector Multiplication Y = A · X</div>';
+
+        step.mulDetail.forEach((rowD, ri) => {
+          // Build expression: a·x + a·x + ...
+          const expr = rowD.terms
+            .map(
+              ({ aij, xj, prod }) =>
+                `<span style="color:var(--accent)">${fmt(aij)}</span>&times;` +
+                `<span style="color:var(--accent3)">(${fmt(xj)})</span>`,
+            )
+            .join(`<span style="color:var(--accent2);padding:0 2px">+</span>`);
+
+          let tableHTML =
+            '<table class="step-calc-table" style="margin-bottom:0.4rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.4rem;">';
+          tableHTML += `<tr><td>Formula:</td><td>y<sub>${ri + 1}</sub> = &Sigma; a<sub>${ri + 1},j</sub> &middot; x<sub>j</sub></td></tr>`;
+          tableHTML += `<tr><td>Subst:</td><td style="word-break: break-all;">y<sub>${ri + 1}</sub> = ${expr}</td></tr>`;
+          tableHTML += `<tr><td>Result:</td><td><span style="color:var(--accent2); font-weight:700;">y<sub>${ri + 1}</sub> = ${fmt(rowD.sum)}</span></td></tr>`;
+          tableHTML += "</table>";
+
+          calcBox.innerHTML += tableHTML;
+        });
+
+        leftCalcs.appendChild(calcBox);
+
+        // Y result vector
+        const yRow = document.createElement("div");
+        yRow.style =
+          "display:flex;gap:4px;align-items:center;margin-bottom:1.5rem;";
+        yRow.innerHTML =
+          '<div class="step-col-title" style="margin-right:1rem;">Result Y:</div>' +
+          '<span style="color:var(--accent);font-size:1.3rem;">[</span>';
+        const yCol = document.createElement("div");
+        yCol.style = "display:flex;flex-direction:row;gap:6px;";
+        step.Y.forEach((v) => {
+          const d = document.createElement("div");
+          d.className = "vec-cell y";
+          d.textContent = fmt(v);
+          yCol.appendChild(d);
+        });
+        yRow.appendChild(yCol);
+        yRow.innerHTML +=
+          '<span style="color:var(--accent);font-size:1.3rem;">]</span>';
+        leftCalcs.appendChild(yRow);
+
+        // ─── Right: λ and normalize ───────────────────────────
+        const normType = document.getElementById("normType").value;
+
+        const step2Title = document.createElement("div");
+        step2Title.innerHTML = `<div class="step-col-title">Step 2 &mdash; Find &lambda; &amp; Normalize X<sub>${step.k}</sub></div>`;
+        leftCalcs.appendChild(step2Title);
+
+        const normBox = document.createElement("div");
+        normBox.className = "step-calc-box";
+        normBox.innerHTML =
+          '<div class="step-calc-label">Eigenvalue Approximation</div>';
+
+        // Lambda extraction detail
+        let normDetail = "";
+        let normFormula = "";
+        if (normType === "l2") {
+          const sq = step.Y.map((v) => `(${fmt(v)})&sup2;`).join("+");
+          normFormula = `&lambda; = &radic;&Sigma;y<sub>i</sub>&sup2;`;
+          normDetail = `&radic;(${sq})`;
+        } else {
+          const abs = step.Y.map((v) => `|${fmt(v)}|`).join(", ");
+          normFormula = `&lambda; = max(|y<sub>i</sub>|)`;
+          normDetail = `max(${abs})`;
+        }
+
+        let lambdaTable = '<table class="step-calc-table">';
+        lambdaTable += `<tr><td>Formula:</td><td>${normFormula}</td></tr>`;
+        lambdaTable += `<tr><td>Subst:</td><td style="font-size:0.7rem;">&lambda; = ${normDetail}</td></tr>`;
+        lambdaTable += `<tr><td>Result:</td><td><span style="color:var(--accent3); font-size:1.05rem; font-weight:700;">&lambda;<sub>${step.k}</sub> = ${fmt(step.lam)}</span></td></tr>`;
+
+        // Rayleigh quotient
+        const xTAx = step.Y.reduce((s, v, i) => s + step.xPrev[i] * v, 0);
+        const xTx = step.xPrev.reduce((s, v) => s + v * v, 0);
+
+        lambdaTable += `<tr><td colspan="2"><div style="border-top:1px dashed rgba(255,255,255,0.1); margin:0.4rem 0;"></div></td></tr>`;
+        lambdaTable += `<tr><td>Rayleigh:</td><td>&lambda; = (X<sup>T</sup>AX)/(X<sup>T</sup>X)</td></tr>`;
+        lambdaTable += `<tr><td>Subst:</td><td style="font-size:0.7rem;">&lambda; = ${fmt(xTAx)} / ${fmt(xTx)}</td></tr>`;
+        lambdaTable += `<tr><td>Result:</td><td><span style="color:var(--accent); font-weight:700;">&lambda; = ${fmt(step.rayleigh)}</span></td></tr>`;
+
+        // Delta
+        if (step.delta !== null) {
+          const dColor =
+            step.delta < 0.01 ? "var(--accent3)" : "var(--accent2)";
+          lambdaTable += `<tr><td colspan="2"><div style="border-top:1px dashed rgba(255,255,255,0.1); margin:0.4rem 0;"></div></td></tr>`;
+          lambdaTable += `<tr><td>&Delta;&lambda;:</td><td><span style="color:${dColor}; font-weight:700;">${step.delta.toExponential(4)}</span></td></tr>`;
+        }
+        lambdaTable += "</table>";
+
+        normBox.innerHTML += lambdaTable;
+        leftCalcs.appendChild(normBox);
+
+        // Normalization step detail
+        const nrmBox = document.createElement("div");
+        nrmBox.className = "step-calc-box";
+        nrmBox.innerHTML =
+          '<div class="step-calc-label">Vector Normalization: X<sub>' +
+          step.k +
+          "</sub> = Y / &lambda;<sub>" +
+          step.k +
+          "</sub></div>";
+
+        let nrmTable = '<table class="step-calc-table">';
+        step.xNew.forEach((v, i) => {
+          nrmTable += `<tr><td>x<sub>${i + 1}</sub> :</td>`;
+          nrmTable += `<td>${fmt(step.Y[i])} / ${fmt(step.lam)} = <span style="color:var(--accent3); font-weight:700;">${fmt(v)}</span></td></tr>`;
+        });
+        nrmTable += "</table>";
+        nrmBox.innerHTML += nrmTable;
+
+        leftCalcs.appendChild(nrmBox);
+
+        // Attach left
+        rowContent.appendChild(leftCalcs);
+
+        // Chart container (right side)
+        const rightSide = document.createElement("div");
+        const canvasId = `stepChart_pwr_${step.k}_${Math.random().toString(36).substr(2, 9)}`;
+        rightSide.innerHTML = `
+          <div class="step-mini-chart-wrap">
+            <div class="step-mini-title">Step ${step.k} &mdash; Convergence Curve</div>
+            <canvas id="${canvasId}" style="width:100%; height:100%;"></canvas>
+          </div>
+        `;
+        rowContent.appendChild(rightSide);
+
+        card.appendChild(rowContent);
+
+        // Summary bar
+        const summary = document.createElement("div");
+        summary.className = "step-summary";
+        summary.innerHTML = `
+    <span style="color:var(--text-dim);">X<sub>${step.k - 1}</sub>:</span>
+    <span style="color:var(--accent3)">[${step.xPrev.map(fmt).join(", ")}]</span>
+    <span style="color:var(--accent2);">&rarr;</span>
+    <span style="color:var(--text-dim);">Y:</span>
+    <span style="color:var(--accent2)">[${step.Y.map(fmt).join(", ")}]</span>
+    <span style="color:var(--accent2);">&rarr;</span>
+    <span style="color:var(--text-dim);">&lambda;<sub>${step.k}</sub>:</span>
+    <span style="color:var(--accent)">${fmt(step.rayleigh)}</span>
+    <span style="color:var(--accent2);">&rarr;</span>
+    <span style="color:var(--text-dim);">X<sub>${step.k}</sub>:</span>
+    <span style="color:var(--accent)">[${step.xNew.map(fmt).join(", ")}]</span>`;
+        card.appendChild(summary);
+
+        // Render chart after appending to DOM
+        setTimeout(() => {
+          const ctx = document.getElementById(canvasId);
+          if (ctx) {
+            // Collect points up to this step.k
+            const histK = [];
+            const histLam = [];
+            for (let i = 0; i < step.k; i++) {
+              histK.push("k=" + stepsData[i].k);
+              histLam.push(stepsData[i].lam);
+            }
+
+            const grad = ctx
+              .getContext("2d")
+              .createLinearGradient(0, 0, 0, 200);
+            grad.addColorStop(0, "rgba(0, 212, 255, 0.35)");
+            grad.addColorStop(1, "rgba(0, 212, 255, 0)");
+
+            new Chart(ctx, {
+              type: "line",
+              data: {
+                labels: histK,
+                datasets: [
+                  {
+                    label: "Eigenvalue λ",
+                    data: histLam,
+                    borderColor: "#00d4ff",
+                    backgroundColor: grad,
+                    pointBackgroundColor: "#00d4ff",
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: "#0f172a",
+                    borderColor: "rgba(0, 212, 255, 0.3)",
+                    borderWidth: 1,
+                    titleColor: "#94a3b8",
+                    bodyColor: "#00d4ff",
+                    titleFont: { family: "Space Mono", size: 10 },
+                    bodyFont: { family: "Space Mono", size: 11 },
+                    callbacks: {
+                      label: function (tooltipItem) {
+                        return "λ: " + tooltipItem.parsed.y;
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: false,
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { size: 9, family: "'Space Mono', monospace" },
+                    },
+                  },
+                  x: {
+                    grid: { display: false },
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "'Space Mono', monospace" },
+                    },
+                  },
+                },
+              },
+            });
+          }
+        }, 50);
+
+        return card;
+      }
+
+      function renderStep(idx) {
+        const c = document.getElementById("stepCardContainer");
+        c.innerHTML = "";
+        c.appendChild(buildStepCard(stepsData[idx]));
+      }
+
+      function changeStep(dir) {
+        currentStep = Math.max(
+          0,
+          Math.min(stepsData.length - 1, currentStep + dir),
+        );
+        renderStep(currentStep);
+        updateNav();
+      }
+
+      function updateNav() {
+        document.getElementById("prevBtn").disabled = currentStep === 0;
+        document.getElementById("nextBtn").disabled =
+          currentStep === stepsData.length - 1;
+        document.getElementById("stepCounter").textContent =
+          `Step ${currentStep + 1} / ${stepsData.length}`;
+      }
+
+      function toggleAllSteps() {
+        showingAll = !showingAll;
+        document.getElementById("toggleAllBtn").textContent = showingAll
+          ? "Show One Step"
+          : "Show All Steps";
+        document.getElementById("singleStepView").style.display = showingAll
+          ? "none"
+          : "block";
+        document.getElementById("allStepsView").style.display = showingAll
+          ? "block"
+          : "none";
+        if (showingAll) {
+          const c = document.getElementById("allStepsContainer");
+          c.innerHTML = "";
+          stepsData.forEach((s) => c.appendChild(buildStepCard(s)));
+        }
+      }
+
+      function showError(msg) {
+        const el = document.getElementById("errorAlert");
+        el.textContent = "✕ Error: " + msg;
+        el.style.display = "block";
+      }
+
+      function resetAll() {
+        document.getElementById("errorAlert").style.display = "none";
+        document.getElementById("successAlert").style.display = "none";
+        document.getElementById("emptyState").style.display = "block";
+        document.getElementById("resultsContent").style.display = "none";
+        if (eigenChart) {
+          eigenChart.destroy();
+          eigenChart = null;
+        }
+        if (errorChart) {
+          errorChart.destroy();
+          errorChart = null;
+        }
+        stepsData = [];
+        currentStep = 0;
+        showingAll = false;
+        generateMatrix();
+      }
+
+      /* ── Background Motion Animation ── */
+      (() => {
+        const gridCv = document.getElementById("bgGrid");
+        const partCv = document.getElementById("bgParticles");
+        const symbolsWrap = document.getElementById("bgSymbols");
+        if (!gridCv || !partCv || !symbolsWrap) return;
+
+        const gctx = gridCv.getContext("2d");
+        const pctx = partCv.getContext("2d");
+        const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+        const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+        const particles = [];
+        const particleCount = 90;
+        let w = 0,
+          h = 0,
+          dpr = 1;
+
+        function resize() {
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          w = window.innerWidth;
+          h = window.innerHeight;
+          [gridCv, partCv].forEach((cv) => {
+            cv.width = Math.floor(w * dpr);
+            cv.height = Math.floor(h * dpr);
+            cv.style.width = w + "px";
+            cv.style.height = h + "px";
+          });
+          gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function seedParticles() {
+          particles.length = 0;
+          for (let i = 0; i < particleCount; i++)
+            particles.push({
+              x: Math.random() * w,
+              y: Math.random() * h,
+              vx: (Math.random() - 0.5) * 0.35,
+              vy: (Math.random() - 0.5) * 0.35,
+              r: 1.5 + Math.random() * 2.3,
+              c: palette[(Math.random() * palette.length) | 0],
+            });
+        }
+
+        function seedSymbols() {
+          const symbols = [
+            "∫",
+            "∑",
+            "∂",
+            "∇",
+            "λ",
+            "π",
+            "∞",
+            "k₁",
+            "k₂",
+            "eˣ",
+            "dy/dx",
+          ];
+          symbolsWrap.innerHTML = "";
+          for (let i = 0; i < 22; i++) {
+            const s = document.createElement("span");
+            const type = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+            s.className = "bg-symbol " + type;
+            s.textContent = symbols[i % symbols.length];
+            s.style.left = Math.random() * 98 + "%";
+            s.style.top = 80 + Math.random() * 50 + "%";
+            s.style.fontSize = 13 + Math.random() * 20 + "px";
+            s.style.animationDuration = 22 + Math.random() * 20 + "s";
+            s.style.animationDelay = -Math.random() * 26 + "s";
+            symbolsWrap.appendChild(s);
+          }
+        }
+
+        function drawGrid(t) {
+          gctx.clearRect(0, 0, w, h);
+          const gap = 56,
+            ox = (t * 0.008) % gap,
+            oy = (t * 0.005) % gap;
+          gctx.strokeStyle = "rgba(0,212,255,.11)";
+          gctx.lineWidth = 1;
+          for (let x = -gap; x < w + gap; x += gap) {
+            gctx.beginPath();
+            gctx.moveTo(x + ox, 0);
+            gctx.lineTo(x + ox, h);
+            gctx.stroke();
+          }
+          for (let y = -gap; y < h + gap; y += gap) {
+            gctx.beginPath();
+            gctx.moveTo(0, y + oy);
+            gctx.lineTo(w, y + oy);
+            gctx.stroke();
+          }
+          gctx.strokeStyle = "rgba(124,58,237,.08)";
+          for (let x = -h; x < w + h; x += gap * 1.5) {
+            gctx.beginPath();
+            gctx.moveTo(x - ox * 0.7, 0);
+            gctx.lineTo(x + h - oy * 0.7, h);
+            gctx.stroke();
+          }
+        }
+
+        function drawParticles() {
+          pctx.clearRect(0, 0, w, h);
+          for (const p of particles) {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0 || p.x > w) p.vx *= -1;
+            if (p.y < 0 || p.y > h) p.vy *= -1;
+          }
+          for (let i = 0; i < particles.length; i++) {
+            const a = particles[i];
+            for (let j = i + 1; j < particles.length; j++) {
+              const b = particles[j],
+                dx = a.x - b.x,
+                dy = a.y - b.y,
+                dist = Math.hypot(dx, dy);
+              if (dist < 120) {
+                pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                pctx.lineWidth = 1;
+                pctx.beginPath();
+                pctx.moveTo(a.x, a.y);
+                pctx.lineTo(b.x, b.y);
+                pctx.stroke();
+              }
+            }
+            if (mouse.active) {
+              const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+              if (md < mouse.r) {
+                const alpha = (1 - md / mouse.r) * 0.45;
+                pctx.strokeStyle = `rgba(124,58,237,${alpha})`;
+                pctx.beginPath();
+                pctx.moveTo(a.x, a.y);
+                pctx.lineTo(mouse.x, mouse.y);
+                pctx.stroke();
+              }
+            }
+          }
+          for (const p of particles) {
+            const near = mouse.active
+              ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r
+              : false;
+            pctx.beginPath();
+            pctx.fillStyle = p.c;
+            pctx.globalAlpha = near ? 1 : 0.82;
+            pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+            pctx.fill();
+            if (near) {
+              pctx.beginPath();
+              pctx.globalAlpha = 0.15;
+              pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+              pctx.fill();
+            }
+          }
+          pctx.globalAlpha = 1;
+        }
+
+        function loop(t) {
+          drawGrid(t);
+          drawParticles();
+          requestAnimationFrame(loop);
+        }
+        window.addEventListener("mousemove", (e) => {
+          mouse.x = e.clientX;
+          mouse.y = e.clientY;
+          mouse.active = true;
+        });
+        window.addEventListener("mouseleave", () => {
+          mouse.active = false;
+        });
+        window.addEventListener("resize", resize);
+        resize();
+        seedParticles();
+        seedSymbols();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1800 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gauss-Seidel Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      }
+      .panel:nth-child(2) { animation-delay: 0.1s; }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px; height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.8); }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      input[type="number"], select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus, select:focus { border-color: var(--accent); box-shadow: var(--glow); }
+
+      /* ── Augmented Matrix Grid ── */
+      .aug-matrix-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 1.2rem;
+        overflow-x: auto;
+        padding-bottom: 0.3rem;
+      }
+      .matrix-bracket {
+        color: var(--accent);
+        font-size: 3rem;
+        font-weight: 100;
+        line-height: 1;
+        opacity: 0.7;
+        flex-shrink: 0;
+      }
+      .aug-grid-container {
+        display: flex;
+        gap: 0;
+        flex: 1;
+        min-width: 0;
+      }
+      .aug-A-grid, .aug-b-grid {
+        display: grid;
+        gap: 0.35rem;
+      }
+      .aug-divider {
+        width: 2px;
+        background: rgba(0,212,255,0.25);
+        margin: 0 0.5rem;
+        border-radius: 2px;
+      }
+      .matrix-cell {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.45rem 0.4rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        text-align: center;
+        outline: none;
+        width: 62px;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      }
+      .matrix-cell.b-cell {
+        border-color: rgba(255,107,53,0.35);
+        background: rgba(255,107,53,0.05);
+        color: var(--accent2);
+      }
+      .matrix-cell:focus { border-color: var(--accent); box-shadow: var(--glow); background: rgba(0,212,255,0.05); }
+      .matrix-cell.b-cell:focus { border-color: var(--accent2); box-shadow: 0 0 20px rgba(255,107,53,0.3); }
+
+      .matrix-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), #0099cc); color: #000; }
+      .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--glow); }
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+      .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover { background: rgba(255,51,85,0.1); }
+      .btn-row { display: flex; gap: 0.8rem; margin-top: 1rem; flex-wrap: wrap; }
+
+      .tabs {
+        display: flex;
+        gap: 0.3rem;
+        margin-bottom: 1.2rem;
+        background: var(--surface2);
+        padding: 0.3rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      .tab {
+        flex: 1;
+        padding: 0.5rem;
+        text-align: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+        user-select: none;
+      }
+      .tab.active { background: var(--accent); color: #000; font-weight: 700; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+
+      .equation-area {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .equation-area textarea {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        width: 100%;
+        resize: vertical;
+        outline: none;
+        min-height: 80px;
+        line-height: 1.6;
+      }
+      .equation-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-top: 0.5rem;
+      }
+
+      .full-width { grid-column: 1 / -1; }
+      .sep { height: 1px; background: var(--border); margin: 1rem 0; }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+      .sol-chip {
+        background: rgba(0,212,255,0.08);
+        border: 1px solid rgba(0,212,255,0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        color: var(--accent);
+      }
+
+      /* ── Charts ── */
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) { .charts-row { grid-template-columns: 1fr; } }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 250px;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+
+      /* ── Final Graph ── */
+      .final-chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 300px;
+        margin-bottom: 1.5rem;
+      }
+
+      /* ── Steps ── */
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.35rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+      .step-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        min-width: 80px;
+        text-align: center;
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.9rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover { background: rgba(255,107,53,0.1); }
+
+      /* ── Step Card ── */
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0,212,255,0.1);
+        border: 1px solid rgba(0,212,255,0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+
+      /* Step body: three columns — calc | error | chart */
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 900px) { .step-body { grid-template-columns: 1fr 1fr; } }
+      @media (max-width: 600px) { .step-body { grid-template-columns: 1fr; } }
+
+      /* Step mini chart panel */
+      .step-chart-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .step-mini-chart-wrap {
+        background: rgba(0,0,0,0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.7rem;
+        flex: 1;
+        min-height: 160px;
+        position: relative;
+      }
+
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0,212,255,0.15);
+      }
+
+      /* ── Step graphic: variable bar ── */
+      .step-var-chart {
+        width: 100%;
+        height: 120px;
+        margin-top: 0.8rem;
+      }
+
+      .calc-box {
+        background: rgba(0,0,0,0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .calc-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .calc-label { color: var(--text-dim); min-width: 60px; flex-shrink: 0; }
+      .calc-expr { color: var(--text); }
+      .calc-result { color: var(--accent3); font-weight: 700; }
+      .calc-arrow { color: var(--accent2); }
+
+      .vec-cell {
+        background: rgba(0,212,255,0.07);
+        border: 1px solid rgba(0,212,255,0.15);
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--accent3);
+        text-align: center;
+        min-width: 60px;
+      }
+      .vec-cell.new-val {
+        color: var(--accent);
+        border-color: rgba(0,212,255,0.4);
+        background: rgba(0,212,255,0.12);
+      }
+
+      .err-chip {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 5px;
+        border: 1px solid;
+      }
+      .err-chip.good { color: var(--accent3); border-color: rgba(119,220,30,0.35); background: rgba(119,220,30,0.07); }
+      .err-chip.warn { color: var(--accent2); border-color: rgba(255,107,53,0.35); background: rgba(255,107,53,0.07); }
+
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+
+      .all-steps-wrap {
+        max-height: 700px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      /* ── Alerts ── */
+      .alert {
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+        display: none;
+      }
+      .alert-error { background: rgba(255,51,85,0.1); border: 1px solid #ff3355; color: #ff6680; }
+      .alert-success { background: rgba(127,255,110,0.08); border: 1px solid rgba(127,255,110,0.3); color: var(--accent3); }
+
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+      }
+      .empty-state .icon { font-size: 2.5rem; display: block; margin-bottom: 0.8rem; opacity: 0.4; }
+
+      /* ── FOOTER ── */
+      .site-footer {
+        position: sticky;
+        left: 14px; right: 14px; bottom: 12px;
+        z-index: 4;
+        background: rgba(6,16,31,0.82);
+        border: 1px solid rgba(0,212,255,0.2);
+        border-radius: 14px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+      }
+      .site-footer .foot-left {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .site-footer .foot-left .inf { color: var(--accent); font-weight: 700; margin-right: 6px; }
+      .site-footer .foot-links { display: flex; gap: 26px; flex-wrap: wrap; justify-content: flex-end; }
+      .site-footer .foot-links a {
+        color: #8aa8c7;
+        text-decoration: none;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        transition: color 0.2s ease;
+      }
+      .site-footer .foot-links a:hover { color: var(--accent); }
+      @media (max-width: 900px) {
+        .site-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .site-footer .foot-links { gap: 16px; justify-content: flex-start; }
+      }
+
+      /* ── Background ── */
+      .bg-motion { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+      .bg-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      #bgGrid { opacity: 0.56; }
+      #bgParticles { opacity: 0.95; }
+      .bg-symbols { position: absolute; inset: 0; overflow: hidden; }
+      .bg-symbol {
+        position: absolute;
+        color: rgba(0,212,255,0.24);
+        font-family: "Space Mono", monospace;
+        text-shadow: 0 0 16px rgba(0,212,255,0.2);
+        user-select: none;
+        animation: floatMath linear infinite;
+      }
+      .bg-symbol.violet { color: rgba(124,58,237,0.25); text-shadow: 0 0 16px rgba(124,58,237,0.18); }
+      .bg-symbol.mint { color: rgba(119,220,30,0.24); text-shadow: 0 0 16px rgba(119,220,30,0.18); }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(26px);
+        opacity: 0.34;
+        mix-blend-mode: screen;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .blob.b1 { width: 320px; height: 320px; left: -70px; top: 10%; background: radial-gradient(circle, rgba(0,212,255,0.55), transparent 70%); animation-delay: 0s; }
+      .blob.b2 { width: 340px; height: 340px; right: -80px; top: 45%; background: radial-gradient(circle, rgba(124,58,237,0.52), transparent 70%); animation-delay: 1.4s; }
+      .blob.b3 { width: 300px; height: 300px; left: 30%; bottom: -90px; background: radial-gradient(circle, rgba(119,220,30,0.5), transparent 70%); animation-delay: 2.6s; }
+      @keyframes floatMath {
+        from { transform: translate3d(0,0,0) rotate(0deg); opacity: 0.08; }
+        50% { opacity: 0.32; }
+        to { transform: translate3d(24px,-125vh,0) rotate(8deg); opacity: 0.08; }
+      }
+      @keyframes pulseBlob {
+        0%, 100% { transform: scale(1) translate3d(0,0,0); opacity: 0.3; }
+        50% { transform: scale(1.16) translate3d(16px,-12px,0); opacity: 0.45; }
+      }
+      ::-webkit-scrollbar { width: 4px; height: 4px; }
+      ::-webkit-scrollbar-track { background: var(--surface2); }
+      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+      /* ── Convergence indicator bar ── */
+      .conv-bar-wrap {
+        margin-top: 0.6rem;
+        margin-bottom: 0.4rem;
+      }
+      .conv-bar-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-bottom: 0.25rem;
+        display: flex;
+        justify-content: space-between;
+      }
+      .conv-bar-track {
+        height: 6px;
+        background: rgba(255,255,255,0.07);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .conv-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.4s ease;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+
+      /* bottom padding for footer */
+      .container { padding-bottom: 5rem; }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">Numerical Methods</div>
+        <h1>Gauss-Seidel</h1>
+        <p>Iterative Linear System Solver — Step-by-Step Solution with Graphical Convergence</p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── Input Panel ── -->
+        <div class="panel">
+          <div class="panel-title">System Input [A|b]</div>
+
+          <div class="tabs">
+            <div class="tab active" data-tab="matrix" onclick="switchTab('matrix')">Matrix Mode</div>
+            <div class="tab" data-tab="equation" onclick="switchTab('equation')">Equation Mode</div>
+          </div>
+
+          <!-- Matrix Mode -->
+          <div class="tab-content active" id="tab-matrix">
+            <div class="controls-row">
+              <div class="control-group">
+                <label>Equations (n×n)</label>
+                <input type="number" id="matSize" value="3" min="2" max="6" onchange="generateMatrix()" />
+              </div>
+              <div class="control-group" style="justify-content:flex-end;align-items:flex-end;">
+                <button class="btn btn-secondary" onclick="generateMatrix()">Generate Grid</button>
+              </div>
+            </div>
+            <div class="matrix-label">Augmented Matrix [A | b]</div>
+            <div class="aug-matrix-wrapper">
+              <span class="matrix-bracket">[</span>
+              <div class="aug-grid-container">
+                <div class="aug-A-grid" id="matrixGrid"></div>
+                <div class="aug-divider"></div>
+                <div class="aug-b-grid" id="bGrid"></div>
+              </div>
+              <span class="matrix-bracket">]</span>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <button class="btn btn-secondary" style="font-size:0.7rem;padding:0.4rem 0.8rem;" onclick="loadExample()">Load Example</button>
+              <button class="btn btn-secondary" style="font-size:0.7rem;padding:0.4rem 0.8rem;" onclick="randomMatrix()">Random</button>
+            </div>
+          </div>
+
+          <!-- Equation Mode -->
+          <div class="tab-content" id="tab-equation">
+            <div class="equation-area">
+              <textarea id="equationInput" placeholder="Enter augmented matrix [A|b] rows, each row on a new line:&#10;4, 1, 2, 15&#10;1, 3, 1, 8&#10;2, 1, 5, 20"></textarea>
+            </div>
+            <div class="equation-hint">Each row: a₁, a₂, …, aₙ, b — separated by commas</div>
+            <button class="btn btn-secondary" style="margin-top:0.5rem;font-size:0.7rem;" onclick="parseEquation()">Parse &amp; Preview</button>
+            <div id="parsePreview"></div>
+          </div>
+        </div>
+
+        <!-- ── Parameters Panel ── -->
+        <div class="panel">
+          <div class="panel-title">Parameters</div>
+          <div class="controls-row">
+            <div class="control-group">
+              <label>Max Iterations</label>
+              <input type="number" id="maxIter" value="6" min="1" max="100" />
+            </div>
+            <div class="control-group">
+              <label>Decimal Places</label>
+              <input type="number" id="decimals" value="4" min="2" max="10" />
+            </div>
+          </div>
+          <div class="controls-row">
+            <div class="control-group">
+              <label>Tolerance (stop if max Δx &lt; tol)</label>
+              <input type="number" id="tolerance" value="0.0001" step="0.0001" min="0" />
+            </div>
+            <div class="control-group">
+              <label>Initial Guess X₀</label>
+              <select id="initGuess">
+                <option value="zero">All Zeros</option>
+                <option value="diagonal">Diagonal (b/aii)</option>
+              </select>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runGaussSeidel()">▶ Compute</button>
+            <button class="btn btn-danger" onclick="resetAll()">✕ Reset</button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+          <div class="sep"></div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text-dim);line-height:1.9;">
+            <strong style="color:var(--accent)">Gauss-Seidel Algorithm</strong><br/>
+            Given Ax = b and X⁰:<br/>
+            <span style="color:var(--accent2)">for</span> k = 1, 2, … max iterations:<br/>
+            &nbsp;&nbsp;<span style="color:var(--accent2)">for</span> i = 1 to n:<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;x<sub>i</sub><sup>(k)</sup> = (b<sub>i</sub> − Σ<sub>j≠i</sub> a<sub>ij</sub>·x<sub>j</sub>) / a<sub>ii</sub><br/>
+            Uses <strong>latest updated values</strong> immediately<br/>
+            Converges if matrix is diagonally dominant
+          </div>
+        </div>
+
+        <!-- ── Results (full width) ── -->
+        <div class="panel full-width">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">∑</span>
+            Configure your system [A|b] and parameters, then click Compute.
+          </div>
+
+          <div id="resultsContent" style="display:none;">
+            <!-- Stats -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="iterDisplay">—</div>
+                <div class="stat-label">Iterations Run</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="convDisplay">—</div>
+                <div class="stat-label">Converged</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="errDisplay">—</div>
+                <div class="stat-label">Final Max Δx</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="diagDisplay">—</div>
+                <div class="stat-label">Diag. Dominant</div>
+              </div>
+            </div>
+
+            <!-- Solution -->
+            <div class="solution-display">
+              <div class="sol-title">Final Solution Vector X</div>
+              <div class="sol-values" id="solutionDisplay"></div>
+            </div>
+
+            <!-- Charts row -->
+            <div class="charts-row">
+              <div>
+                <div class="chart-title">Variable Values per Iteration</div>
+                <div class="chart-wrap"><canvas id="varChart"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title">Max Δx Error per Iteration</div>
+                <div class="chart-wrap"><canvas id="errChart"></canvas></div>
+              </div>
+            </div>
+
+            <!-- Final convergence graph (full width) -->
+            <div class="chart-title">Final Convergence — All Variables Across Iterations</div>
+            <div class="final-chart-wrap"><canvas id="finalChart"></canvas></div>
+
+            <div class="sep"></div>
+
+            <!-- Step-by-step -->
+            <div>
+              <div class="steps-header">
+                <div class="steps-header-title">Step-by-Step Iteration Log</div>
+                <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+                  <button class="step-all-btn" id="toggleAllBtn" onclick="toggleAllSteps()">Show All Steps</button>
+                  <div class="step-nav">
+                    <button id="prevBtn" onclick="changeStep(-1)" disabled>◀ Prev</button>
+                    <span class="step-counter" id="stepCounter">Step 1 / 1</span>
+                    <button id="nextBtn" onclick="changeStep(1)">Next ▶</button>
+                  </div>
+                </div>
+              </div>
+              <div id="singleStepView">
+                <div id="stepCardContainer"></div>
+              </div>
+              <div id="allStepsView" style="display:none;">
+                <div class="all-steps-wrap" id="allStepsContainer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">∑</span>Gauss-Seidel Calculator &mdash; Numerical Methods
+      </div>
+      <div class="foot-links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/adam.html">Adam's Method</a>
+        <a href="/gauss_jordan.html">Gauss-Jordan</a>
+        <a href="/lagrange.html">Lagrange Interpolation</a>
+        <a href="/power1.html">Power Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/Newton_divide.html">Newton's divide</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/simpson.html">Simpson's Rule</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/trapezoidel.html">Trapezoidal Rule</a>
+        <a href="/index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+(function() {
+
+      // ── State ──────────────────────────────────────────────────
+      let currentSize = 3;
+      let stepsData = [];
+      let currentStep = 0;
+      let showingAll = false;
+      let varChart = null, errChartObj = null, finalChartObj = null;
+
+      // ── Tab switching ─────────────────────────────────────────
+      function switchTab(name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+      }
+
+      // ── Matrix Generation ─────────────────────────────────────
+      function generateMatrix() {
+        const n = Math.max(2, Math.min(6, parseInt(document.getElementById('matSize').value) || 3));
+        currentSize = n;
+        document.getElementById('matSize').value = n;
+
+        const ag = document.getElementById('matrixGrid');
+        const bg = document.getElementById('bGrid');
+        ag.style.gridTemplateColumns = `repeat(${n},1fr)`;
+        ag.innerHTML = '';
+        bg.style.gridTemplateColumns = '1fr';
+        bg.innerHTML = '';
+
+        // Default: diagonally dominant matrix
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++) {
+            const inp = document.createElement('input');
+            inp.type = 'number';
+            inp.className = 'matrix-cell';
+            inp.id = `a_${i}_${j}`;
+            inp.value = i === j ? (n * 2) : (i === j - 1 || i === j + 1 ? 1 : 0);
+            inp.step = 'any';
+            ag.appendChild(inp);
+          }
+          const bi = document.createElement('input');
+          bi.type = 'number';
+          bi.className = 'matrix-cell b-cell';
+          bi.id = `b_${i}`;
+          bi.value = (n * 2 + (i === 0 ? 1 : 0));
+          bi.step = 'any';
+          bg.appendChild(bi);
+        }
+      }
+
+      // ── Read A and b ──────────────────────────────────────────
+      function readSystem() {
+        const n = currentSize;
+        const A = [], b = [];
+        for (let i = 0; i < n; i++) {
+          A.push([]);
+          for (let j = 0; j < n; j++) {
+            const v = parseFloat(document.getElementById(`a_${i}_${j}`).value);
+            if (isNaN(v)) throw new Error(`Invalid A[${i+1}][${j+1}]`);
+            A[i].push(v);
+          }
+          const bv = parseFloat(document.getElementById(`b_${i}`).value);
+          if (isNaN(bv)) throw new Error(`Invalid b[${i+1}]`);
+          b.push(bv);
+        }
+        return { A, b };
+      }
+
+      // ── Parse Equation Mode ───────────────────────────────────
+      function parseEquation() {
+        try {
+          const text = document.getElementById('equationInput').value.trim();
+          const rows = text.split('\n').filter(r => r.trim());
+          const A = [], b = [];
+          rows.forEach((row, i) => {
+            const vals = row.split(',').map(v => {
+              const num = parseFloat(v.trim());
+              if (isNaN(num)) throw new Error(`Row ${i+1}: invalid value`);
+              return num;
+            });
+            if (vals.length < 2) throw new Error(`Row ${i+1}: too few values`);
+            b.push(vals.pop());
+            A.push(vals);
+          });
+          const n = A.length;
+          for (let i = 0; i < n; i++)
+            if (A[i].length !== n) throw new Error(`Row ${i+1} length mismatch (expected ${n} coefficients + 1 b)`);
+
+          document.getElementById('matSize').value = n;
+          currentSize = n;
+          generateMatrix();
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++)
+              document.getElementById(`a_${i}_${j}`).value = A[i][j];
+            document.getElementById(`b_${i}`).value = b[i];
+          }
+          document.getElementById('parsePreview').innerHTML =
+            `<div class="alert alert-success" style="display:block;margin-top:0.5rem;">✓ Parsed ${n}×${n} system. Switch to Matrix Mode to verify.</div>`;
+        } catch(e) {
+          document.getElementById('parsePreview').innerHTML =
+            `<div class="alert alert-error" style="display:block;margin-top:0.5rem;">✕ ${e.message}</div>`;
+        }
+      }
+
+      // ── Load Example ──────────────────────────────────────────
+      function loadExample() {
+        const examples = [
+          { A: [[4,1,2],[1,3,1],[2,1,5]], b: [15,8,20] },
+          { A: [[10,2,1],[1,5,1],[2,1,8]], b: [7,-8,26] },
+          { A: [[8,2,-2],[1,-8,3],[2,-1,9]], b: [8,-4,12] },
+          { A: [[5,1],[2,6]], b: [11,20] }
+        ];
+        const ex = examples[Math.floor(Math.random() * examples.length)];
+        const n = ex.A.length;
+        document.getElementById('matSize').value = n;
+        currentSize = n;
+        generateMatrix();
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++)
+            document.getElementById(`a_${i}_${j}`).value = ex.A[i][j];
+          document.getElementById(`b_${i}`).value = ex.b[i];
+        }
+      }
+
+      // ── Random Matrix (diagonally dominant) ───────────────────
+      function randomMatrix() {
+        const n = currentSize;
+        for (let i = 0; i < n; i++) {
+          let rowSum = 0;
+          for (let j = 0; j < n; j++) {
+            if (i !== j) {
+              const v = Math.round((Math.random() * 4 - 2) * 10) / 10;
+              document.getElementById(`a_${i}_${j}`).value = v;
+              rowSum += Math.abs(v);
+            }
+          }
+          document.getElementById(`a_${i}_${i}`).value = +(rowSum + 1 + Math.random() * 3).toFixed(1);
+          document.getElementById(`b_${i}`).value = Math.round(Math.random() * 20 - 5);
+        }
+      }
+
+      // ── Check Diagonal Dominance ──────────────────────────────
+      function isDiagDominant(A) {
+        const n = A.length;
+        for (let i = 0; i < n; i++) {
+          const diag = Math.abs(A[i][i]);
+          let rest = 0;
+          for (let j = 0; j < n; j++) if (i !== j) rest += Math.abs(A[i][j]);
+          if (diag < rest) return false;
+        }
+        return true;
+      }
+
+      // ── Gauss-Seidel Core ─────────────────────────────────────
+      function gaussSeidel(A, b, maxIter, tol, initType) {
+        const n = A.length;
+
+        // Initial guess
+        let x = new Array(n).fill(0);
+        if (initType === 'diagonal') {
+          for (let i = 0; i < n; i++) {
+            if (Math.abs(A[i][i]) < 1e-14) throw new Error(`Zero diagonal at row ${i+1}. Cannot use Diagonal init.`);
+            x[i] = b[i] / A[i][i];
+          }
+        }
+
+        const iters = [];
+        let converged = false;
+
+        for (let k = 1; k <= maxIter; k++) {
+          const xOld = [...x];
+          const xNewVals = [];
+          const varDetails = []; // per-variable computation detail
+
+          for (let i = 0; i < n; i++) {
+            if (Math.abs(A[i][i]) < 1e-14) throw new Error(`Zero diagonal at row ${i+1}. System cannot be solved.`);
+            // sum of all j != i, using latest x values (Gauss-Seidel: use updated values immediately)
+            let sigma = 0;
+            const sigmaTerms = [];
+            for (let j = 0; j < n; j++) {
+              if (j !== i) {
+                // Capture xj value at this exact moment:
+                // j < i → already updated this iteration (use new value)
+                // j > i → not yet updated (use old value from xOld)
+                const xj_val = j < i ? x[j] : xOld[j];
+                const val = A[i][j] * xj_val;
+                sigmaTerms.push({ aij: A[i][j], j, xj: xj_val, prod: val, updated: j < i });
+                sigma += val;
+              }
+            }
+            const newXi = (b[i] - sigma) / A[i][i];
+            x[i] = newXi; // update immediately (Gauss-Seidel key feature)
+            xNewVals.push(newXi);
+            varDetails.push({ i, aii: A[i][i], bi: b[i], sigma, sigmaTerms, newXi });
+          }
+
+          // Max absolute error
+          const deltas = xNewVals.map((xi, i) => Math.abs(xi - xOld[i]));
+          const maxDelta = Math.max(...deltas);
+
+          iters.push({
+            k,
+            xOld: [...xOld],
+            xNew: [...xNewVals],
+            deltas,
+            maxDelta,
+            varDetails,
+            converged: maxDelta < tol
+          });
+
+          if (maxDelta < tol) { converged = true; break; }
+        }
+
+        return { x, iterations: iters, converged };
+      }
+
+      // ── Run ───────────────────────────────────────────────────
+      function runGaussSeidel() {
+        document.getElementById('errorAlert').style.display = 'none';
+        document.getElementById('successAlert').style.display = 'none';
+
+        if (document.querySelector('.tab.active').dataset.tab === 'equation') {
+          try { parseEquation(); } catch(e) {}
+        }
+
+        let A, b;
+        try {
+          ({ A, b } = readSystem());
+        } catch(e) {
+          showError(e.message); return;
+        }
+
+        const maxIter = parseInt(document.getElementById('maxIter').value) || 6;
+        const decimals = parseInt(document.getElementById('decimals').value) || 4;
+        const tol = parseFloat(document.getElementById('tolerance').value) || 1e-4;
+        const initType = document.getElementById('initGuess').value;
+        const diag = isDiagDominant(A);
+
+        let result;
+        try {
+          result = gaussSeidel(A, b, maxIter, tol, initType);
+        } catch(e) {
+          showError(e.message); return;
+        }
+
+        stepsData = [...result.iterations];
+        currentStep = 0;
+        showingAll = false;
+
+        displayResults(result, decimals, diag, tol);
+
+        const msg = result.converged
+          ? `✓ Converged in ${result.iterations.length} iteration(s). Max Δx < ${tol}`
+          : `⚠ Did not converge in ${result.iterations.length} iteration(s). Try more iterations.`;
+        document.getElementById('successAlert').textContent = msg;
+        document.getElementById('successAlert').style.display = 'block';
+      }
+
+      // ── Display ───────────────────────────────────────────────
+      function displayResults(result, decimals, diag, tol) {
+        const fmt = v => v.toFixed(decimals);
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('resultsContent').style.display = 'block';
+
+        document.getElementById('iterDisplay').textContent = result.iterations.length;
+        document.getElementById('convDisplay').textContent = result.converged ? '✓ YES' : '✗ NO';
+        document.getElementById('convDisplay').style.color = result.converged ? 'var(--accent3)' : 'var(--accent2)';
+        const last = result.iterations[result.iterations.length - 1];
+        document.getElementById('errDisplay').textContent = last.maxDelta.toExponential(2);
+        document.getElementById('diagDisplay').textContent = diag ? '✓ YES' : '✗ NO';
+        document.getElementById('diagDisplay').style.color = diag ? 'var(--accent3)' : 'var(--accent2)';
+
+        document.getElementById('solutionDisplay').innerHTML = result.x
+          .map((v, i) => `<div class="sol-chip">x<sub>${i+1}</sub> = ${fmt(v)}</div>`)
+          .join('');
+
+        renderCharts(result, decimals);
+
+        document.getElementById('toggleAllBtn').textContent = 'Show All Steps';
+        document.getElementById('singleStepView').style.display = 'block';
+        document.getElementById('allStepsView').style.display = 'none';
+        showingAll = false;
+        renderStep(0);
+        updateNav();
+      }
+
+      // ── Charts ────────────────────────────────────────────────
+      const COLORS = ['#00d4ff','#ff6b35','#77dc1e','#a855f7','#f59e0b','#ec4899'];
+      function renderCharts(result, decimals) {
+        const n = result.x.length;
+        const labels = result.iterations.map(r => `k=${r.k}`);
+
+        const baseOpts = {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 600 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0d1a22',
+              borderColor: '#1a3545',
+              borderWidth: 1,
+              titleColor: '#00d4ff',
+              bodyColor: '#e8f4f8',
+              titleFont: { family: 'Space Mono', size: 10 },
+              bodyFont: { family: 'Space Mono', size: 10 }
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(26,53,69,0.5)' }, ticks: { color: '#7a9aaa', font: { family: 'Space Mono', size: 9 } } },
+            y: { grid: { color: 'rgba(26,53,69,0.5)' }, ticks: { color: '#7a9aaa', font: { family: 'Space Mono', size: 9 } } }
+          }
+        };
+
+        // Variable values per iteration chart
+        if (varChart) varChart.destroy();
+        const varDatasets = Array.from({ length: n }, (_, i) => ({
+          label: `x${i+1}`,
+          data: result.iterations.map(r => +r.xNew[i].toFixed(decimals)),
+          borderColor: COLORS[i % COLORS.length],
+          backgroundColor: COLORS[i % COLORS.length] + '18',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: COLORS[i % COLORS.length],
+          fill: false,
+          tension: 0.3
+        }));
+        varChart = new Chart(document.getElementById('varChart'), {
+          type: 'line',
+          data: { labels, datasets: varDatasets },
+          options: {
+            ...baseOpts,
+            plugins: {
+              ...baseOpts.plugins,
+              legend: { display: true, labels: { color: '#7a9aaa', font: { family: 'Space Mono', size: 9 }, boxWidth: 12 } }
+            }
+          }
+        });
+
+        // Max delta error chart
+        const deltas = result.iterations.map(r => r.maxDelta);
+        if (errChartObj) errChartObj.destroy();
+        errChartObj = new Chart(document.getElementById('errChart'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              data: deltas,
+              borderColor: '#ff6b35',
+              backgroundColor: 'rgba(255,107,53,0.08)',
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: '#ff6b35',
+              fill: true,
+              tension: 0.3
+            }]
+          },
+          options: {
+            ...baseOpts,
+            scales: {
+              ...baseOpts.scales,
+              y: { ...baseOpts.scales.y, type: deltas.some(d => d > 0) ? 'logarithmic' : 'linear' }
+            }
+          }
+        });
+
+        // Final convergence chart — all variables, more detailed
+        if (finalChartObj) finalChartObj.destroy();
+        const finalDatasets = Array.from({ length: n }, (_, i) => ({
+          label: `x${i+1}`,
+          data: result.iterations.map(r => +r.xNew[i].toFixed(decimals)),
+          borderColor: COLORS[i % COLORS.length],
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          pointRadius: 5,
+          pointBackgroundColor: COLORS[i % COLORS.length],
+          pointBorderColor: '#050a0e',
+          pointBorderWidth: 2,
+          fill: false,
+          tension: 0.35
+        }));
+        finalChartObj = new Chart(document.getElementById('finalChart'), {
+          type: 'line',
+          data: { labels, datasets: finalDatasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 800 },
+            plugins: {
+              legend: {
+                display: true,
+                labels: { color: '#e8f4f8', font: { family: 'Space Mono', size: 10 }, boxWidth: 14 }
+              },
+              tooltip: {
+                backgroundColor: '#0d1a22',
+                borderColor: '#1a3545',
+                borderWidth: 1,
+                titleColor: '#00d4ff',
+                bodyColor: '#e8f4f8',
+                titleFont: { family: 'Space Mono', size: 11 },
+                bodyFont: { family: 'Space Mono', size: 10 },
+                callbacks: {
+                  label: ctx => ` x${ctx.datasetIndex+1} = ${ctx.parsed.y}`
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(26,53,69,0.5)' },
+                ticks: { color: '#7a9aaa', font: { family: 'Space Mono', size: 10 } },
+                title: { display: true, text: 'Iteration k', color: '#7a9aaa', font: { family: 'Space Mono', size: 10 } }
+              },
+              y: {
+                grid: { color: 'rgba(26,53,69,0.5)' },
+                ticks: { color: '#7a9aaa', font: { family: 'Space Mono', size: 10 } },
+                title: { display: true, text: 'Variable Value', color: '#7a9aaa', font: { family: 'Space Mono', size: 10 } }
+              }
+            }
+          }
+        });
+      }
+
+      // ── Step Card Builder ─────────────────────────────────────
+      function buildStepCard(step) {
+        const decimals = parseInt(document.getElementById('decimals').value);
+        const fmt = v => typeof v === 'number' ? v.toFixed(decimals) : v;
+        const n = step.xOld.length;
+
+        const card = document.createElement('div');
+        card.className = 'step-card';
+
+        // Badge
+        const badge = document.createElement('div');
+        badge.className = 'step-badge';
+        badge.innerHTML = `⚙ &nbsp;ITERATION &nbsp; k = ${step.k}`;
+        card.appendChild(badge);
+
+        // Body
+        const body = document.createElement('div');
+        body.className = 'step-body';
+
+        // ── LEFT: Variable-by-variable computation ──
+        const left = document.createElement('div');
+        left.innerHTML = `
+          <div class="step-col-title">Step 1 — Compute Each Variable x<sub>i</sub></div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.67rem;color:var(--text-dim);margin-bottom:0.5rem;">
+            X<sup>(${step.k-1})</sup> = [&thinsp;<span style="color:var(--accent3)">${step.xOld.map(fmt).join(', ')}</span>&thinsp;]
+          </div>`;
+
+        const calcBox = document.createElement('div');
+        calcBox.className = 'calc-box';
+
+        step.varDetails.forEach(vd => {
+          const i = vd.i;
+          // Build sigma expression
+          const sigExpr = vd.sigmaTerms.map(t => {
+            const updTag = t.updated
+              ? `<span style="color:var(--accent);font-size:0.6rem;">(updated)</span>`
+              : `<span style="color:var(--text-dim);font-size:0.6rem;">(old)</span>`;
+            return `<span style="color:var(--accent)">${fmt(t.aij)}</span>` +
+              `<span style="color:var(--text-dim)">×</span>` +
+              `<span style="color:${t.updated ? 'var(--accent)' : 'var(--accent3)'}">(${fmt(t.xj)})</span>${updTag}`;
+          }).join(`<span style="color:var(--accent2);padding:0 2px">+</span>`);
+
+          const formula = document.createElement('div');
+          formula.style = 'margin-bottom:0.7rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);';
+          formula.innerHTML = `
+            <div class="calc-row" style="flex-wrap:wrap;">
+              <span class="calc-label">x<sub>${i+1}</sub> =</span>
+              <span style="font-size:0.65rem;color:var(--text-dim);">(${fmt(vd.bi)} − [${sigExpr}]) / ${fmt(vd.aii)}</span>
+            </div>
+            <div class="calc-row">
+              <span class="calc-label"></span>
+              <span style="color:var(--text-dim);">= (${fmt(vd.bi)} − ${fmt(vd.sigma)}) / ${fmt(vd.aii)}</span>
+              <span class="calc-arrow">=</span>
+              <span class="calc-result">${fmt(vd.newXi)}</span>
+            </div>`;
+          calcBox.appendChild(formula);
+        });
+        left.appendChild(calcBox);
+
+        // New X vector display — use createElement to avoid innerHTML += destroying calcBox
+        const xTitle = document.createElement('div');
+        xTitle.className = 'step-col-title';
+        xTitle.style.marginTop = '0.8rem';
+        xTitle.innerHTML = `Updated X<sup>(${step.k})</sup>`;
+        left.appendChild(xTitle);
+
+        const xRow = document.createElement('div');
+        xRow.style = 'display:flex;gap:4px;align-items:center;flex-wrap:wrap;';
+        const bracketL = document.createElement('span');
+        bracketL.style.cssText = 'color:var(--accent);font-size:1.3rem;';
+        bracketL.textContent = '[';
+        xRow.appendChild(bracketL);
+        const xCol = document.createElement('div');
+        xCol.style = 'display:flex;flex-direction:column;gap:3px;';
+        step.xNew.forEach(v => {
+          const d = document.createElement('div');
+          d.className = 'vec-cell new-val';
+          d.textContent = fmt(v);
+          xCol.appendChild(d);
+        });
+        xRow.appendChild(xCol);
+        const bracketR = document.createElement('span');
+        bracketR.style.cssText = 'color:var(--accent);font-size:1.3rem;';
+        bracketR.textContent = ']';
+        xRow.appendChild(bracketR);
+        left.appendChild(xRow);
+        body.appendChild(left);
+
+        // ── RIGHT: Error analysis ──
+        const right = document.createElement('div');
+        const rightTitle = document.createElement('div');
+        rightTitle.className = 'step-col-title';
+        rightTitle.textContent = 'Step 2 — Error Analysis';
+        right.appendChild(rightTitle);
+
+        const errBox = document.createElement('div');
+        errBox.className = 'calc-box';
+        const tol = parseFloat(document.getElementById('tolerance').value) || 1e-4;
+
+        // Per-variable delta rows
+        step.deltas.forEach((d, i) => {
+          const isGood = d < tol;
+          const row = document.createElement('div');
+          row.className = 'calc-row';
+          row.innerHTML = `
+            <span class="calc-label">Δx<sub>${i+1}</sub> =</span>
+            <span style="color:var(--text-dim);">|${fmt(step.xNew[i])} − ${fmt(step.xOld[i])}|</span>
+            <span class="calc-arrow">=</span>
+            <span class="${isGood ? 'err-chip good' : 'err-chip warn'}">${d.toExponential(3)}</span>`;
+          errBox.appendChild(row);
+        });
+
+        const sepDiv = document.createElement('div');
+        sepDiv.className = 'sep';
+        sepDiv.style.margin = '0.4rem 0';
+        errBox.appendChild(sepDiv);
+
+        const maxRow = document.createElement('div');
+        maxRow.className = 'calc-row';
+        maxRow.innerHTML = `<span class="calc-label">Max Δx:</span><span class="calc-result" style="font-size:1rem;">${step.maxDelta.toExponential(4)}</span>`;
+        errBox.appendChild(maxRow);
+        right.appendChild(errBox);
+
+        // Convergence bar (DOM-safe)
+        const logRatio = step.maxDelta > 0 ? Math.max(0, Math.min(100, 100 - (Math.log10(step.maxDelta) - Math.log10(tol)) / (Math.log10(1) - Math.log10(tol)) * 100)) : 100;
+        const convWrap = document.createElement('div');
+        convWrap.className = 'conv-bar-wrap';
+        const convLabel = document.createElement('div');
+        convLabel.className = 'conv-bar-label';
+        convLabel.innerHTML = `<span>Convergence</span><span>${step.converged ? '✓ Converged' : 'In Progress'}</span>`;
+        const convTrack = document.createElement('div');
+        convTrack.className = 'conv-bar-track';
+        const convFill = document.createElement('div');
+        convFill.className = 'conv-bar-fill';
+        convFill.style.width = (step.converged ? 100 : Math.min(99, logRatio)) + '%';
+        convTrack.appendChild(convFill);
+        convWrap.appendChild(convLabel);
+        convWrap.appendChild(convTrack);
+        right.appendChild(convWrap);
+
+        body.appendChild(right);
+
+        // ── THIRD COLUMN: Mini Line Chart (up to this iteration) ──
+        const chartPanel = document.createElement('div');
+        chartPanel.className = 'step-chart-panel';
+
+        const chartColTitle = document.createElement('div');
+        chartColTitle.className = 'step-col-title';
+        chartColTitle.textContent = 'Step 3 — Convergence Graph';
+        chartPanel.appendChild(chartColTitle);
+
+        // Subtitle: "k=1 to k=N so far"
+        const chartSub = document.createElement('div');
+        chartSub.style.cssText = 'font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.4rem;';
+        chartSub.textContent = `Iterations k=1 → k=${step.k} (up to this step)`;
+        chartPanel.appendChild(chartSub);
+
+        // Mini line chart — all steps up to and including this one
+        const miniChartWrap = document.createElement('div');
+        miniChartWrap.className = 'step-mini-chart-wrap';
+        miniChartWrap.style.height = '155px';
+        const miniCanvas = document.createElement('canvas');
+        miniCanvas.width = 300;
+        miniCanvas.height = 155;
+        miniCanvas.style.cssText = 'width:100%;height:155px;display:block;';
+        miniChartWrap.appendChild(miniCanvas);
+        chartPanel.appendChild(miniChartWrap);
+
+        // Render mini chart after DOM insertion (use setTimeout)
+        const stepsUpToNow = stepsData.slice(0, step.k); // k is 1-indexed, slice is 0-indexed
+        const miniLabels = stepsUpToNow.map(s => `k=${s.k}`);
+        const nVars = step.xNew.length;
+        const miniDatasets = Array.from({ length: nVars }, (_, vi) => ({
+          label: `x${vi+1}`,
+          data: stepsUpToNow.map(s => +s.xNew[vi].toFixed(decimals)),
+          borderColor: COLORS[vi % COLORS.length],
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: COLORS[vi % COLORS.length],
+          pointBorderColor: '#050a0e',
+          pointBorderWidth: 1.5,
+          fill: false,
+          tension: 0.35
+        }));
+
+        // Highlight current step's point
+        miniDatasets.forEach((ds, vi) => {
+          ds.pointRadius = stepsUpToNow.map((s, idx) => idx === step.k - 1 ? 6 : 3);
+          ds.pointHoverRadius = 7;
+        });
+
+        setTimeout(() => {
+          new Chart(miniCanvas, {
+            type: 'line',
+            data: { labels: miniLabels, datasets: miniDatasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 400 },
+              plugins: {
+                legend: {
+                  display: n <= 4,
+                  labels: { color: '#7a9aaa', font: { family: 'Space Mono', size: 8 }, boxWidth: 10, padding: 6 }
+                },
+                tooltip: {
+                  backgroundColor: '#0d1a22',
+                  borderColor: '#1a3545',
+                  borderWidth: 1,
+                  titleColor: '#00d4ff',
+                  bodyColor: '#e8f4f8',
+                  titleFont: { family: 'Space Mono', size: 9 },
+                  bodyFont: { family: 'Space Mono', size: 9 }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { color: 'rgba(26,53,69,0.5)' },
+                  ticks: { color: '#7a9aaa', font: { family: 'Space Mono', size: 8 } }
+                },
+                y: {
+                  grid: { color: 'rgba(26,53,69,0.5)' },
+                  ticks: { color: '#7a9aaa', font: { family: 'Space Mono', size: 8 }, maxTicksLimit: 5 }
+                }
+              }
+            }
+          });
+        }, 0);
+
+        // Mini bar: current iteration variable magnitudes
+        const barTitle = document.createElement('div');
+        barTitle.className = 'step-col-title';
+        barTitle.style.marginTop = '0.6rem';
+        barTitle.textContent = `Current X(${step.k}) Values`;
+        chartPanel.appendChild(barTitle);
+
+        const barWrap = document.createElement('div');
+        const maxAbsVal = Math.max(...step.xNew.map(Math.abs), 1);
+        step.xNew.forEach((v, i) => {
+          const pct = Math.min(100, (Math.abs(v) / maxAbsVal) * 100);
+          const color = COLORS[i % COLORS.length];
+          const barItem = document.createElement('div');
+          barItem.style.marginBottom = '0.45rem';
+          const barLabel = document.createElement('div');
+          barLabel.style.cssText = 'display:flex;justify-content:space-between;font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:2px;';
+          barLabel.innerHTML = `<span>x<sub>${i+1}</sub></span><span style="color:${color};">${fmt(v)}</span>`;
+          const barTrack = document.createElement('div');
+          barTrack.style.cssText = 'height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;';
+          const barFill = document.createElement('div');
+          barFill.style.cssText = `width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width 0.4s;`;
+          barTrack.appendChild(barFill);
+          barItem.appendChild(barLabel);
+          barItem.appendChild(barTrack);
+          barWrap.appendChild(barItem);
+        });
+        chartPanel.appendChild(barWrap);
+
+        body.appendChild(chartPanel);
+        card.appendChild(body);
+
+        // Summary bar
+        const summary = document.createElement('div');
+        summary.className = 'step-summary';
+        summary.innerHTML = `
+          <span style="color:var(--text-dim);">X<sup>(${step.k-1})</sup>:</span>
+          <span style="color:var(--accent3)">[${step.xOld.map(fmt).join(', ')}]</span>
+          <span style="color:var(--accent2);">→</span>
+          <span style="color:var(--text-dim);">X<sup>(${step.k})</sup>:</span>
+          <span style="color:var(--accent)">[${step.xNew.map(fmt).join(', ')}]</span>
+          <span style="color:var(--accent2);">→</span>
+          <span style="color:var(--text-dim);">Max Δx:</span>
+          <span style="color:${step.converged ? 'var(--accent3)' : 'var(--accent2)'}">${step.maxDelta.toExponential(3)}</span>
+          ${step.converged ? '<span style="color:var(--accent3);">✓ Converged</span>' : ''}`;
+        card.appendChild(summary);
+
+        return card;
+      }
+
+      function renderStep(idx) {
+        const c = document.getElementById('stepCardContainer');
+        c.innerHTML = '';
+        c.appendChild(buildStepCard(stepsData[idx]));
+      }
+
+      function changeStep(dir) {
+        currentStep = Math.max(0, Math.min(stepsData.length - 1, currentStep + dir));
+        renderStep(currentStep);
+        updateNav();
+      }
+
+      function updateNav() {
+        document.getElementById('prevBtn').disabled = currentStep === 0;
+        document.getElementById('nextBtn').disabled = currentStep === stepsData.length - 1;
+        document.getElementById('stepCounter').textContent = `Step ${currentStep + 1} / ${stepsData.length}`;
+      }
+
+      function toggleAllSteps() {
+        showingAll = !showingAll;
+        document.getElementById('toggleAllBtn').textContent = showingAll ? 'Show One Step' : 'Show All Steps';
+        document.getElementById('singleStepView').style.display = showingAll ? 'none' : 'block';
+        document.getElementById('allStepsView').style.display = showingAll ? 'block' : 'none';
+        if (showingAll) {
+          const c = document.getElementById('allStepsContainer');
+          c.innerHTML = '';
+          stepsData.forEach(s => c.appendChild(buildStepCard(s)));
+        }
+      }
+
+      function showError(msg) {
+        const el = document.getElementById('errorAlert');
+        el.textContent = '✕ Error: ' + msg;
+        el.style.display = 'block';
+      }
+
+      function resetAll() {
+        document.getElementById('errorAlert').style.display = 'none';
+        document.getElementById('successAlert').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('resultsContent').style.display = 'none';
+        if (varChart) { varChart.destroy(); varChart = null; }
+        if (errChartObj) { errChartObj.destroy(); errChartObj = null; }
+        if (finalChartObj) { finalChartObj.destroy(); finalChartObj = null; }
+        stepsData = [];
+        currentStep = 0;
+        showingAll = false;
+        generateMatrix();
+      }
+
+      // ── Init ──────────────────────────────────────────────────
+      generateMatrix();
+
+      // ── Background Animation ──────────────────────────────────
+      (() => {
+        const gridCv = document.getElementById('bgGrid');
+        const partCv = document.getElementById('bgParticles');
+        const symbolsWrap = document.getElementById('bgSymbols');
+        if (!gridCv || !partCv || !symbolsWrap) return;
+        const gctx = gridCv.getContext('2d');
+        const pctx = partCv.getContext('2d');
+        const palette = ['#00d4ff', '#7c3aed', '#77dc1e'];
+        const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+        const particles = [];
+        const particleCount = 90;
+        let w = 0, h = 0, dpr = 1;
+
+        function resize() {
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          w = window.innerWidth; h = window.innerHeight;
+          [gridCv, partCv].forEach(cv => {
+            cv.width = Math.floor(w * dpr); cv.height = Math.floor(h * dpr);
+            cv.style.width = w + 'px'; cv.style.height = h + 'px';
+          });
+          gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function seedParticles() {
+          particles.length = 0;
+          for (let i = 0; i < particleCount; i++)
+            particles.push({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, r: 1.5 + Math.random() * 2.3, c: palette[(Math.random() * palette.length) | 0] });
+        }
+
+        function seedSymbols() {
+          const symbols = ['∑', 'σ', 'Δ', '∂', 'x₁', 'x₂', 'aᵢⱼ', '∫', 'bᵢ', 'Ax=b', '∞'];
+          symbolsWrap.innerHTML = '';
+          for (let i = 0; i < 22; i++) {
+            const s = document.createElement('span');
+            const type = i % 3 === 1 ? 'violet' : i % 3 === 2 ? 'mint' : '';
+            s.className = 'bg-symbol ' + type;
+            s.textContent = symbols[i % symbols.length];
+            s.style.left = Math.random() * 98 + '%';
+            s.style.top = 80 + Math.random() * 50 + '%';
+            s.style.fontSize = 13 + Math.random() * 20 + 'px';
+            s.style.animationDuration = 22 + Math.random() * 20 + 's';
+            s.style.animationDelay = -Math.random() * 26 + 's';
+            symbolsWrap.appendChild(s);
+          }
+        }
+
+        function drawGrid(t) {
+          gctx.clearRect(0, 0, w, h);
+          const gap = 56, ox = (t * 0.008) % gap, oy = (t * 0.005) % gap;
+          gctx.strokeStyle = 'rgba(0,212,255,.11)'; gctx.lineWidth = 1;
+          for (let x = -gap; x < w + gap; x += gap) { gctx.beginPath(); gctx.moveTo(x + ox, 0); gctx.lineTo(x + ox, h); gctx.stroke(); }
+          for (let y = -gap; y < h + gap; y += gap) { gctx.beginPath(); gctx.moveTo(0, y + oy); gctx.lineTo(w, y + oy); gctx.stroke(); }
+          gctx.strokeStyle = 'rgba(124,58,237,.08)';
+          for (let x = -h; x < w + h; x += gap * 1.5) { gctx.beginPath(); gctx.moveTo(x - ox * 0.7, 0); gctx.lineTo(x + h - oy * 0.7, h); gctx.stroke(); }
+        }
+
+        function drawParticles() {
+          pctx.clearRect(0, 0, w, h);
+          for (const p of particles) {
+            p.x += p.vx; p.y += p.vy;
+            if (p.x < 0 || p.x > w) p.vx *= -1;
+            if (p.y < 0 || p.y > h) p.vy *= -1;
+          }
+          for (let i = 0; i < particles.length; i++) {
+            const a = particles[i];
+            for (let j = i + 1; j < particles.length; j++) {
+              const b = particles[j], dx = a.x - b.x, dy = a.y - b.y, dist = Math.hypot(dx, dy);
+              if (dist < 120) { pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`; pctx.lineWidth = 1; pctx.beginPath(); pctx.moveTo(a.x, a.y); pctx.lineTo(b.x, b.y); pctx.stroke(); }
+            }
+            if (mouse.active) {
+              const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+              if (md < mouse.r) { const alpha = (1 - md / mouse.r) * 0.45; pctx.strokeStyle = `rgba(124,58,237,${alpha})`; pctx.beginPath(); pctx.moveTo(a.x, a.y); pctx.lineTo(mouse.x, mouse.y); pctx.stroke(); }
+            }
+          }
+          for (const p of particles) {
+            const near = mouse.active ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r : false;
+            pctx.beginPath(); pctx.fillStyle = p.c; pctx.globalAlpha = near ? 1 : 0.82;
+            pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2); pctx.fill();
+            if (near) { pctx.beginPath(); pctx.globalAlpha = 0.15; pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2); pctx.fill(); }
+          }
+          pctx.globalAlpha = 1;
+        }
+
+        function loop(t) { drawGrid(t); drawParticles(); requestAnimationFrame(loop); }
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true; });
+        window.addEventListener('mouseleave', () => { mouse.active = false; });
+        window.addEventListener('resize', resize);
+        resize(); seedParticles(); seedSymbols();
+        requestAnimationFrame(loop);
+      })();
+    
+      // expose to global scope
+      window.switchTab = switchTab;
+      window.generateMatrix = generateMatrix;
+      window.loadExample = loadExample;
+      window.randomMatrix = randomMatrix;
+      window.parseEquation = parseEquation;
+      window.runGaussSeidel = runGaussSeidel;
+      window.resetAll = resetAll;
+      window.changeStep = changeStep;
+      window.toggleAllSteps = toggleAllSteps;
+
+})();
+</script></script>
+  </body>
+</html>

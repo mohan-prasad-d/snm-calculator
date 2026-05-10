@@ -1,0 +1,3205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Adams–Bashforth Method Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+        position: relative;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+      .func-input-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .func-input-wrap input[type="text"] {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-size: 1rem;
+        padding: 0.3rem 0;
+        width: 100%;
+      }
+      .func-input-wrap input[type="text"]:focus {
+        box-shadow: none;
+        border: none;
+      }
+      .func-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .func-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        margin-top: 0.4rem;
+        line-height: 1.7;
+      }
+      .func-hint span {
+        color: var(--accent3);
+      }
+      .field-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-top: 0.3rem;
+        padding: 0.3rem 0.5rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.2);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .field-desc .eg {
+        color: var(--accent3);
+      }
+      .field-desc .warn {
+        color: var(--accent2);
+      }
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      .full-width {
+        grid-column: 1/-1;
+      }
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.61rem;
+        color: var(--text);
+        line-height: 1.75;
+        z-index: 99;
+        width: 260px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.64rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 260px;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .final-chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+      }
+      .iter-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        width: 100%;
+        min-width: 540px;
+      }
+      .iter-table th {
+        padding: 0.45rem 0.7rem;
+        text-align: right;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .iter-table th:first-child,
+      .iter-table th:nth-child(5) {
+        text-align: center;
+      }
+      .iter-table td {
+        padding: 0.3rem 0.7rem;
+        text-align: right;
+        border-bottom: 1px solid rgba(26, 53, 69, 0.4);
+        white-space: nowrap;
+      }
+      .iter-table td:first-child {
+        text-align: center;
+        color: var(--text-dim);
+      }
+      .iter-table td.x-col {
+        color: var(--accent);
+      }
+      .iter-table td.fx-col {
+        color: var(--text);
+      }
+      .iter-table td.coeff-col {
+        text-align: center;
+        color: var(--accent2);
+        font-weight: 700;
+      }
+      .iter-table td.area-col {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .iter-table tr.endpoint-row td {
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .iter-table tr.endpoint-row td.x-col {
+        color: var(--accent2);
+      }
+      .iter-table tr:last-child td {
+        border-bottom: none;
+      }
+      .iter-table tfoot td {
+        border-top: 2px solid var(--border);
+        padding-top: 0.6rem;
+        font-weight: 700;
+      }
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 900px) {
+        .step-body {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .calc-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .calc-label {
+        color: var(--text-dim);
+        min-width: 76px;
+        flex-shrink: 0;
+      }
+      .calc-result {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .mini-val-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        width: 100%;
+      }
+      .mini-val-table td {
+        padding: 0.28rem 0.5rem;
+        border: 1px solid rgba(26, 53, 69, 0.6);
+      }
+      .mini-val-table td:first-child {
+        color: var(--text-dim);
+      }
+      .mini-val-table td:last-child {
+        color: var(--text);
+        text-align: right;
+        font-weight: 600;
+      }
+      .mini-val-table tr.highlight td:last-child {
+        color: var(--accent3);
+      }
+      .mini-val-table tr.pivRow td:last-child {
+        color: var(--accent);
+      }
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .all-steps-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .step-graph-wrap {
+        grid-column: 1 / -1;
+        margin-top: 1rem;
+      }
+      .step-graph-wrap .graph-box {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.7rem;
+        overflow: hidden;
+      }
+      .step-graph-wrap canvas {
+        width: 100%;
+        height: 240px;
+        display: block;
+      }
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+      .trap-canvas-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      .trap-canvas-wrap canvas {
+        width: 100%;
+        height: 220px;
+        display: block;
+      }
+      .accuracy-bar-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .acc-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .acc-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        margin-bottom: 0.4rem;
+      }
+      .acc-label {
+        color: var(--text-dim);
+        min-width: 90px;
+      }
+      .acc-track {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .acc-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s;
+      }
+      .acc-val {
+        color: var(--accent3);
+        min-width: 100px;
+        text-align: right;
+      }
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+      .phase-badge {
+        display: inline-block;
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      .phase-rk4 {
+        background: rgba(255, 107, 53, 0.15);
+        border: 1px solid rgba(255, 107, 53, 0.35);
+        color: var(--accent2);
+      }
+      .phase-ab {
+        background: rgba(119, 220, 30, 0.12);
+        border: 1px solid rgba(119, 220, 30, 0.3);
+        color: var(--accent3);
+      }
+      .phase-init {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">
+          Numerical Methods &mdash; Ordinary Differential Equations
+        </div>
+        <h1>Adams&ndash;Bashforth Method</h1>
+        <p>
+          Solve &nbsp; dy/dx = f(x,y) &nbsp; using explicit multistep prediction
+          with RK4 starting values
+        </p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── INPUT PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">ODE Function &amp; Parameters</div>
+
+          <!-- f(x,y) -->
+          <div
+            class="func-label"
+            style="display: flex; align-items: center; gap: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 1</span> &mdash; Enter the
+            ODE: dy/dx = f(x, y)
+            <span class="info-btn" onclick="togglePop('pop-fx')">?</span>
+            <div class="info-popup" id="pop-fx" style="z-index: 200">
+              <div class="pop-title">What is f(x, y)?</div>
+              This is the right-hand side of the ODE.<br />
+              The equation is of the form:<br /><br />
+              <strong style="color: var(--accent3)">dy/dx = f(x, y)</strong
+              ><br /><br />
+              Example:
+              <strong style="color: var(--accent3)">x + y</strong> &rarr; dy/dx
+              = x+y<br />
+              Example: <strong style="color: var(--accent3)">-y</strong> &rarr;
+              dy/dx = -y<br /><br />
+              Supports: x, y, +, -, *, /, ^, sin, cos, exp, log
+            </div>
+          </div>
+          <div class="func-input-wrap">
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.65rem;
+                color: var(--text-dim);
+                margin-bottom: 0.3rem;
+              "
+            >
+              dy/dx =
+            </div>
+            <input
+              type="text"
+              id="funcInput"
+              value="x + y"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="e.g. x + y"
+            />
+            <div class="func-hint">
+              <span style="color: var(--accent2)">Power:</span>
+              <span>x^2</span> &nbsp;
+              <span style="color: var(--accent2)">Trig:</span>
+              <span>sin(x)</span> <span>cos(x)</span> &nbsp;
+              <span style="color: var(--accent2)">Other:</span>
+              <span>exp(x)</span> <span>log(x)</span> <span>sqrt(x)</span>
+            </div>
+          </div>
+
+          <!-- x0, y0 -->
+          <div
+            class="func-label"
+            style="display: flex; align-items: center; gap: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 2</span> &mdash; Set
+            initial conditions
+            <span class="info-btn" onclick="togglePop('pop-ic')">?</span>
+            <div class="info-popup" id="pop-ic" style="z-index: 200">
+              <div class="pop-title">Initial Conditions</div>
+              The ODE requires a starting point:<br /><br />
+              <strong>x&#x2080;</strong> = initial x value<br />
+              <strong>y&#x2080;</strong> = value of y at x&#x2080;<br /><br />
+              Example: y(0) = 1 means x&#x2080;=0, y&#x2080;=1
+            </div>
+          </div>
+          <div class="controls-row" style="margin-bottom: 0.4rem">
+            <div class="control-group">
+              <label
+                >Initial x &nbsp;<span
+                  style="color: var(--accent); font-size: 0.75rem"
+                  >x&#x2080;</span
+                ></label
+              >
+              <input
+                type="number"
+                id="x0Input"
+                value="0"
+                step="any"
+                placeholder="e.g. 0"
+              />
+              <div class="field-desc">
+                Starting x value. <span class="eg">Usually 0.</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label
+                >Initial y &nbsp;<span
+                  style="color: var(--accent); font-size: 0.75rem"
+                  >y&#x2080;</span
+                ></label
+              >
+              <input
+                type="number"
+                id="y0Input"
+                value="1"
+                step="any"
+                placeholder="e.g. 1"
+              />
+              <div class="field-desc">
+                Value of y at x&#x2080;.
+                <span class="eg"
+                  >From the initial condition y(x&#x2080;) = y&#x2080;.</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- h and n -->
+          <div class="controls-row" style="margin-top: 0.8rem">
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.3rem">
+                Step Size &nbsp;<span
+                  style="color: var(--accent); font-size: 0.75rem"
+                  >h</span
+                >
+                <span class="info-btn" onclick="togglePop('pop-h')">?</span>
+                <div class="info-popup" id="pop-h" style="z-index: 200">
+                  <div class="pop-title">Step Size (h)</div>
+                  The increment in x between each step.<br /><br />
+                  Smaller h = more accurate results<br />
+                  but more computation.<br /><br />
+                  h = 0.1 &rarr; steps at x = 0, 0.1, 0.2, &hellip;<br />
+                  h = 0.2 &rarr; steps at x = 0, 0.2, 0.4, &hellip;
+                </div>
+              </label>
+              <input
+                type="number"
+                id="stepInput"
+                value="0.1"
+                step="any"
+                min="0.0001"
+                placeholder="e.g. 0.1"
+              />
+              <div class="field-desc">
+                Width of each step. <span class="eg">Try 0.1 or 0.2.</span>
+                <span class="warn">Must be &gt; 0.</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.3rem">
+                Number of Steps &nbsp;<span
+                  style="color: var(--accent); font-size: 0.75rem"
+                  >n</span
+                >
+                <span class="info-btn" onclick="togglePop('pop-n')">?</span>
+                <div class="info-popup" id="pop-n" style="z-index: 200">
+                  <div class="pop-title">Number of Steps (n)</div>
+                  Total steps to compute.<br /><br />
+                  Includes RK4 starter steps and<br />
+                  Adams&ndash;Bashforth prediction steps.<br /><br />
+                  4-step AB needs n &ge; 4<br />
+                  3-step AB needs n &ge; 3<br />
+                  2-step AB needs n &ge; 2
+                </div>
+              </label>
+              <input
+                type="number"
+                id="nStepsInput"
+                value="6"
+                min="2"
+                max="200"
+                placeholder="e.g. 6"
+              />
+              <div class="field-desc">
+                Total steps to compute.
+                <span class="eg">AB steps = n &minus; (starters&minus;1).</span>
+                <span class="warn">Max 200.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Method and decimals -->
+          <div class="controls-row">
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.3rem">
+                AB Method
+                <span class="info-btn" onclick="togglePop('pop-meth')">?</span>
+                <div class="info-popup" id="pop-meth" style="z-index: 200">
+                  <div class="pop-title">Adams&ndash;Bashforth Variant</div>
+                  <strong>2-step:</strong> uses 2 previous f-values<br />
+                  Needs 1 RK4 starter<br /><br />
+                  <strong>3-step:</strong> uses 3 previous f-values<br />
+                  Needs 2 RK4 starters<br /><br />
+                  <strong>4-step:</strong> uses 4 previous f-values<br />
+                  Needs 3 RK4 starters (most accurate)
+                </div>
+              </label>
+              <select id="methodSelect">
+                <option value="2-step">2-Step AB</option>
+                <option value="3-step">3-Step AB</option>
+                <option value="4-step" selected>4-Step AB</option>
+              </select>
+              <div class="field-desc">
+                Higher order = more accurate.
+                <span class="eg">4-step is standard textbook choice.</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label style="display: flex; align-items: center; gap: 0.3rem">
+                Decimal Places
+                <span class="info-btn" onclick="togglePop('pop-dec')">?</span>
+                <div class="info-popup" id="pop-dec" style="z-index: 200">
+                  <div class="pop-title">Decimal Places</div>
+                  How many digits to show after the<br />
+                  decimal point in the results.<br /><br />
+                  This is display only &mdash; it does not<br />
+                  affect calculation accuracy.
+                </div>
+              </label>
+              <input type="number" id="decimals" value="6" min="2" max="12" />
+              <div class="field-desc">
+                Digits in result table.
+                <span class="eg">Display only, not accuracy.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Examples -->
+          <div
+            class="func-label"
+            style="margin-bottom: 0.4rem; margin-top: 0.4rem"
+          >
+            <span style="color: var(--accent2)">STEP 3</span> &mdash; Or pick a
+            ready example
+          </div>
+          <div class="examples-strip">
+            <span
+              class="ex-chip"
+              onclick="loadEx(0)"
+              title="dy/dx = x+y, y(0)=1"
+              >y'=x+y</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(1)"
+              title="dy/dx = y-x^2+1, y(0)=0.5"
+              >y'=y-x&sup2;+1</span
+            >
+            <span class="ex-chip" onclick="loadEx(2)" title="dy/dx = -y, y(0)=1"
+              >y'=&minus;y</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(3)"
+              title="dy/dx = 2xy, y(0)=1"
+              >y'=2xy</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(4)"
+              title="dy/dx = x-y+2, y(0)=2"
+              >y'=x&minus;y+2</span
+            >
+            <span
+              class="ex-chip"
+              onclick="loadEx(5)"
+              title="dy/dx = x*y, y(1)=1"
+              >y'=xy</span
+            >
+          </div>
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.56rem;
+              color: var(--text-dim);
+              margin-top: 0.3rem;
+            "
+          >
+            Click any chip to auto-fill the ODE parameters
+          </div>
+        </div>
+
+        <!-- ── INFO / FORMULA PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Method Overview</div>
+
+          <!-- Phase 1: RK4 -->
+          <div
+            style="
+              background: rgba(255, 107, 53, 0.06);
+              border: 1px solid rgba(255, 107, 53, 0.2);
+              border-radius: 10px;
+              padding: 1rem;
+              margin-bottom: 1rem;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.6rem;
+                color: var(--accent2);
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                margin-bottom: 0.7rem;
+              "
+            >
+              PHASE 1 &mdash; RK4 STARTING VALUES
+            </div>
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.72rem;
+                color: var(--text);
+                line-height: 2.1;
+              "
+            >
+              <span style="color: var(--accent3)">k&#x2081;</span> = h &middot;
+              f(x&#x2099;, y&#x2099;)<br />
+              <span style="color: var(--accent3)">k&#x2082;</span> = h &middot;
+              f(x&#x2099;+h/2, y&#x2099;+k&#x2081;/2)<br />
+              <span style="color: var(--accent3)">k&#x2083;</span> = h &middot;
+              f(x&#x2099;+h/2, y&#x2099;+k&#x2082;/2)<br />
+              <span style="color: var(--accent3)">k&#x2084;</span> = h &middot;
+              f(x&#x2099;+h, y&#x2099;+k&#x2083;)<br /><br />
+              <span style="color: var(--accent)"
+                >y&#x2099;&#x208A;&#x2081;</span
+              >
+              = y&#x2099; + (1/6)(k&#x2081; + 2k&#x2082; + 2k&#x2083; +
+              k&#x2084;)
+            </div>
+          </div>
+
+          <!-- Phase 2: AB formulas -->
+          <div
+            style="
+              background: rgba(0, 0, 0, 0.25);
+              border: 1px solid var(--border);
+              border-radius: 10px;
+              padding: 1rem;
+              margin-bottom: 1.2rem;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.6rem;
+                color: var(--accent);
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                margin-bottom: 0.7rem;
+              "
+            >
+              PHASE 2 &mdash; ADAMS&ndash;BASHFORTH FORMULAS
+            </div>
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.72rem;
+                color: var(--text);
+                line-height: 2.2;
+              "
+            >
+              <span style="color: var(--accent2)">2-step:</span>&nbsp;
+              y&#x2099;&#x208A;&#x2081; = y&#x2099; + h/2 [3f&#x2099; &minus;
+              f&#x2099;&#x208B;&#x2081;]<br />
+              <span style="color: var(--accent2)">3-step:</span>&nbsp;
+              y&#x2099;&#x208A;&#x2081; = y&#x2099; + h/12 [23f&#x2099; &minus;
+              16f&#x2099;&#x208B;&#x2081; + 5f&#x2099;&#x208B;&#x2082;]<br />
+              <span style="color: var(--accent2)">4-step:</span>&nbsp;
+              y&#x2099;&#x208A;&#x2081; = y&#x2099; + h/24 [55f&#x2099; &minus;
+              59f&#x2099;&#x208B;&#x2081; + 37f&#x2099;&#x208B;&#x2082; &minus;
+              9f&#x2099;&#x208B;&#x2083;]
+            </div>
+          </div>
+
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.63rem;
+              color: var(--text-dim);
+              line-height: 2;
+              margin-bottom: 1rem;
+            "
+          >
+            <strong style="color: var(--accent)"
+              >How the calculation works:</strong
+            ><br />
+            <span style="color: var(--accent2)">&#x2460;</span> Use RK4 to
+            compute the required starting values<br />
+            <span style="color: var(--accent2)">&#x2461;</span> Evaluate
+            f(x&#x2099;, y&#x2099;) at each known point<br />
+            <span style="color: var(--accent2)">&#x2462;</span> Apply weighted
+            combination of previous slopes<br />
+            <span style="color: var(--accent2)">&#x2463;</span> Predict
+            y&#x2099;&#x208A;&#x2081; using the explicit AB formula<br />
+            <span style="color: var(--accent2)">&#x2464;</span> Repeat using the
+            newly computed point
+          </div>
+
+          <div
+            style="
+              background: rgba(119, 220, 30, 0.05);
+              border: 1px solid rgba(119, 220, 30, 0.18);
+              border-radius: 8px;
+              padding: 0.75rem 1rem;
+              margin-bottom: 1rem;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.6rem;
+                color: var(--accent3);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                margin-bottom: 0.4rem;
+              "
+            >
+              KEY INSIGHT
+            </div>
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.7rem;
+                color: var(--text);
+                line-height: 1.9;
+              "
+            >
+              Adams&ndash;Bashforth uses <em>previous slopes</em> to predict the
+              next value<br />
+              <span style="color: var(--text-dim); font-size: 0.62rem"
+                >Higher-order methods use more past data for greater
+                accuracy</span
+              >
+            </div>
+          </div>
+
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runTrap()">
+              &#9654; Solve ODE
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+              &#10005; Reset
+            </button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+        </div>
+
+        <!-- ── RESULTS PANEL ── -->
+        <div class="panel full-width" style="animation-delay: 0.2s">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">dy/dx</span>
+            Enter dy/dx = f(x, y), set initial conditions and step size,<br />
+            then click <strong>Solve ODE</strong> to compute the numerical
+            solution.
+          </div>
+
+          <div id="resultsContent" style="display: none">
+            <!-- Stat cards -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="statResult">—</div>
+                <div class="stat-label">Final y Value</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statH">—</div>
+                <div class="stat-label">Step Size h</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statN">—</div>
+                <div class="stat-label">Total Steps n</div>
+              </div>
+              <div class="stat-card">
+                <div
+                  class="stat-value"
+                  id="statExact"
+                  style="font-size: 0.9rem"
+                >
+                  —
+                </div>
+                <div class="stat-label">AB Method</div>
+              </div>
+            </div>
+
+            <!-- Result banner -->
+            <div class="solution-display">
+              <div class="sol-title">
+                ODE Solution &mdash; Adams&ndash;Bashforth Numerical Result
+              </div>
+              <div class="sol-values" id="solutionDisplay"></div>
+            </div>
+
+            <!-- ODE Solution Canvas -->
+            <div class="chart-title">
+              Solution Curve &mdash; y(x) Numerical Solution
+            </div>
+            <div class="trap-canvas-wrap">
+              <canvas id="trapCanvas"></canvas>
+            </div>
+
+            <!-- Phase distribution bar -->
+            <div class="accuracy-bar-wrap" id="accBarWrap">
+              <div class="acc-title">Step Phase Distribution</div>
+              <div class="acc-row">
+                <span class="acc-label" style="color: var(--accent2)"
+                  >RK4 Starters</span
+                >
+                <div class="acc-track">
+                  <div
+                    class="acc-fill"
+                    id="accFillTrap"
+                    style="background: var(--accent2); width: 0%"
+                  ></div>
+                </div>
+                <span
+                  class="acc-val"
+                  id="accValTrap"
+                  style="color: var(--accent2)"
+                  >—</span
+                >
+              </div>
+              <div class="acc-row">
+                <span class="acc-label" style="color: var(--accent3)"
+                  >AB Steps</span
+                >
+                <div class="acc-track">
+                  <div
+                    class="acc-fill"
+                    id="accFillErr"
+                    style="background: var(--accent3); width: 0%"
+                  ></div>
+                </div>
+                <span
+                  class="acc-val"
+                  id="accValErr"
+                  style="color: var(--accent3)"
+                  >—</span
+                >
+              </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-row">
+              <div>
+                <div class="chart-title">Solution y(x) at Each Step</div>
+                <div class="chart-wrap"><canvas id="fxChart"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title">
+                  Slope f(x&#x2099;, y&#x2099;) at Each Step
+                </div>
+                <div class="chart-wrap"><canvas id="areaChart"></canvas></div>
+              </div>
+            </div>
+
+            <!-- Full iteration table -->
+            <div class="chart-title">Complete Computation Table</div>
+            <div class="final-chart-wrap">
+              <div id="iterTableWrap"></div>
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- Step-by-step cards -->
+            <div>
+              <div class="steps-header">
+                <div class="steps-header-title">Step-by-Step Breakdown</div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.8rem;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <button
+                    class="step-all-btn"
+                    id="toggleAllBtn"
+                    onclick="toggleAllSteps()"
+                  >
+                    Show All Steps
+                  </button>
+                  <div class="step-nav">
+                    <button id="prevBtn" onclick="changeStep(-1)" disabled>
+                      &#9664; Prev
+                    </button>
+                    <span class="step-counter" id="stepCounter"
+                      >Step 1 / 1</span
+                    >
+                    <button id="nextBtn" onclick="changeStep(1)">
+                      Next &#9654;
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div id="singleStepView"><div id="stepCardContainer"></div></div>
+              <div id="allStepsView" style="display: none">
+                <div class="all-steps-wrap" id="allStepsContainer"></div>
+              </div>
+            </div>
+
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.58rem;
+                color: var(--text-dim);
+                margin-top: 1rem;
+                padding-top: 0.8rem;
+                border-top: 1px solid var(--border);
+              "
+            >
+              * Orange dots = RK4 starting values &nbsp;|&nbsp; Green dots =
+              Adams&ndash;Bashforth predictions &nbsp;|&nbsp; Cyan = initial
+              condition
+            </div>
+          </div>
+          <!-- /resultsContent -->
+        </div>
+      </div>
+      <!-- /main-grid -->
+    </div>
+    <!-- /container -->
+
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">y'</span>Adams&ndash;Bashforth Method Calculator
+        &mdash; Numerical ODE Solver
+      </div>
+      <div class="foot-links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/gauss_seidel.html">Gauss-Seidel</a>
+        <a href="/gauss_jordan.html">Gauss-Jordan</a>
+        <a href="/lagrange.html">Lagrange Interpolation</a>
+        <a href="/power1.html">Power Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/Newton_divide.html">Newton's divide</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/simpson.html">Simpson's Rule</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/trapezoidel.html">Trapezoidal Rule</a>
+        <a href="/index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ── State ─────────────────────────────────────────────────────
+        let stepsData = [];
+        let currentStep = 0;
+        let showingAll = false;
+        let fxChartObj = null;
+        let areaChartObj = null;
+        let trapCanvasData = null;
+
+        // ── Examples ──────────────────────────────────────────────────
+        const EXAMPLES = [
+          { f: "x + y", x0: 0, y0: 1, h: 0.1, n: 6, method: "4-step" },
+          { f: "y - x^2 + 1", x0: 0, y0: 0.5, h: 0.2, n: 6, method: "4-step" },
+          { f: "-y", x0: 0, y0: 1, h: 0.1, n: 6, method: "4-step" },
+          { f: "2*x*y", x0: 0, y0: 1, h: 0.1, n: 6, method: "4-step" },
+          { f: "x - y + 2", x0: 0, y0: 2, h: 0.1, n: 5, method: "3-step" },
+          { f: "x*y", x0: 1, y0: 1, h: 0.1, n: 4, method: "2-step" },
+        ];
+
+        window.loadEx = function (i) {
+          const e = EXAMPLES[i];
+          document.getElementById("funcInput").value = e.f;
+          document.getElementById("x0Input").value = e.x0;
+          document.getElementById("y0Input").value = e.y0;
+          document.getElementById("stepInput").value = e.h;
+          document.getElementById("nStepsInput").value = e.n;
+          document.getElementById("methodSelect").value = e.method;
+        };
+
+        // ── Safe expression evaluator (supports x AND y) ──────────────
+        function makeEvalXY(expr) {
+          const s = expr
+            .replace(/\^/g, "**")
+            .replace(/\bsqrt\b/g, "Math.sqrt")
+            .replace(/\babs\b/g, "Math.abs")
+            .replace(/\bsin\b/g, "Math.sin")
+            .replace(/\bcos\b/g, "Math.cos")
+            .replace(/\btan\b/g, "Math.tan")
+            .replace(/\bexp\b/g, "Math.exp")
+            .replace(/\blog10\b/g, "Math.log10")
+            .replace(/\blog\b/g, "Math.log")
+            .replace(/\bPI\b/g, "Math.PI")
+            .replace(/\bE\b/g, "Math.E");
+          try {
+            return new Function("x", "y", '"use strict"; return (' + s + ");");
+          } catch (e) {
+            throw new Error("Cannot parse expression: " + expr);
+          }
+        }
+
+        // ── RK4 single step ───────────────────────────────────────────
+        // k1 = h*f(xn, yn)
+        // k2 = h*f(xn+h/2, yn+k1/2)
+        // k3 = h*f(xn+h/2, yn+k2/2)
+        // k4 = h*f(xn+h, yn+k3)
+        // yn+1 = yn + (1/6)(k1 + 2k2 + 2k3 + k4)
+        function rk4Step(f, xn, yn, h) {
+          const k1 = h * f(xn, yn);
+          const k2 = h * f(xn + h / 2, yn + k1 / 2);
+          const k3 = h * f(xn + h / 2, yn + k2 / 2);
+          const k4 = h * f(xn + h, yn + k3);
+          const yn1 = yn + (1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+          return { k1, k2, k3, k4, yn1 };
+        }
+
+        // ── Adams–Bashforth explicit formulas ─────────────────────────
+        // fvals[0] = f(xn,yn), fvals[1] = f(x_{n-1},y_{n-1}), etc.
+        function abStep(method, fvals, yn, h) {
+          const [f0, f1, f2, f3] = fvals;
+          switch (method) {
+            case "2-step":
+              return yn + (h / 2) * (3 * f0 - f1);
+            case "3-step":
+              return yn + (h / 12) * (23 * f0 - 16 * f1 + 5 * f2);
+            case "4-step":
+              return yn + (h / 24) * (55 * f0 - 59 * f1 + 37 * f2 - 9 * f3);
+          }
+        }
+
+        // ── MAIN SOLVER ───────────────────────────────────────────────
+        function solve(fExpr, x0, y0, h, nSteps, method) {
+          const f = makeEvalXY(fExpr);
+          const starterNeeds = { "2-step": 2, "3-step": 3, "4-step": 4 };
+          const starters = starterNeeds[method];
+
+          if (nSteps < starters) {
+            throw new Error(
+              method +
+                " requires at least " +
+                starters +
+                " total steps. Please increase n to " +
+                starters +
+                " or more.",
+            );
+          }
+
+          const pts = [];
+
+          // Initial point
+          const fy0 = f(x0, y0);
+          if (!isFinite(fy0) || isNaN(fy0))
+            throw new Error(
+              "f(x\u2080, y\u2080) is undefined or infinite at the initial point.",
+            );
+          pts.push({
+            n: 0,
+            x: x0,
+            y: y0,
+            fy: fy0,
+            type: "initial",
+            card: null,
+          });
+
+          // RK4 starting values: compute starters-1 additional points
+          for (let i = 0; i < starters - 1; i++) {
+            const prev = pts[i];
+            const rk = rk4Step(f, prev.x, prev.y, h);
+            const xNew = prev.x + h;
+            const yNew = rk.yn1;
+            if (!isFinite(yNew) || isNaN(yNew))
+              throw new Error(
+                "RK4 step " + (i + 1) + ": result is undefined or diverged.",
+              );
+            const fyNew = f(xNew, yNew);
+            if (!isFinite(fyNew) || isNaN(fyNew))
+              throw new Error(
+                "f is undefined at RK4 step " +
+                  (i + 1) +
+                  ", x=" +
+                  xNew.toFixed(6),
+              );
+            pts.push({
+              n: i + 1,
+              x: xNew,
+              y: yNew,
+              fy: fyNew,
+              type: "rk4",
+              card: {
+                type: "rk4",
+                idx: i,
+                stepNum: i + 1,
+                xPrev: prev.x,
+                yPrev: prev.y,
+                h,
+                k1: rk.k1,
+                k2: rk.k2,
+                k3: rk.k3,
+                k4: rk.k4,
+                yn1: yNew,
+                x1: xNew,
+                plotPts: pts
+                  .map((p) => ({ x: p.x, y: p.y, type: p.type, n: p.n }))
+                  .concat([{ x: xNew, y: yNew, type: "rk4", n: i + 1 }]),
+              },
+            });
+          }
+
+          // Adams-Bashforth steps
+          let abIdx = 0;
+          for (let i = starters - 1; i < nSteps; i++) {
+            const prev = pts[i];
+            const fvals = [];
+            for (let j = 0; j < starters; j++) fvals.push(pts[i - j].fy);
+
+            const yn1 = abStep(method, fvals, prev.y, h);
+            if (!isFinite(yn1) || isNaN(yn1))
+              throw new Error(
+                "AB step " + (i + 1) + ": result is undefined or diverged.",
+              );
+            const xNew = prev.x + h;
+            const fyNew = f(xNew, yn1);
+            if (!isFinite(fyNew) || isNaN(fyNew))
+              throw new Error(
+                "f is undefined at AB step " +
+                  (i + 1) +
+                  ", x=" +
+                  xNew.toFixed(6),
+              );
+
+            pts.push({
+              n: i + 1,
+              x: xNew,
+              y: yn1,
+              fy: fyNew,
+              type: "ab",
+              card: {
+                type: "ab",
+                idx: abIdx++,
+                method,
+                stepNum: i + 1,
+                xPrev: prev.x,
+                yPrev: prev.y,
+                h,
+                fvals: [...fvals],
+                yn1,
+                x1: xNew,
+                plotPts: pts
+                  .map((p) => ({ x: p.x, y: p.y, type: p.type, n: p.n }))
+                  .concat([{ x: xNew, y: yn1, type: "ab", n: i + 1 }]),
+              },
+            });
+          }
+
+          return { pts, starters };
+        }
+
+        // ── RUN ───────────────────────────────────────────────────────
+        window.runTrap = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+
+          const fExpr = document.getElementById("funcInput").value.trim();
+          const x0 = parseFloat(document.getElementById("x0Input").value);
+          const y0 = parseFloat(document.getElementById("y0Input").value);
+          const h = parseFloat(document.getElementById("stepInput").value);
+          const nSteps =
+            parseInt(document.getElementById("nStepsInput").value) || 6;
+          const method = document.getElementById("methodSelect").value;
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 6;
+
+          if (!fExpr) {
+            showError("Please enter f(x, y).");
+            return;
+          }
+          if (isNaN(x0)) {
+            showError("Initial x\u2080 is invalid.");
+            return;
+          }
+          if (isNaN(y0)) {
+            showError("Initial y\u2080 is invalid.");
+            return;
+          }
+          if (isNaN(h) || h <= 0) {
+            showError("Step size h must be a positive number.");
+            return;
+          }
+          if (nSteps < 1 || nSteps > 200) {
+            showError("Number of steps must be between 1 and 200.");
+            return;
+          }
+
+          let result;
+          try {
+            result = solve(fExpr, x0, y0, h, nSteps, method);
+          } catch (e) {
+            showError(e.message);
+            return;
+          }
+
+          const { pts, starters } = result;
+
+          // Build stepsData from cards (skip initial point n=0 which has no card)
+          stepsData = pts
+            .slice(1)
+            .map((p) => p.card)
+            .filter((c) => c !== null);
+          // Fix indices for progress bar
+          stepsData.forEach((c, i) => {
+            if (c) c._totalIdx = i;
+          });
+
+          currentStep = 0;
+          showingAll = false;
+          document.getElementById("toggleAllBtn").textContent =
+            "Show All Steps";
+          document.getElementById("singleStepView").style.display = "block";
+          document.getElementById("allStepsView").style.display = "none";
+
+          displayResults(pts, starters, decimals, fExpr, method, h, nSteps);
+
+          const finalPt = pts[pts.length - 1];
+          const abCount = nSteps - (starters - 1);
+          const msg =
+            "\u2713 Solved dy/dx = " +
+            fExpr +
+            " | Method: " +
+            method +
+            " Adams\u2013Bashforth | " +
+            (starters - 1) +
+            " RK4 starter" +
+            (starters - 1 !== 1 ? "s" : "") +
+            " + " +
+            abCount +
+            " AB step" +
+            (abCount !== 1 ? "s" : "") +
+            " | y(" +
+            finalPt.x.toFixed(4) +
+            ") \u2248 " +
+            finalPt.y.toFixed(decimals);
+          showSuccess(msg);
+        };
+
+        // ── DISPLAY RESULTS ───────────────────────────────────────────
+        function displayResults(
+          pts,
+          starters,
+          decimals,
+          fExpr,
+          method,
+          h,
+          nSteps,
+        ) {
+          const fmt = (v, d) =>
+            typeof v === "number" && isFinite(v)
+              ? v.toFixed(d || decimals)
+              : "N/A";
+          const finalPt = pts[pts.length - 1];
+          const abCount = nSteps - (starters - 1);
+          const rk4Count = starters - 1;
+
+          document.getElementById("emptyState").style.display = "none";
+          document.getElementById("resultsContent").style.display = "block";
+
+          // Stat cards
+          document.getElementById("statResult").textContent = fmt(finalPt.y);
+          document.getElementById("statH").textContent = fmt(h);
+          document.getElementById("statN").textContent = nSteps;
+          document.getElementById("statExact").textContent = method;
+
+          // Phase distribution bars
+          const accWrap = document.getElementById("accBarWrap");
+          accWrap.style.display = "block";
+          const rk4Pct = Math.round((rk4Count / nSteps) * 100);
+          const abPct = Math.round((abCount / nSteps) * 100);
+          document.getElementById("accFillTrap").style.width = rk4Pct + "%";
+          document.getElementById("accValTrap").textContent =
+            rk4Count + " step" + (rk4Count !== 1 ? "s" : "");
+          document.getElementById("accFillErr").style.width = abPct + "%";
+          document.getElementById("accValErr").textContent =
+            abCount + " step" + (abCount !== 1 ? "s" : "");
+
+          // Solution chips
+          const sol = document.getElementById("solutionDisplay");
+          sol.innerHTML = "";
+          const chips = [
+            {
+              val: "y(" + fmt(finalPt.x, 4) + ") \u2248 " + fmt(finalPt.y),
+              c: "#00d4ff",
+              bc: "#00d4ff44",
+              bg: "#00d4ff11",
+            },
+            {
+              val: "h = " + fmt(h),
+              c: "#77dc1e",
+              bc: "#77dc1e44",
+              bg: "#77dc1e11",
+            },
+            { val: method, c: "#ff6b35", bc: "#ff6b3544", bg: "#ff6b3511" },
+            {
+              val: starters - 1 + " RK4 + " + abCount + " AB",
+              c: "#a78bfa",
+              bc: "#a78bfa44",
+              bg: "#a78bfa11",
+            },
+          ];
+          chips.forEach((ch) => {
+            const d = document.createElement("div");
+            d.className = "sol-chip";
+            d.style.cssText =
+              "color:" +
+              ch.c +
+              ";border-color:" +
+              ch.bc +
+              ";background:" +
+              ch.bg +
+              ";";
+            d.textContent = ch.val;
+            sol.appendChild(d);
+          });
+
+          // ── ODE Canvas Visualizer ──
+          trapCanvasData = { pts, fExpr, starters, method };
+          drawODECanvas(pts, starters);
+
+          // ── Chart 1: y(x) solution line ──
+          const xLabels = pts.map((p) => "x=" + fmt(p.x, 3));
+          const yVals = pts.map((p) => p.y);
+          const ptColors = pts.map((p) =>
+            p.type === "rk4"
+              ? "rgba(255,107,53,0.9)"
+              : p.type === "ab"
+                ? "rgba(119,220,30,0.9)"
+                : "rgba(0,212,255,0.9)",
+          );
+          if (fxChartObj) {
+            fxChartObj.destroy();
+            fxChartObj = null;
+          }
+          fxChartObj = new Chart(
+            document.getElementById("fxChart").getContext("2d"),
+            {
+              type: "line",
+              data: {
+                labels: xLabels,
+                datasets: [
+                  {
+                    label: "y(x)",
+                    data: yVals,
+                    borderColor: "#00d4ff",
+                    backgroundColor: "rgba(0,212,255,0.05)",
+                    pointBackgroundColor: ptColors,
+                    pointBorderColor: ptColors,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 9 },
+                    bodyFont: { family: "Space Mono", size: 9 },
+                    callbacks: {
+                      label: (ctx) => " y = " + ctx.parsed.y.toFixed(decimals),
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 7 },
+                      maxRotation: 60,
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                  y: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                },
+              },
+            },
+          );
+
+          // ── Chart 2: f(xn, yn) slope values ──
+          const fyVals = pts.map((p) => p.fy);
+          const fyColors = pts.map((p) =>
+            p.type === "rk4"
+              ? "rgba(255,107,53,0.8)"
+              : p.type === "ab"
+                ? "rgba(119,220,30,0.75)"
+                : "rgba(0,212,255,0.75)",
+          );
+          if (areaChartObj) {
+            areaChartObj.destroy();
+            areaChartObj = null;
+          }
+          areaChartObj = new Chart(
+            document.getElementById("areaChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: xLabels,
+                datasets: [
+                  {
+                    label: "f(x\u2099, y\u2099)",
+                    data: fyVals,
+                    backgroundColor: fyColors,
+                    borderColor: fyColors.map((c) =>
+                      c
+                        .replace("0.8", "1")
+                        .replace("0.75", "1")
+                        .replace("0.9", "1"),
+                    ),
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 9 },
+                    bodyFont: { family: "Space Mono", size: 9 },
+                    callbacks: {
+                      label: (ctx) =>
+                        " f(x,y) = " + ctx.parsed.y.toFixed(decimals),
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 7 },
+                      maxRotation: 60,
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                  y: {
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 9 },
+                    },
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                  },
+                },
+              },
+            },
+          );
+
+          // ── Iteration table ──
+          buildIterTable(pts, decimals, method, starters);
+
+          // ── First step card ──
+          renderStep(0);
+          updateNav();
+        }
+
+        // ── ITERATION TABLE ───────────────────────────────────────────
+        function buildIterTable(pts, decimals, method, starters) {
+          const fmt = (v) =>
+            typeof v === "number" && isFinite(v) ? v.toFixed(decimals) : "N/A";
+          const wrap = document.getElementById("iterTableWrap");
+          wrap.innerHTML = "";
+          const tbl = document.createElement("table");
+          tbl.className = "iter-table";
+
+          tbl.innerHTML = `<thead><tr>
+    <th style="text-align:center;">n</th>
+    <th>x<sub>n</sub></th>
+    <th>y<sub>n</sub></th>
+    <th>f(x<sub>n</sub>, y<sub>n</sub>)</th>
+    <th style="text-align:left;">Method Used</th>
+  </tr></thead>`;
+
+          const tbody = document.createElement("tbody");
+          pts.forEach((pt) => {
+            const tr = document.createElement("tr");
+            if (pt.type === "initial") tr.className = "endpoint-row";
+
+            const methodLabel =
+              pt.type === "initial"
+                ? "Initial Condition"
+                : pt.type === "rk4"
+                  ? "RK4 (Starter)"
+                  : "Adams\u2013Bashforth " + method;
+            const methodColor =
+              pt.type === "initial"
+                ? "var(--accent)"
+                : pt.type === "rk4"
+                  ? "var(--accent2)"
+                  : "var(--accent3)";
+            const methodBadge =
+              pt.type === "initial"
+                ? "phase-init"
+                : pt.type === "rk4"
+                  ? "phase-rk4"
+                  : "phase-ab";
+            tr.innerHTML = `
+      <td>${pt.n}</td>
+      <td class="x-col">${fmt(pt.x)}</td>
+      <td class="area-col">${fmt(pt.y)}</td>
+      <td class="fx-col">${fmt(pt.fy)}</td>
+      <td style="text-align:left;padding-left:0.6rem;"><span class="phase-badge ${methodBadge}">${methodLabel}</span></td>`;
+            tbody.appendChild(tr);
+          });
+
+          tbl.appendChild(tbody);
+          wrap.appendChild(tbl);
+        }
+
+        // ── ODE CANVAS VISUALIZER ────────────────────────────────────
+        function drawODECanvas(pts, starters) {
+          const canvas = document.getElementById("trapCanvas");
+          const W = canvas.parentElement.clientWidth - 16;
+          const H = 220;
+          const DPR = window.devicePixelRatio || 1;
+          canvas.width = W * DPR;
+          canvas.height = H * DPR;
+          canvas.style.width = W + "px";
+          canvas.style.height = H + "px";
+          const ctx = canvas.getContext("2d");
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+          const pad = { l: 50, r: 20, t: 18, b: 35 };
+          const pw = W - pad.l - pad.r;
+          const ph = H - pad.t - pad.b;
+
+          const xVals = pts.map((p) => p.x);
+          const yVals = pts.map((p) => p.y);
+          const xMin = Math.min(...xVals),
+            xMax = Math.max(...xVals);
+          const yMin = Math.min(...yVals),
+            yMax = Math.max(...yVals);
+          const xPad = (xMax - xMin) * 0.06 || 0.05;
+          const yPadV = (yMax - yMin) * 0.14 || 0.3;
+          const dxMin = xMin - xPad,
+            dxMax = xMax + xPad;
+          const dyMin = yMin - yPadV,
+            dyMax = yMax + yPadV;
+
+          function toX(v) {
+            return pad.l + ((v - dxMin) / (dxMax - dxMin)) * pw;
+          }
+          function toY(v) {
+            return pad.t + (1 - (v - dyMin) / (dyMax - dyMin)) * ph;
+          }
+
+          // Background
+          ctx.fillStyle = "#112230";
+          ctx.fillRect(0, 0, W, H);
+
+          // Grid
+          ctx.strokeStyle = "rgba(26,53,69,0.5)";
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 4; i++) {
+            const yv = dyMin + (i * (dyMax - dyMin)) / 4;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, toY(yv));
+            ctx.lineTo(W - pad.r, toY(yv));
+            ctx.stroke();
+          }
+          for (let i = 0; i <= 5; i++) {
+            const xv = dxMin + (i * (dxMax - dxMin)) / 5;
+            ctx.beginPath();
+            ctx.moveTo(toX(xv), pad.t);
+            ctx.lineTo(toX(xv), H - pad.b);
+            ctx.stroke();
+          }
+
+          // x-axis zero line
+          if (dyMin <= 0 && dyMax >= 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(122,154,170,0.4)";
+            ctx.lineWidth = 1;
+            ctx.moveTo(pad.l, toY(0));
+            ctx.lineTo(W - pad.r, toY(0));
+            ctx.stroke();
+          }
+
+          // Shade RK4 region
+          if (pts.length >= 2 && starters >= 2) {
+            const xEnd = toX(pts[starters - 1].x);
+            ctx.fillStyle = "rgba(255,107,53,0.05)";
+            ctx.fillRect(toX(pts[0].x), pad.t, xEnd - toX(pts[0].x), ph);
+            ctx.strokeStyle = "rgba(255,107,53,0.2)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(xEnd, pad.t);
+            ctx.lineTo(xEnd, H - pad.b);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+
+          // Connecting line
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(0,212,255,0.6)";
+          ctx.lineWidth = 2;
+          pts.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(toX(p.x), toY(p.y));
+            else ctx.lineTo(toX(p.x), toY(p.y));
+          });
+          ctx.stroke();
+
+          // Dots with vertical drop lines
+          pts.forEach((p) => {
+            const cx = toX(p.x),
+              cy = toY(p.y);
+            // dashed drop
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(0,212,255,0.12)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            const baseY = dyMin <= 0 && dyMax >= 0 ? toY(0) : H - pad.b;
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx, baseY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // dot
+            const dotColor =
+              p.type === "initial"
+                ? "#00d4ff"
+                : p.type === "rk4"
+                  ? "#ff6b35"
+                  : "#77dc1e";
+            // glow ring
+            ctx.beginPath();
+            ctx.fillStyle = dotColor + "22";
+            ctx.arc(cx, cy, 9, 0, 2 * Math.PI);
+            ctx.fill();
+            // solid dot
+            ctx.beginPath();
+            ctx.fillStyle = dotColor;
+            ctx.arc(cx, cy, 4.5, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+
+          // Axis labels
+          ctx.fillStyle = "#7a9aaa";
+          const fsize = Math.max(9, Math.min(11, pw / 40));
+          ctx.font = fsize + "px Space Mono,monospace";
+          ctx.textAlign = "center";
+          const tickStep = Math.ceil(pts.length / Math.min(pts.length, 8));
+          for (let i = 0; i < pts.length; i += tickStep) {
+            ctx.fillText(pts[i].x.toFixed(2), toX(pts[i].x), H - pad.b + 14);
+          }
+          ctx.textAlign = "right";
+          for (let i = 0; i <= 4; i++) {
+            const yv = dyMin + (i * (dyMax - dyMin)) / 4;
+            ctx.fillText(yv.toFixed(2), pad.l - 5, toY(yv) + 4);
+          }
+
+          // Legend
+          ctx.font = "9px Space Mono,monospace";
+          const lx = pad.l + 4;
+          const ly = pad.t + 5;
+
+          ctx.fillStyle = "#00d4ff22";
+          ctx.beginPath();
+          ctx.arc(lx + 4, ly - 1, 6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#00d4ff";
+          ctx.beginPath();
+          ctx.arc(lx + 4, ly - 1, 3.5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#7a9aaa";
+          ctx.textAlign = "left";
+          ctx.fillText("Initial", lx + 13, ly + 3);
+
+          ctx.fillStyle = "#ff6b3522";
+          ctx.beginPath();
+          ctx.arc(lx + 66, ly - 1, 6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#ff6b35";
+          ctx.beginPath();
+          ctx.arc(lx + 66, ly - 1, 3.5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#7a9aaa";
+          ctx.fillText("RK4", lx + 75, ly + 3);
+
+          ctx.fillStyle = "#77dc1e22";
+          ctx.beginPath();
+          ctx.arc(lx + 108, ly - 1, 6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#77dc1e";
+          ctx.beginPath();
+          ctx.arc(lx + 108, ly - 1, 3.5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#7a9aaa";
+          ctx.fillText("AB", lx + 117, ly + 3);
+
+          // Chart label
+          ctx.textAlign = "right";
+          ctx.fillStyle = "rgba(0,212,255,0.4)";
+          ctx.fillText(
+            "Solution of dy/dx = f(x,y) using Adams\u2013Bashforth Method",
+            W - pad.r,
+            pad.t + 12,
+          );
+        }
+
+        // ── STEP MINI GRAPH ───────────────────────────────────────────
+        function drawStepMiniGraph(canvas, pts, decimals) {
+          if (!canvas || !pts || !pts.length) return;
+          const W = canvas.parentElement.clientWidth;
+          const H = 240;
+          const DPR = window.devicePixelRatio || 1;
+          canvas.width = Math.floor(W * DPR);
+          canvas.height = Math.floor(H * DPR);
+          const ctx = canvas.getContext("2d");
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+          const pad = { l: 44, r: 18, t: 18, b: 34 };
+          const pw = W - pad.l - pad.r;
+          const ph = H - pad.t - pad.b;
+
+          const xVals = pts.map((p) => p.x);
+          const yVals = pts.map((p) => p.y);
+          const xMin = Math.min(...xVals);
+          const xMax = Math.max(...xVals);
+          const yMin = Math.min(...yVals);
+          const yMax = Math.max(...yVals);
+          const xPad = (xMax - xMin) * 0.08 || 0.05;
+          const yPad = (yMax - yMin) * 0.18 || 0.25;
+          const dxMin = xMin - xPad;
+          const dxMax = xMax + xPad;
+          const dyMin = yMin - yPad;
+          const dyMax = yMax + yPad;
+
+          const toX = (v) => pad.l + ((v - dxMin) / (dxMax - dxMin)) * pw;
+          const toY = (v) => pad.t + (1 - (v - dyMin) / (dyMax - dyMin)) * ph;
+
+          ctx.fillStyle = "#112230";
+          ctx.fillRect(0, 0, W, H);
+
+          ctx.strokeStyle = "rgba(26,53,69,0.45)";
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 4; i++) {
+            const yv = dyMin + (i * (dyMax - dyMin)) / 4;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, toY(yv));
+            ctx.lineTo(W - pad.r, toY(yv));
+            ctx.stroke();
+          }
+          for (let i = 0; i <= 5; i++) {
+            const xv = dxMin + (i * (dxMax - dxMin)) / 5;
+            ctx.beginPath();
+            ctx.moveTo(toX(xv), pad.t);
+            ctx.lineTo(toX(xv), H - pad.b);
+            ctx.stroke();
+          }
+
+          if (dyMin <= 0 && dyMax >= 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(122,154,170,0.45)";
+            ctx.moveTo(pad.l, toY(0));
+            ctx.lineTo(W - pad.r, toY(0));
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(0,212,255,0.7)";
+          ctx.lineWidth = 2;
+          pts.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(toX(p.x), toY(p.y));
+            else ctx.lineTo(toX(p.x), toY(p.y));
+          });
+          ctx.stroke();
+
+          pts.forEach((p, i) => {
+            const cx = toX(p.x);
+            const cy = toY(p.y);
+            const baseY = dyMin <= 0 && dyMax >= 0 ? toY(0) : H - pad.b;
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(119,220,30,0.16)";
+            ctx.setLineDash([3, 3]);
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx, baseY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const color =
+              p.type === "initial"
+                ? "#00d4ff"
+                : p.type === "rk4"
+                  ? "#ff6b35"
+                  : "#77dc1e";
+
+            ctx.fillStyle = "#e8f4f8";
+            ctx.font = "9px Space Mono,monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(`x=${p.x.toFixed(decimals)}`, cx, cy + 18);
+            ctx.fillStyle = color;
+            ctx.fillText(
+              `y=${p.y.toFixed(decimals)}`,
+              cx,
+              cy - 12 < pad.t ? cy + 12 : cy - 10,
+            );
+
+            ctx.beginPath();
+            ctx.fillStyle = color + "22";
+            ctx.arc(cx, cy, 9, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(cx, cy, p.type === "initial" ? 5.3 : 4.7, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+
+          ctx.fillStyle = "#7a9aaa";
+          ctx.font = "10px Space Mono,monospace";
+          ctx.textAlign = "left";
+          ctx.fillText(
+            `Step ${pts[pts.length - 1].n}: x=${pts[pts.length - 1].x.toFixed(decimals)}  y≈${pts[pts.length - 1].y.toFixed(decimals)}`,
+            pad.l,
+            12,
+          );
+
+          ctx.save();
+          ctx.fillStyle = "#7a9aaa";
+          ctx.font = "10px Space Mono,monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("x", W / 2, H - 8);
+          ctx.translate(12, H / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText("y", 0, 0);
+          ctx.restore();
+
+          ctx.font = "9px Space Mono,monospace";
+          const lx = pad.l + 4;
+          const ly = pad.t + 5;
+
+          ctx.fillStyle = "#00d4ff22";
+          ctx.beginPath();
+          ctx.arc(lx + 4, ly - 1, 6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#00d4ff";
+          ctx.beginPath();
+          ctx.arc(lx + 4, ly - 1, 3.5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#7a9aaa";
+          ctx.textAlign = "left";
+          ctx.fillText("Initial", lx + 13, ly + 3);
+
+          ctx.fillStyle = "#ff6b3522";
+          ctx.beginPath();
+          ctx.arc(lx + 66, ly - 1, 6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#ff6b35";
+          ctx.beginPath();
+          ctx.arc(lx + 66, ly - 1, 3.5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#7a9aaa";
+          ctx.fillText("RK4", lx + 75, ly + 3);
+
+          ctx.fillStyle = "#77dc1e22";
+          ctx.beginPath();
+          ctx.arc(lx + 108, ly - 1, 6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#77dc1e";
+          ctx.beginPath();
+          ctx.arc(lx + 108, ly - 1, 3.5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillStyle = "#7a9aaa";
+          ctx.fillText("AB", lx + 117, ly + 3);
+        }
+
+        // ── STEP CARDS ────────────────────────────────────────────────
+        function buildStepCard(card, decimals) {
+          if (!card) return document.createElement("div");
+          const fmt = (v) =>
+            typeof v === "number" && isFinite(v) ? v.toFixed(decimals) : "N/A";
+          const el = document.createElement("div");
+          el.className = "step-card";
+          return card.type === "rk4"
+            ? buildRK4Card(card, decimals, fmt, el)
+            : buildABCard(card, decimals, fmt, el);
+        }
+
+        // ─── RK4 step card ────────────────────────────────────────────
+        function buildRK4Card(card, decimals, fmt, el) {
+          const badge = document.createElement("div");
+          badge.className = "step-badge";
+          badge.innerHTML = `&#9645; &nbsp; <span class="phase-rk4">RK4 STARTER</span> &nbsp;Step ${card.stepNum} &nbsp;|&nbsp; x: ${fmt(card.xPrev)} &rarr; ${fmt(card.x1)}`;
+          el.appendChild(badge);
+
+          const body = document.createElement("div");
+          body.className = "step-body";
+
+          // LEFT: RK4 substitution
+          const left = document.createElement("div");
+          left.innerHTML = '<div class="step-col-title">RK4 Computation</div>';
+          const calcBox = document.createElement("div");
+          calcBox.className = "calc-box";
+          calcBox.style.fontFamily = "'Space Mono',monospace";
+          calcBox.style.fontSize = "0.68rem";
+          calcBox.style.lineHeight = "2.2";
+          calcBox.style.color = "var(--text-dim)";
+          calcBox.innerHTML = `
+    <div><span style="color:var(--accent2);">k&#x2081;</span> = h &middot; f(x&#x2099;, y&#x2099;)</div>
+    <div style="padding-left:0.6rem;">&nbsp;= ${fmt(card.h)} &middot; f(${fmt(card.xPrev)}, ${fmt(card.yPrev)})</div>
+    <div style="padding-left:0.6rem;">&nbsp;= <strong style="color:var(--accent2);">${fmt(card.k1)}</strong></div>
+    <div style="height:1px;background:var(--border);margin:0.4rem 0;"></div>
+    <div><span style="color:var(--accent2);">k&#x2082;</span> = h &middot; f(x&#x2099;+h/2, y&#x2099;+k&#x2081;/2)</div>
+    <div style="padding-left:0.6rem;">&nbsp;= <strong style="color:var(--accent2);">${fmt(card.k2)}</strong></div>
+    <div style="height:1px;background:var(--border);margin:0.4rem 0;"></div>
+    <div><span style="color:var(--accent2);">k&#x2083;</span> = h &middot; f(x&#x2099;+h/2, y&#x2099;+k&#x2082;/2)</div>
+    <div style="padding-left:0.6rem;">&nbsp;= <strong style="color:var(--accent2);">${fmt(card.k3)}</strong></div>
+    <div style="height:1px;background:var(--border);margin:0.4rem 0;"></div>
+    <div><span style="color:var(--accent2);">k&#x2084;</span> = h &middot; f(x&#x2099;+h, y&#x2099;+k&#x2083;)</div>
+    <div style="padding-left:0.6rem;">&nbsp;= <strong style="color:var(--accent2);">${fmt(card.k4)}</strong></div>`;
+          left.appendChild(calcBox);
+          body.appendChild(left);
+
+          // MIDDLE: value table
+          const mid = document.createElement("div");
+          mid.innerHTML = '<div class="step-col-title">Slope Values (k)</div>';
+          const tbl = document.createElement("table");
+          tbl.className = "mini-val-table";
+          [
+            { label: "xn", val: fmt(card.xPrev), cls: "pivRow" },
+            { label: "yn", val: fmt(card.yPrev), cls: "pivRow" },
+            { label: "h", val: fmt(card.h), cls: "" },
+            { label: "k\u2081", val: fmt(card.k1), cls: "" },
+            { label: "k\u2082", val: fmt(card.k2), cls: "" },
+            { label: "k\u2083", val: fmt(card.k3), cls: "" },
+            { label: "k\u2084", val: fmt(card.k4), cls: "" },
+            { label: "y_{n+1}", val: fmt(card.yn1), cls: "highlight" },
+          ].forEach((r) => {
+            const tr = document.createElement("tr");
+            if (r.cls) tr.className = r.cls;
+            tr.innerHTML = `<td>${r.label}</td><td>${r.val}</td>`;
+            tbl.appendChild(tr);
+          });
+          mid.appendChild(tbl);
+          body.appendChild(mid);
+
+          // RIGHT: final result
+          const right = document.createElement("div");
+          right.innerHTML = '<div class="step-col-title">RK4 Result</div>';
+          const resBox = document.createElement("div");
+          resBox.className = "calc-box";
+          const avg = card.k1 + 2 * card.k2 + 2 * card.k3 + card.k4;
+          const correction = avg / 6;
+          resBox.innerHTML = `
+    <div style="font-family:'Space Mono',monospace;font-size:0.64rem;color:var(--text-dim);line-height:2;">
+      y&#x2099;&#x208A;&#x2081; = y&#x2099; + (1/6)(k&#x2081; + 2k&#x2082; + 2k&#x2083; + k&#x2084;)<br/>
+      = ${fmt(card.yPrev)} + (1/6) &times; ${fmt(avg)}<br/>
+      = ${fmt(card.yPrev)} + ${fmt(correction)}<br/>
+      = <strong style="color:var(--accent3);font-size:0.85rem;">${fmt(card.yn1)}</strong>
+    </div>
+    <div style="height:1px;background:var(--border);margin:0.6rem 0;"></div>
+    <div class="calc-row"><span class="calc-label">x&#x2099;&#x208A;&#x2081; =</span><span style="color:var(--accent);">${fmt(card.x1)}</span></div>
+    <div class="calc-row"><span class="calc-label">y&#x2099;&#x208A;&#x2081; =</span><span style="color:var(--accent3);font-weight:700;">${fmt(card.yn1)}</span></div>
+    <div style="height:1px;background:var(--border);margin:0.5rem 0;"></div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:rgba(255,107,53,0.7);line-height:1.7;">
+      &#9432; This RK4 value will be used as a starting point for the Adams&ndash;Bashforth prediction.
+    </div>`;
+          right.appendChild(resBox);
+          body.appendChild(right);
+          el.appendChild(body);
+
+          const graphWrap = document.createElement("div");
+          graphWrap.className = "step-graph-wrap";
+          graphWrap.innerHTML = `
+    <div class="step-col-title">Step Graph</div>
+    <div class="graph-box">
+      <canvas class="step-mini-canvas"></canvas>
+    </div>`;
+          el.appendChild(graphWrap);
+
+          requestAnimationFrame(() => {
+            const miniCanvas = graphWrap.querySelector("canvas");
+            if (miniCanvas && card.plotPts && card.plotPts.length) {
+              drawStepMiniGraph(miniCanvas, card.plotPts, decimals);
+            }
+          });
+
+          const sum = document.createElement("div");
+          sum.className = "step-summary";
+          sum.innerHTML = `
+    <span style="color:var(--text-dim)">x&#x2099;:</span><span style="color:var(--accent)">${fmt(card.xPrev)}</span>
+    <span style="color:var(--accent2)">&rarr;</span>
+    <span style="color:var(--text-dim)">x&#x2099;&#x208A;&#x2081;:</span><span style="color:var(--accent)">${fmt(card.x1)}</span>
+    <span style="color:var(--accent2)">|</span>
+    <span style="color:var(--text-dim)">y&#x2099;:</span><span style="color:var(--text)">${fmt(card.yPrev)}</span>
+    <span style="color:var(--accent2)">&rarr;</span>
+    <span style="color:var(--text-dim)">y&#x2099;&#x208A;&#x2081;:</span><span style="color:var(--accent3);font-weight:700;">${fmt(card.yn1)}</span>
+    <span style="color:var(--accent2)">|</span>
+    <span class="phase-rk4">RK4</span>`;
+          el.appendChild(sum);
+          return el;
+        }
+
+        // ─── Adams–Bashforth step card ────────────────────────────────
+        function buildABCard(card, decimals, fmt, el) {
+          const badge = document.createElement("div");
+          badge.className = "step-badge";
+          badge.innerHTML = `&#9645; &nbsp; <span class="phase-ab">AB ${card.method.toUpperCase()}</span> &nbsp;Step ${card.stepNum} &nbsp;|&nbsp; x: ${fmt(card.xPrev)} &rarr; ${fmt(card.x1)}`;
+          el.appendChild(badge);
+
+          const starterMap = { "2-step": 2, "3-step": 3, "4-step": 4 };
+          const starters = starterMap[card.method];
+
+          // Coefficient sets (exact)
+          const coefSets = {
+            "2-step": {
+              hCoef: "1/2",
+              hVal: 1 / 2,
+              terms: ["3", "−1"],
+              labels: ["3f\u2099", "f\u2099\u208B\u2081"],
+              symbolic: "3f(n) \u2212 f(n\u22121)",
+            },
+            "3-step": {
+              hCoef: "1/12",
+              hVal: 1 / 12,
+              terms: ["23", "−16", "5"],
+              labels: [
+                "23f\u2099",
+                "16f\u2099\u208B\u2081",
+                "5f\u2099\u208B\u2082",
+              ],
+              symbolic: "23f(n) \u2212 16f(n\u22121) + 5f(n\u22122)",
+            },
+            "4-step": {
+              hCoef: "1/24",
+              hVal: 1 / 24,
+              terms: ["55", "−59", "37", "−9"],
+              labels: [
+                "55f\u2099",
+                "59f\u2099\u208B\u2081",
+                "37f\u2099\u208B\u2082",
+                "9f\u2099\u208B\u2083",
+              ],
+              symbolic:
+                "55f(n) \u2212 59f(n\u22121) + 37f(n\u22122) \u2212 9f(n\u22123)",
+            },
+          };
+          const cs = coefSets[card.method];
+
+          // Numeric weighted sum
+          const coefNums = {
+            "2-step": [3, -1],
+            "3-step": [23, -16, 5],
+            "4-step": [55, -59, 37, -9],
+          }[card.method];
+          let weightedSum = 0;
+          for (let i = 0; i < starters; i++)
+            weightedSum += coefNums[i] * card.fvals[i];
+          const correction = card.h * cs.hVal * weightedSum;
+
+          // Substitution string
+          let subStr = "";
+          for (let i = 0; i < starters; i++) {
+            const coef = coefNums[i];
+            if (i === 0) subStr += coef + "×(" + fmt(card.fvals[i]) + ")";
+            else
+              subStr +=
+                (coef >= 0 ? " + " : " ") +
+                coef +
+                "×(" +
+                fmt(card.fvals[i]) +
+                ")";
+          }
+
+          const body = document.createElement("div");
+          body.className = "step-body";
+
+          // LEFT: formula
+          const left = document.createElement("div");
+          left.innerHTML =
+            '<div class="step-col-title">AB Formula &amp; Substitution</div>';
+          const formulaBox = document.createElement("div");
+          formulaBox.className = "calc-box";
+          formulaBox.innerHTML = `
+    <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--accent);letter-spacing:0.05em;margin-bottom:0.5rem;">${card.method.toUpperCase()} ADAMS\u2013BASHFORTH</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.66rem;color:var(--text-dim);line-height:2.1;">
+      y&#x2099;&#x208A;&#x2081; = y&#x2099; + h\u00D7(${cs.hCoef})[${cs.symbolic}]<br/>
+      <div style="height:1px;background:var(--border);margin:0.4rem 0;"></div>
+      <span style="color:var(--accent2);font-size:0.58rem;">SUBSTITUTION:</span><br/>
+      y&#x2099;&#x208A;&#x2081; = ${fmt(card.yPrev)}<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (${fmt(card.h)}&times;${cs.hCoef})[${subStr}]<br/>
+      = ${fmt(card.yPrev)} + ${fmt(correction)}<br/>
+      = <strong style="color:var(--accent3);font-size:0.85rem;">${fmt(card.yn1)}</strong>
+    </div>`;
+          left.appendChild(formulaBox);
+          body.appendChild(left);
+
+          // MIDDLE: f-values table
+          const fNameLabels = [
+            "f(x\u2099, y\u2099)",
+            "f(x\u2099\u208B\u2081, y\u2099\u208B\u2081)",
+            "f(x\u2099\u208B\u2082, y\u2099\u208B\u2082)",
+            "f(x\u2099\u208B\u2083, y\u2099\u208B\u2083)",
+          ];
+          const mid = document.createElement("div");
+          mid.innerHTML = `<div class="step-col-title">Previous f-Values Used</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--text-dim);margin-bottom:0.5rem;line-height:1.6;">
+      Adams\u2013Bashforth uses previous slopes<br/>to predict the next solution value.
+    </div>`;
+          const tbl = document.createElement("table");
+          tbl.className = "mini-val-table";
+          // header
+          const htr = document.createElement("tr");
+          htr.innerHTML = `<td style="color:var(--accent);font-size:0.58rem;font-weight:700;">f-value</td><td style="color:var(--accent);font-size:0.58rem;font-weight:700;text-align:right;">value</td>`;
+          tbl.appendChild(htr);
+          for (let i = 0; i < starters; i++) {
+            const tr = document.createElement("tr");
+            if (i === 0) tr.className = "pivRow";
+            tr.innerHTML = `<td>${fNameLabels[i]}</td><td>${fmt(card.fvals[i])}</td>`;
+            tbl.appendChild(tr);
+          }
+          // weighted sum
+          const wtr = document.createElement("tr");
+          wtr.className = "highlight";
+          wtr.innerHTML = `<td>Weighted sum</td><td>${fmt(weightedSum)}</td>`;
+          tbl.appendChild(wtr);
+          const hptr = document.createElement("tr");
+          hptr.className = "highlight";
+          hptr.innerHTML = `<td>h&times;${cs.hCoef}&times;sum</td><td>${fmt(correction)}</td>`;
+          tbl.appendChild(hptr);
+          mid.appendChild(tbl);
+          body.appendChild(mid);
+
+          // RIGHT: result
+          const right = document.createElement("div");
+          right.innerHTML = '<div class="step-col-title">Computed Result</div>';
+          const resBox = document.createElement("div");
+          resBox.className = "calc-box";
+          const totalCards = stepsData.length;
+          const pct =
+            totalCards > 0
+              ? (((card._totalIdx || 0) + 1) / totalCards) * 100
+              : 0;
+          resBox.innerHTML = `
+    <div class="calc-row"><span class="calc-label">y&#x2099; =</span><span style="color:var(--text);">${fmt(card.yPrev)}</span></div>
+    <div class="calc-row"><span class="calc-label">Correction:</span><span style="color:var(--accent3);">${fmt(correction)}</span></div>
+    <div style="height:1px;background:var(--border);margin:0.5rem 0;"></div>
+    <div class="calc-row"><span class="calc-label">y&#x2099;&#x208A;&#x2081; =</span><span style="color:var(--accent3);font-weight:700;font-size:1rem;">${fmt(card.yn1)}</span></div>
+    <div class="calc-row"><span class="calc-label">x&#x2099;&#x208A;&#x2081; =</span><span style="color:var(--accent);">${fmt(card.x1)}</span></div>
+    <div style="height:1px;background:var(--border);margin:0.5rem 0;"></div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.3rem;">Solution progress</div>
+    <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;">
+      <div style="width:${pct.toFixed(1)}%;height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent));border-radius:4px;transition:width 0.4s;"></div>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--text-dim);margin-top:0.3rem;text-align:right;">${pct.toFixed(0)}% complete</div>`;
+          right.appendChild(resBox);
+          body.appendChild(right);
+          el.appendChild(body);
+
+          const graphWrap = document.createElement("div");
+          graphWrap.className = "step-graph-wrap";
+          graphWrap.innerHTML = `
+    <div class="step-col-title">Step Graph</div>
+    <div class="graph-box">
+      <canvas class="step-mini-canvas"></canvas>
+    </div>`;
+          el.appendChild(graphWrap);
+
+          requestAnimationFrame(() => {
+            const miniCanvas = graphWrap.querySelector("canvas");
+            if (miniCanvas && card.plotPts && card.plotPts.length) {
+              drawStepMiniGraph(miniCanvas, card.plotPts, decimals);
+            }
+          });
+
+          const sum = document.createElement("div");
+          sum.className = "step-summary";
+          sum.innerHTML = `
+    <span style="color:var(--text-dim)">x&#x2099;:</span><span style="color:var(--accent)">${fmt(card.xPrev)}</span>
+    <span style="color:var(--accent2)">&rarr;</span>
+    <span style="color:var(--text-dim)">x&#x2099;&#x208A;&#x2081;:</span><span style="color:var(--accent)">${fmt(card.x1)}</span>
+    <span style="color:var(--accent2)">|</span>
+    <span style="color:var(--text-dim)">y&#x2099;:</span><span style="color:var(--text)">${fmt(card.yPrev)}</span>
+    <span style="color:var(--accent2)">&rarr;</span>
+    <span style="color:var(--text-dim)">y&#x2099;&#x208A;&#x2081;:</span><span style="color:var(--accent3);font-weight:700;">${fmt(card.yn1)}</span>
+    <span style="color:var(--accent2)">|</span>
+    <span class="phase-ab">AB ${card.method}</span>`;
+          el.appendChild(sum);
+          return el;
+        }
+
+        // ── Step nav ──────────────────────────────────────────────────
+        function renderStep(idx) {
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 6;
+          const c = document.getElementById("stepCardContainer");
+          c.innerHTML = "";
+          if (stepsData[idx])
+            c.appendChild(buildStepCard(stepsData[idx], decimals));
+        }
+
+        window.changeStep = function (dir) {
+          currentStep = Math.max(
+            0,
+            Math.min(stepsData.length - 1, currentStep + dir),
+          );
+          renderStep(currentStep);
+          updateNav();
+        };
+
+        function updateNav() {
+          document.getElementById("prevBtn").disabled = currentStep === 0;
+          document.getElementById("nextBtn").disabled =
+            currentStep === stepsData.length - 1;
+          document.getElementById("stepCounter").textContent =
+            "Step " + (currentStep + 1) + " / " + stepsData.length;
+        }
+
+        window.toggleAllSteps = function () {
+          showingAll = !showingAll;
+          document.getElementById("toggleAllBtn").textContent = showingAll
+            ? "Show One Step"
+            : "Show All Steps";
+          document.getElementById("singleStepView").style.display = showingAll
+            ? "none"
+            : "block";
+          document.getElementById("allStepsView").style.display = showingAll
+            ? "block"
+            : "none";
+          if (showingAll) {
+            const decimals =
+              parseInt(document.getElementById("decimals").value) || 6;
+            const c = document.getElementById("allStepsContainer");
+            c.innerHTML = "";
+            stepsData.forEach((s) => c.appendChild(buildStepCard(s, decimals)));
+          }
+        };
+
+        // ── Reset ─────────────────────────────────────────────────────
+        window.resetAll = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          document.getElementById("emptyState").style.display = "block";
+          document.getElementById("resultsContent").style.display = "none";
+          if (fxChartObj) {
+            fxChartObj.destroy();
+            fxChartObj = null;
+          }
+          if (areaChartObj) {
+            areaChartObj.destroy();
+            areaChartObj = null;
+          }
+          stepsData = [];
+          currentStep = 0;
+          showingAll = false;
+          trapCanvasData = null;
+          document.getElementById("funcInput").value = "x + y";
+          document.getElementById("x0Input").value = "0";
+          document.getElementById("y0Input").value = "1";
+          document.getElementById("stepInput").value = "0.1";
+          document.getElementById("nStepsInput").value = "6";
+          document.getElementById("methodSelect").value = "4-step";
+        };
+
+        // ── Info popup ────────────────────────────────────────────────
+        window.togglePop = function (id) {
+          const p = document.getElementById(id);
+          if (!p) return;
+          const isOpen = p.classList.contains("show");
+          document
+            .querySelectorAll(".info-popup")
+            .forEach((x) => x.classList.remove("show"));
+          if (!isOpen) p.classList.add("show");
+        };
+        document.addEventListener("click", (e) => {
+          if (!e.target.classList.contains("info-btn"))
+            document
+              .querySelectorAll(".info-popup")
+              .forEach((p) => p.classList.remove("show"));
+        });
+
+        // ── Alerts ────────────────────────────────────────────────────
+        function showError(msg) {
+          const e = document.getElementById("errorAlert");
+          e.textContent = "\u2715 Error: " + msg;
+          e.style.display = "block";
+        }
+        function showSuccess(msg) {
+          const e = document.getElementById("successAlert");
+          e.textContent = msg;
+          e.style.display = "block";
+        }
+        function hideAlert(id) {
+          document.getElementById(id).style.display = "none";
+        }
+
+        // ── Background animation ──────────────────────────────────────
+        (() => {
+          const gridCv = document.getElementById("bgGrid");
+          const partCv = document.getElementById("bgParticles");
+          const symW = document.getElementById("bgSymbols");
+          if (!gridCv || !partCv || !symW) return;
+          const gctx = gridCv.getContext("2d"),
+            pctx = partCv.getContext("2d");
+          const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+          const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+          const particles = [];
+          const pc = 90;
+          let w = 0,
+            h = 0,
+            dpr = 1;
+          function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = window.innerWidth;
+            h = window.innerHeight;
+            [gridCv, partCv].forEach((cv) => {
+              cv.width = Math.floor(w * dpr);
+              cv.height = Math.floor(h * dpr);
+              cv.style.width = w + "px";
+              cv.style.height = h + "px";
+            });
+            gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          function seed() {
+            particles.length = 0;
+            for (let i = 0; i < pc; i++)
+              particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 1.5 + Math.random() * 2.3,
+                c: palette[(Math.random() * palette.length) | 0],
+              });
+          }
+          function seedSym() {
+            const syms = [
+              "dy/dx",
+              "f(x,y)",
+              "k\u2081",
+              "k\u2082",
+              "k\u2083",
+              "k\u2084",
+              "h",
+              "y\u2099\u208A\u2081",
+              "RK4",
+              "AB",
+              "y'",
+              "f\u2099",
+              "\u0394y",
+              "y\u2080",
+            ];
+            symW.innerHTML = "";
+            for (let i = 0; i < 22; i++) {
+              const s = document.createElement("span");
+              const t = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+              s.className = "bg-symbol " + t;
+              s.textContent = syms[i % syms.length];
+              s.style.left = Math.random() * 98 + "%";
+              s.style.top = 80 + Math.random() * 50 + "%";
+              s.style.fontSize = 13 + Math.random() * 20 + "px";
+              s.style.animationDuration = 22 + Math.random() * 20 + "s";
+              s.style.animationDelay = -Math.random() * 26 + "s";
+              symW.appendChild(s);
+            }
+          }
+          function drawGrid(t) {
+            gctx.clearRect(0, 0, w, h);
+            const gap = 56,
+              ox = (t * 0.008) % gap,
+              oy = (t * 0.005) % gap;
+            gctx.strokeStyle = "rgba(0,212,255,.11)";
+            gctx.lineWidth = 1;
+            for (let x = -gap; x < w + gap; x += gap) {
+              gctx.beginPath();
+              gctx.moveTo(x + ox, 0);
+              gctx.lineTo(x + ox, h);
+              gctx.stroke();
+            }
+            for (let y = -gap; y < h + gap; y += gap) {
+              gctx.beginPath();
+              gctx.moveTo(0, y + oy);
+              gctx.lineTo(w, y + oy);
+              gctx.stroke();
+            }
+            gctx.strokeStyle = "rgba(124,58,237,.08)";
+            for (let x = -h; x < w + h; x += gap * 1.5) {
+              gctx.beginPath();
+              gctx.moveTo(x - ox * 0.7, 0);
+              gctx.lineTo(x + h - oy * 0.7, h);
+              gctx.stroke();
+            }
+          }
+          function drawPart() {
+            pctx.clearRect(0, 0, w, h);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > w) p.vx *= -1;
+              if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            for (let i = 0; i < particles.length; i++) {
+              const a = particles[i];
+              for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j],
+                  dx = a.x - b.x,
+                  dy = a.y - b.y,
+                  dist = Math.hypot(dx, dy);
+                if (dist < 120) {
+                  pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                  pctx.lineWidth = 1;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(b.x, b.y);
+                  pctx.stroke();
+                }
+              }
+              if (mouse.active) {
+                const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (md < mouse.r) {
+                  const al = (1 - md / mouse.r) * 0.45;
+                  pctx.strokeStyle = `rgba(124,58,237,${al})`;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(mouse.x, mouse.y);
+                  pctx.stroke();
+                }
+              }
+            }
+            for (const p of particles) {
+              const near = mouse.active
+                ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r
+                : false;
+              pctx.beginPath();
+              pctx.fillStyle = p.c;
+              pctx.globalAlpha = near ? 1 : 0.82;
+              pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+              pctx.fill();
+              if (near) {
+                pctx.beginPath();
+                pctx.globalAlpha = 0.15;
+                pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+                pctx.fill();
+              }
+            }
+            pctx.globalAlpha = 1;
+          }
+          function loop(t) {
+            drawGrid(t);
+            drawPart();
+            requestAnimationFrame(loop);
+          }
+          window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+          });
+          window.addEventListener("mouseleave", () => {
+            mouse.active = false;
+          });
+          window.addEventListener("resize", resize);
+          resize();
+          seed();
+          seedSym();
+          requestAnimationFrame(loop);
+        })();
+
+        window.addEventListener("resize", () => {
+          if (trapCanvasData) {
+            const { pts, starters } = trapCanvasData;
+            drawODECanvas(pts, starters);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

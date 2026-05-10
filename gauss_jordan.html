@@ -1,0 +1,2395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gauss Jordan Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      input[type="number"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+
+      /* ── Augmented Matrix Grid ── */
+      .aug-matrix-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 1.2rem;
+        overflow-x: auto;
+        padding-bottom: 0.3rem;
+      }
+      .matrix-bracket {
+        color: var(--accent);
+        font-size: 3rem;
+        font-weight: 100;
+        line-height: 1;
+        opacity: 0.7;
+        flex-shrink: 0;
+      }
+      .aug-grid-container {
+        display: flex;
+        gap: 0;
+        flex: 1;
+        min-width: 0;
+      }
+      .aug-A-grid,
+      .aug-b-grid {
+        display: grid;
+        gap: 0.35rem;
+      }
+      .aug-divider {
+        width: 2px;
+        background: rgba(0, 212, 255, 0.25);
+        margin: 0 0.5rem;
+        border-radius: 2px;
+      }
+      .matrix-cell {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.45rem 0.4rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        text-align: center;
+        outline: none;
+        width: 62px;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s,
+          background 0.2s;
+      }
+      .matrix-cell.b-cell {
+        border-color: rgba(255, 107, 53, 0.35);
+        background: rgba(255, 107, 53, 0.05);
+        color: var(--accent2);
+      }
+      .matrix-cell:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+        background: rgba(0, 212, 255, 0.05);
+      }
+      .matrix-cell.b-cell:focus {
+        border-color: var(--accent2);
+        box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+      }
+
+      .matrix-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+      .btn-secondary:hover {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.3rem;
+        margin-bottom: 1.2rem;
+        background: var(--surface2);
+        padding: 0.3rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      .tab {
+        flex: 1;
+        padding: 0.5rem;
+        text-align: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+        user-select: none;
+      }
+      .tab.active {
+        background: var(--accent);
+        color: #000;
+        font-weight: 700;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      .equation-area {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .equation-area textarea {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        width: 100%;
+        resize: vertical;
+        outline: none;
+        min-height: 80px;
+        line-height: 1.6;
+      }
+      .equation-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-top: 0.5rem;
+      }
+
+      .full-width {
+        grid-column: 1 / -1;
+      }
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .calc-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .calc-label {
+        color: var(--text-dim);
+        min-width: 60px;
+        flex-shrink: 0;
+      }
+      .calc-expr {
+        color: var(--text);
+      }
+      .calc-result {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .calc-arrow {
+        color: var(--accent2);
+      }
+
+      .vec-cell {
+        background: rgba(0, 212, 255, 0.07);
+        border: 1px solid rgba(0, 212, 255, 0.15);
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--accent3);
+        text-align: center;
+        min-width: 60px;
+      }
+      .vec-cell.new-val {
+        color: var(--accent);
+        border-color: rgba(0, 212, 255, 0.4);
+        background: rgba(0, 212, 255, 0.12);
+      }
+
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.4rem 0;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        color: var(--accent);
+      }
+
+      /* ── Charts ── */
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 250px;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .final-chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 300px;
+        margin-bottom: 1.5rem;
+      }
+
+      /* ── Steps ── */
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .all-steps-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      /* ── Step Card ── */
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+
+      /* Step body: three columns — calc | detail | chart */
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 900px) {
+        .step-body {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Step mini chart panel */
+      .step-chart-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .step-mini-chart-wrap {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.7rem;
+        flex: 1;
+        min-height: 160px;
+        position: relative;
+      }
+
+      .step-matrix-wrap {
+        overflow-x: auto;
+      }
+      .step-matrix-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .step-matrix-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text);
+      }
+      .step-matrix-table td {
+        padding: 0.28rem 0.5rem;
+        text-align: right;
+        border: 1px solid rgba(26, 53, 69, 0.6);
+      }
+      .step-matrix-table td.pivot-col {
+        color: var(--accent);
+        background: rgba(0, 212, 255, 0.06);
+      }
+      .step-matrix-table td.pivot-row {
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .step-matrix-table td.pivot-cell {
+        color: var(--accent);
+        background: rgba(0, 212, 255, 0.12);
+        font-weight: 700;
+      }
+      .step-matrix-table td.b-col {
+        color: var(--accent2);
+        border-left: 2px solid rgba(0, 212, 255, 0.25);
+      }
+      .step-matrix-table td.changed {
+        color: var(--accent3);
+      }
+      .step-matrix-table td.swapped {
+        color: var(--accent2);
+        background: rgba(255, 107, 53, 0.06);
+      }
+
+      /* ── Step summary bar ── */
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+
+      /* ── Alert ── */
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+
+      /* ── Empty State ── */
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+
+      /* ── Background ── */
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      /* ── Footer ── */
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">Numerical Methods</div>
+        <h1>Gauss Jordan</h1>
+        <p>
+          Full Row Reduction to RREF — Normalize &amp; Eliminate to Identity
+          Matrix
+        </p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── Input Panel ── -->
+        <div class="panel">
+          <div class="panel-title">System Input [A|b]</div>
+
+          <div class="tabs">
+            <div
+              class="tab active"
+              data-tab="matrix"
+              onclick="switchTab('matrix')"
+            >
+              Matrix Mode
+            </div>
+            <div
+              class="tab"
+              data-tab="equation"
+              onclick="switchTab('equation')"
+            >
+              Equation Mode
+            </div>
+          </div>
+
+          <!-- Matrix Mode -->
+          <div class="tab-content active" id="tab-matrix">
+            <div class="controls-row">
+              <div class="control-group">
+                <label>Equations (n×n)</label>
+                <input
+                  type="number"
+                  id="matSize"
+                  value="3"
+                  min="2"
+                  max="6"
+                  onchange="generateMatrix()"
+                />
+              </div>
+              <div
+                class="control-group"
+                style="justify-content: flex-end; align-items: flex-end"
+              >
+                <button class="btn btn-secondary" onclick="generateMatrix()">
+                  Generate Grid
+                </button>
+              </div>
+            </div>
+            <div class="matrix-label">Augmented Matrix [A | b]</div>
+            <div class="aug-matrix-wrapper">
+              <span class="matrix-bracket">[</span>
+              <div class="aug-grid-container">
+                <div class="aug-A-grid" id="matrixGrid"></div>
+                <div class="aug-divider"></div>
+                <div class="aug-b-grid" id="bGrid"></div>
+              </div>
+              <span class="matrix-bracket">]</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+              <button
+                class="btn btn-secondary"
+                style="font-size: 0.7rem; padding: 0.4rem 0.8rem"
+                onclick="loadExample()"
+              >
+                Load Example
+              </button>
+              <button
+                class="btn btn-secondary"
+                style="font-size: 0.7rem; padding: 0.4rem 0.8rem"
+                onclick="randomMatrix()"
+              >
+                Random
+              </button>
+            </div>
+          </div>
+
+          <!-- Equation Mode -->
+          <div class="tab-content" id="tab-equation">
+            <div class="equation-area">
+              <textarea
+                id="equationInput"
+                placeholder="Enter augmented matrix [A|b] rows, each row on a new line:&#10;2, 1, -1, 8&#10;-3, -1, 2, -11&#10;-2, 1, 2, -3"
+              ></textarea>
+            </div>
+            <div class="equation-hint">
+              Each row: a₁, a₂, …, aₙ, b — separated by commas
+            </div>
+            <button
+              class="btn btn-secondary"
+              style="margin-top: 0.5rem; font-size: 0.7rem"
+              onclick="parseEquation()"
+            >
+              Parse &amp; Preview
+            </button>
+            <div id="parsePreview"></div>
+          </div>
+        </div>
+
+        <!-- ── Parameters Panel ── -->
+        <div class="panel">
+          <div class="panel-title">Parameters</div>
+          <div class="controls-row">
+            <div class="control-group">
+              <label>Decimal Places</label>
+              <input type="number" id="decimals" value="4" min="2" max="10" />
+            </div>
+            <div class="control-group">
+              <label>Pivot Strategy</label>
+              <select id="pivotMode">
+                <option value="partial">Partial Pivoting</option>
+                <option value="none">No Pivoting</option>
+              </select>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runGaussJordan()">
+              ▶ Compute
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">✕ Reset</button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+          <div class="sep"></div>
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.65rem;
+              color: var(--text-dim);
+              line-height: 1.9;
+            "
+          >
+            <strong style="color: var(--accent)">Gauss-Jordan Algorithm</strong
+            ><br />
+            Given Ax = b:<br />
+            <span style="color: var(--accent2)">Full Row Reduction:</span><br />
+            &nbsp;&nbsp;<span style="color: var(--accent2)">for</span> k = 1 to
+            n:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--accent3)"
+              >pivot</span
+            >
+            ← select max |a<sub>ik</sub>| (partial)<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;R<sub>k</sub> ← R<sub>k</sub> / a<sub
+              >kk</sub
+            >
+            &nbsp;<span style="color: var(--accent3)">(normalize)</span><br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--accent2)"
+              >for</span
+            >
+            all i ≠ k:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m = a<sub>ik</sub><br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R<sub>i</sub> ← R<sub>i</sub> −
+            m·R<sub>k</sub><br />
+            <span style="color: var(--accent2)">Read Solution:</span><br />
+            &nbsp;&nbsp;x<sub>i</sub> = b′<sub>i</sub> &nbsp;<span
+              style="color: var(--accent3)"
+              >(from RREF directly)</span
+            >
+          </div>
+        </div>
+
+        <!-- ── Results (full width) ── -->
+        <div class="panel full-width">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">I</span>
+            Configure your system [A|b] and parameters, then click Compute.
+          </div>
+
+          <div id="resultsContent" style="display: none">
+            <!-- Stats -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="stepsDisplay">—</div>
+                <div class="stat-label">Operations</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="swapsDisplay">—</div>
+                <div class="stat-label">Row Swaps</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="sizeDisplay">—</div>
+                <div class="stat-label">System Size</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="singDisplay">—</div>
+                <div class="stat-label">Singular</div>
+              </div>
+            </div>
+
+            <!-- Solution -->
+            <div class="solution-display">
+              <div class="sol-title">Solution Vector X (Direct from RREF)</div>
+              <div class="sol-values" id="solutionDisplay"></div>
+            </div>
+
+            <!-- Charts row -->
+            <div class="charts-row">
+              <div>
+                <div class="chart-title">Solution Values</div>
+                <div class="chart-wrap"><canvas id="solChart"></canvas></div>
+              </div>
+              <div>
+                <div class="chart-title">
+                  Pivot Magnitudes per Normalization Step
+                </div>
+                <div class="chart-wrap"><canvas id="pivotChart"></canvas></div>
+              </div>
+            </div>
+
+            <!-- Final RREF matrix -->
+            <div class="chart-title">
+              Reduced Row Echelon Form [I | x] after Gauss-Jordan Elimination
+            </div>
+            <div
+              class="final-chart-wrap"
+              id="uTriangleWrap"
+              style="height: auto; padding: 1rem"
+            ></div>
+
+            <div class="sep"></div>
+
+            <!-- Step-by-step -->
+            <div>
+              <div class="steps-header">
+                <div class="steps-header-title">Step-by-Step Reduction Log</div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.8rem;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <button
+                    class="step-all-btn"
+                    id="toggleAllBtn"
+                    onclick="toggleAllSteps()"
+                  >
+                    Show All Steps
+                  </button>
+                  <div class="step-nav">
+                    <button id="prevBtn" onclick="changeStep(-1)" disabled>
+                      ◀ Prev
+                    </button>
+                    <span class="step-counter" id="stepCounter"
+                      >Step 1 / 1</span
+                    >
+                    <button id="nextBtn" onclick="changeStep(1)">Next ▶</button>
+                  </div>
+                </div>
+              </div>
+              <div id="singleStepView">
+                <div id="stepCardContainer"></div>
+              </div>
+              <div id="allStepsView" style="display: none">
+                <div class="all-steps-wrap" id="allStepsContainer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">I</span>Gauss Jordan Calculator &mdash; Numerical
+        Methods
+      </div>
+      <div class="foot-links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/gauss_seidel.html">Gauss-Seidel</a>
+        <a href="/adam.html">Adam's Method</a>
+        <a href="/lagrange.html">Lagrange Interpolation</a>
+        <a href="/power1.html">Power Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/Newton_divide.html">Newton's divide</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/simpson.html">Simpson's Rule</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/trapezoidel.html">Trapezoidal Rule</a>
+        <a href="/index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        // ── State ──────────────────────────────────────────────────
+        let currentSize = 3;
+        let stepsData = [];
+        let currentStep = 0;
+        let showingAll = false;
+        let solChartObj = null,
+          pivotChartObj = null;
+        let stepChartCounter = 0;
+        const stepChartRegistry = {};
+
+        const COLORS = [
+          "#00d4ff",
+          "#ff6b35",
+          "#77dc1e",
+          "#a78bfa",
+          "#f59e0b",
+          "#ec4899",
+        ];
+
+        // ── Tab switching ─────────────────────────────────────────
+        function switchTab(name) {
+          document
+            .querySelectorAll(".tab")
+            .forEach((t) =>
+              t.classList.toggle("active", t.dataset.tab === name),
+            );
+          document
+            .querySelectorAll(".tab-content")
+            .forEach((c) =>
+              c.classList.toggle("active", c.id === "tab-" + name),
+            );
+        }
+
+        // ── Matrix Generation ─────────────────────────────────────
+        function generateMatrix() {
+          const n = Math.max(
+            2,
+            Math.min(
+              6,
+              parseInt(document.getElementById("matSize").value) || 3,
+            ),
+          );
+          currentSize = n;
+          document.getElementById("matSize").value = n;
+
+          const ag = document.getElementById("matrixGrid");
+          const bg = document.getElementById("bGrid");
+          ag.style.gridTemplateColumns = `repeat(${n},1fr)`;
+          ag.innerHTML = "";
+          bg.style.gridTemplateColumns = "1fr";
+          bg.innerHTML = "";
+
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+              const inp = document.createElement("input");
+              inp.type = "number";
+              inp.className = "matrix-cell";
+              inp.id = `a_${i}_${j}`;
+              inp.value = i === j ? n * 2 : i === j - 1 || i === j + 1 ? 1 : 0;
+              inp.step = "any";
+              ag.appendChild(inp);
+            }
+            const bi = document.createElement("input");
+            bi.type = "number";
+            bi.className = "matrix-cell b-cell";
+            bi.id = `b_${i}`;
+            bi.value = n * 2 + (i === 0 ? 1 : 0);
+            bi.step = "any";
+            bg.appendChild(bi);
+          }
+        }
+
+        // ── Read System ───────────────────────────────────────────
+        function readSystem() {
+          const n = currentSize;
+          const A = [],
+            b = [];
+          for (let i = 0; i < n; i++) {
+            A.push([]);
+            for (let j = 0; j < n; j++) {
+              const v = parseFloat(
+                document.getElementById(`a_${i}_${j}`).value,
+              );
+              if (isNaN(v)) throw new Error(`Invalid A[${i + 1}][${j + 1}]`);
+              A[i].push(v);
+            }
+            const bv = parseFloat(document.getElementById(`b_${i}`).value);
+            if (isNaN(bv)) throw new Error(`Invalid b[${i + 1}]`);
+            b.push(bv);
+          }
+          return { A, b };
+        }
+
+        // ── Parse Equation Mode ───────────────────────────────────
+        function parseEquation() {
+          try {
+            const text = document.getElementById("equationInput").value.trim();
+            const rows = text.split("\n").filter((r) => r.trim());
+            const A = [],
+              b = [];
+            rows.forEach((row, i) => {
+              const vals = row.split(",").map((v) => {
+                const num = parseFloat(v.trim());
+                if (isNaN(num)) throw new Error(`Row ${i + 1}: invalid value`);
+                return num;
+              });
+              if (vals.length < 2)
+                throw new Error(`Row ${i + 1}: too few values`);
+              b.push(vals.pop());
+              A.push(vals);
+            });
+            const n = A.length;
+            for (let i = 0; i < n; i++)
+              if (A[i].length !== n)
+                throw new Error(`Row ${i + 1} length mismatch`);
+
+            document.getElementById("matSize").value = n;
+            currentSize = n;
+            generateMatrix();
+            for (let i = 0; i < n; i++) {
+              for (let j = 0; j < n; j++)
+                document.getElementById(`a_${i}_${j}`).value = A[i][j];
+              document.getElementById(`b_${i}`).value = b[i];
+            }
+            document.getElementById("parsePreview").innerHTML =
+              `<div class="alert alert-success" style="display:block;margin-top:0.5rem;">✓ Parsed ${n}×${n} system. Switch to Matrix Mode to verify.</div>`;
+          } catch (e) {
+            document.getElementById("parsePreview").innerHTML =
+              `<div class="alert alert-error" style="display:block;margin-top:0.5rem;">✕ ${e.message}</div>`;
+          }
+        }
+
+        // ── Load Example ──────────────────────────────────────────
+        function loadExample() {
+          const examples = [
+            {
+              A: [
+                [2, 1, -1],
+                [-3, -1, 2],
+                [-2, 1, 2],
+              ],
+              b: [8, -11, -3],
+            },
+            {
+              A: [
+                [4, 2, 1],
+                [2, 3, 1],
+                [1, 1, 4],
+              ],
+              b: [17, 14, 21],
+            },
+            {
+              A: [
+                [10, 2, 1],
+                [1, 5, 1],
+                [2, 1, 8],
+              ],
+              b: [7, -8, 26],
+            },
+            {
+              A: [
+                [3, 2],
+                [1, 4],
+              ],
+              b: [13, 11],
+            },
+          ];
+          const ex = examples[Math.floor(Math.random() * examples.length)];
+          const n = ex.A.length;
+          document.getElementById("matSize").value = n;
+          currentSize = n;
+          generateMatrix();
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++)
+              document.getElementById(`a_${i}_${j}`).value = ex.A[i][j];
+            document.getElementById(`b_${i}`).value = ex.b[i];
+          }
+        }
+
+        // ── Random Matrix ─────────────────────────────────────────
+        function randomMatrix() {
+          const n = currentSize;
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+              document.getElementById(`a_${i}_${j}`).value =
+                Math.round((Math.random() * 10 - 5) * 10) / 10;
+            }
+            document.getElementById(`b_${i}`).value = Math.round(
+              Math.random() * 20 - 5,
+            );
+          }
+        }
+
+        // ── Deep copy augmented matrix ────────────────────────────
+        function copyAug(A, b) {
+          return { A: A.map((r) => [...r]), b: [...b] };
+        }
+
+        // ── Gauss-Jordan Core ─────────────────────────────────────
+        function gaussJordan(A_in, b_in, pivotMode) {
+          const n = A_in.length;
+          let { A, b } = copyAug(A_in, b_in);
+
+          const steps = [];
+          let swapCount = 0;
+          let singular = false;
+
+          for (let k = 0; k < n; k++) {
+            // ── Partial Pivoting ──────────────────────────────────
+            if (pivotMode === "partial") {
+              let maxVal = Math.abs(A[k][k]);
+              let maxRow = k;
+              for (let i = k + 1; i < n; i++) {
+                if (Math.abs(A[i][k]) > maxVal) {
+                  maxVal = Math.abs(A[i][k]);
+                  maxRow = i;
+                }
+              }
+              if (maxRow !== k) {
+                [A[k], A[maxRow]] = [A[maxRow], A[k]];
+                [b[k], b[maxRow]] = [b[maxRow], b[k]];
+                swapCount++;
+                steps.push({
+                  type: "swap",
+                  pivot: k,
+                  desc: `Swap R${k + 1} ↔ R${maxRow + 1} (pivot |${maxVal.toFixed(4)}| at row ${maxRow + 1})`,
+                  op: `R${k + 1} ↔ R${maxRow + 1}`,
+                  matrix: copyAug(A, b),
+                  changedRows: [k, maxRow],
+                  pivotRow: k,
+                  pivotCol: k,
+                });
+              }
+            }
+
+            const pivotVal = A[k][k];
+            if (Math.abs(pivotVal) < 1e-12) {
+              singular = true;
+              steps.push({
+                type: "elim",
+                pivot: k,
+                desc: `Column ${k + 1}: pivot ≈ 0 — matrix may be singular`,
+                op: `pivot ≈ 0`,
+                matrix: copyAug(A, b),
+                changedRows: [],
+                pivotRow: k,
+                pivotCol: k,
+                multipliers: [],
+                pivotVal: pivotVal,
+              });
+              continue;
+            }
+
+            // ── Normalize Pivot Row ───────────────────────────────
+            const pivotOld = A[k][k];
+            for (let j = 0; j < n; j++) A[k][j] /= pivotOld;
+            b[k] /= pivotOld;
+
+            steps.push({
+              type: "normalize",
+              pivot: k,
+              desc: `Normalize R${k + 1}: divide by ${pivotOld.toFixed(4)}`,
+              op: `R${k + 1} ← R${k + 1} / (${pivotOld.toFixed(4)})`,
+              matrix: copyAug(A, b),
+              changedRows: [k],
+              pivotRow: k,
+              pivotCol: k,
+              pivotVal: pivotOld,
+            });
+
+            // ── Eliminate column k in ALL other rows ──────────────
+            const multipliers = [];
+            const changedRows = [];
+            for (let i = 0; i < n; i++) {
+              if (i === k) continue;
+              const m = A[i][k];
+              if (Math.abs(m) < 1e-14) continue;
+              multipliers.push({ row: i, m });
+              for (let j = 0; j < n; j++) {
+                A[i][j] -= m * A[k][j];
+              }
+              b[i] -= m * b[k];
+              changedRows.push(i);
+            }
+
+            if (multipliers.length > 0) {
+              steps.push({
+                type: "elim",
+                pivot: k,
+                desc: `Eliminate col ${k + 1} in all other rows (a${k + 1}${k + 1} = 1 after normalize)`,
+                op: multipliers
+                  .map(
+                    (m) =>
+                      `R${m.row + 1} ← R${m.row + 1} − (${m.m.toFixed(4)})·R${k + 1}`,
+                  )
+                  .join("  |  "),
+                matrix: copyAug(A, b),
+                changedRows,
+                pivotRow: k,
+                pivotCol: k,
+                multipliers,
+                pivotVal: 1,
+              });
+            }
+          }
+
+          // Check last pivot
+          if (Math.abs(A[n - 1][n - 1]) < 1e-12) singular = true;
+
+          // Solution is directly the b vector after RREF
+          const x = b.map((v, i) => (Math.abs(A[i][i] - 1) < 1e-8 ? v : NaN));
+
+          return { x, steps, singular, swapCount, finalA: A, finalB: b };
+        }
+
+        // ── Run ───────────────────────────────────────────────────
+        function runGaussJordan() {
+          document.getElementById("errorAlert").style.display = "none";
+          document.getElementById("successAlert").style.display = "none";
+
+          if (
+            document.querySelector(".tab.active").dataset.tab === "equation"
+          ) {
+            try {
+              parseEquation();
+            } catch (e) {}
+          }
+
+          let A, b;
+          try {
+            ({ A, b } = readSystem());
+          } catch (e) {
+            showError(e.message);
+            return;
+          }
+
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 4;
+          const pivotMode = document.getElementById("pivotMode").value;
+
+          let result;
+          try {
+            result = gaussJordan(A, b, pivotMode);
+          } catch (e) {
+            showError(e.message);
+            return;
+          }
+
+          stepsData = result.steps;
+          currentStep = 0;
+          showingAll = false;
+          document.getElementById("toggleAllBtn").textContent =
+            "Show All Steps";
+          document.getElementById("singleStepView").style.display = "block";
+          document.getElementById("allStepsView").style.display = "none";
+
+          displayResults(result, decimals);
+
+          const totalOps = result.steps.filter((s) => s.type !== "swap").length;
+          const msg = result.singular
+            ? `⚠ Matrix appears singular or nearly singular.`
+            : `✓ Solved ${currentSize}×${currentSize} system via RREF — ${totalOps} operations (${result.swapCount} swap${result.swapCount !== 1 ? "s" : ""}).`;
+          document.getElementById("successAlert").textContent = msg;
+          document.getElementById("successAlert").style.display = "block";
+        }
+
+        // ── Display Results ───────────────────────────────────────
+        function displayResults(result, decimals) {
+          const fmt = (v) =>
+            typeof v === "number" && !isNaN(v) ? v.toFixed(decimals) : "N/A";
+          document.getElementById("emptyState").style.display = "none";
+          document.getElementById("resultsContent").style.display = "block";
+
+          const totalOps = result.steps.filter((s) => s.type !== "swap").length;
+          document.getElementById("stepsDisplay").textContent = totalOps;
+          document.getElementById("swapsDisplay").textContent =
+            result.swapCount;
+          document.getElementById("sizeDisplay").textContent =
+            `${currentSize}×${currentSize}`;
+          document.getElementById("singDisplay").textContent = result.singular
+            ? "✗ YES"
+            : "✓ NO";
+          document.getElementById("singDisplay").style.color = result.singular
+            ? "var(--accent2)"
+            : "var(--accent3)";
+
+          // Solution chips
+          const sol = document.getElementById("solutionDisplay");
+          sol.innerHTML = "";
+          result.x.forEach((v, i) => {
+            const chip = document.createElement("div");
+            chip.className = "sol-chip";
+            chip.style.color = COLORS[i % COLORS.length];
+            chip.style.borderColor = COLORS[i % COLORS.length] + "44";
+            chip.style.background = COLORS[i % COLORS.length] + "11";
+            chip.innerHTML = `x<sub>${i + 1}</sub> = ${fmt(v)}`;
+            sol.appendChild(chip);
+          });
+
+          // ── Solution bar chart ──
+          if (solChartObj) {
+            solChartObj.destroy();
+            solChartObj = null;
+          }
+          const solCtx = document.getElementById("solChart").getContext("2d");
+          solChartObj = new Chart(solCtx, {
+            type: "bar",
+            data: {
+              labels: result.x.map((_, i) => `x${i + 1}`),
+              datasets: [
+                {
+                  label: "Solution",
+                  data: result.x.map((v) => (isNaN(v) ? 0 : v)),
+                  backgroundColor: result.x.map(
+                    (_, i) => COLORS[i % COLORS.length] + "bb",
+                  ),
+                  borderColor: result.x.map(
+                    (_, i) => COLORS[i % COLORS.length],
+                  ),
+                  borderWidth: 1,
+                  borderRadius: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: {
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                  grid: { color: "rgba(26,53,69,0.5)" },
+                },
+                y: {
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                  grid: { color: "rgba(26,53,69,0.5)" },
+                },
+              },
+            },
+          });
+
+          // ── Pivot magnitude chart (one per normalize step) ──
+          const normalizeOnly = result.steps.filter(
+            (s) => s.type === "normalize",
+          );
+          if (pivotChartObj) {
+            pivotChartObj.destroy();
+            pivotChartObj = null;
+          }
+          const pivCtx = document.getElementById("pivotChart").getContext("2d");
+          pivotChartObj = new Chart(pivCtx, {
+            type: "line",
+            data: {
+              labels: normalizeOnly.map((_, i) => `Pivot ${i + 1}`),
+              datasets: [
+                {
+                  label: "Pivot |value|",
+                  data: normalizeOnly.map((s) => Math.abs(s.pivotVal)),
+                  borderColor: "#00d4ff",
+                  backgroundColor: "rgba(0,212,255,0.08)",
+                  pointBackgroundColor: "#00d4ff",
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: {
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                  grid: { color: "rgba(26,53,69,0.5)" },
+                },
+                y: {
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                  grid: { color: "rgba(26,53,69,0.5)" },
+                },
+              },
+            },
+          });
+
+          // ── RREF matrix display ──
+          const uWrap = document.getElementById("uTriangleWrap");
+          uWrap.innerHTML = "";
+          const uTitle = document.createElement("div");
+          uTitle.className = "step-matrix-title";
+          uTitle.textContent = "RREF [I | x]";
+          uWrap.appendChild(uTitle);
+          uWrap.appendChild(
+            buildMatrixTable(
+              result.finalA,
+              result.finalB,
+              decimals,
+              [],
+              -1,
+              -1,
+              [],
+            ),
+          );
+
+          // ── Render first step ──
+          renderStep(0);
+          updateNav();
+        }
+
+        // ── Build Matrix Table ────────────────────────────────────
+        function buildMatrixTable(
+          A,
+          b,
+          decimals,
+          changedRows,
+          pivotRow,
+          pivotCol,
+          multRows,
+        ) {
+          const fmt = (v) => v.toFixed(decimals);
+          const n = A.length;
+          const tbl = document.createElement("table");
+          tbl.className = "step-matrix-table";
+          for (let i = 0; i < n; i++) {
+            const tr = document.createElement("tr");
+            const isChanged = changedRows.includes(i);
+            const isPivotRow = i === pivotRow;
+            for (let j = 0; j < n; j++) {
+              const td = document.createElement("td");
+              td.textContent = fmt(A[i][j]);
+              if (j === pivotCol && i === pivotRow) td.className = "pivot-cell";
+              else if (j === pivotCol) td.className = "pivot-col";
+              else if (isPivotRow) td.className = "pivot-row";
+              if (isChanged) td.classList.add("changed");
+              tr.appendChild(td);
+            }
+            // b column
+            const tdb = document.createElement("td");
+            tdb.className = "b-col";
+            if (isChanged) tdb.classList.add("changed");
+            tdb.textContent = fmt(b[i]);
+            tr.appendChild(tdb);
+            tbl.appendChild(tr);
+          }
+          return tbl;
+        }
+
+        // ── Build Step Card ───────────────────────────────────────
+        function buildStepCard(step, decimals) {
+          const dp = decimals || 4;
+          const fmt = (v) =>
+            typeof v === "number" && !isNaN(v) ? v.toFixed(dp) : "N/A";
+          const n = step.matrix.A.length;
+
+          const card = document.createElement("div");
+          card.className = "step-card";
+
+          // Badge
+          const badge = document.createElement("div");
+          badge.className = "step-badge";
+          const typeLabel =
+            step.type === "elim"
+              ? `⚙ &nbsp;FULL ELIM &nbsp; Column ${step.pivotCol + 1}`
+              : step.type === "swap"
+                ? `↕ &nbsp;ROW SWAP`
+                : step.type === "normalize"
+                  ? `÷ &nbsp;NORMALIZE &nbsp; Row ${step.pivotRow + 1}`
+                  : ``;
+          badge.innerHTML = typeLabel;
+          card.appendChild(badge);
+
+          // Body — three columns
+          const body = document.createElement("div");
+          body.className = "step-body";
+
+          // ── LEFT: operation details ───────────────────────────────
+          const left = document.createElement("div");
+
+          if (step.type === "normalize") {
+            left.innerHTML = `<div class="step-col-title">Step 1 — Row Normalization</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.67rem;color:var(--text-dim);margin-bottom:0.5rem;">
+          Pivot: a<sub>${step.pivotRow + 1},${step.pivotCol + 1}</sub> = <span style="color:var(--accent)">${fmt(step.pivotVal)}</span>
+        </div>`;
+            const calcBox = document.createElement("div");
+            calcBox.className = "calc-box";
+            const row1 = document.createElement("div");
+            row1.className = "calc-row";
+            row1.innerHTML = `<span class="calc-label">R${step.pivotRow + 1} ÷</span>
+        <span style="color:var(--text-dim);">${fmt(step.pivotVal)}</span>
+        <span class="calc-arrow">→</span>
+        <span style="color:var(--text);">pivot becomes 1</span>`;
+            calcBox.appendChild(row1);
+            const row2 = document.createElement("div");
+            row2.className = "calc-row";
+            row2.style.marginTop = "0.3rem";
+            row2.innerHTML = `<span class="calc-label">Result:</span>
+        <span class="calc-result">a<sub>${step.pivotRow + 1},${step.pivotCol + 1}</sub> = 1.0000</span>`;
+            calcBox.appendChild(row2);
+            const row3 = document.createElement("div");
+            row3.className = "calc-row";
+            row3.style.marginTop = "0.3rem";
+            row3.innerHTML = `<span class="calc-label">Op:</span>
+        <span style="color:var(--text);font-size:0.65rem;">${step.op}</span>`;
+            calcBox.appendChild(row3);
+            left.appendChild(calcBox);
+          } else if (step.type === "elim") {
+            left.innerHTML = `<div class="step-col-title">Step 2 — Column Elimination</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.67rem;color:var(--text-dim);margin-bottom:0.5rem;">
+          Pivot col ${step.pivotCol + 1} — eliminate <span style="color:var(--accent)">above &amp; below</span>
+        </div>`;
+            const calcBox = document.createElement("div");
+            calcBox.className = "calc-box";
+            if (step.multipliers && step.multipliers.length) {
+              step.multipliers.forEach((m) => {
+                const row = document.createElement("div");
+                row.className = "calc-row";
+                row.style.flexWrap = "wrap";
+                row.innerHTML = `<span class="calc-label">m<sub>${m.row + 1},${step.pivotRow + 1}</sub>=</span>
+            <span style="color:var(--text-dim);">${fmt(m.m)}</span>
+            <span class="calc-arrow">→</span>
+            <span style="color:var(--text);">R${m.row + 1} ← R${m.row + 1} − (${fmt(m.m)})·R${step.pivotRow + 1}</span>`;
+                calcBox.appendChild(row);
+              });
+            } else {
+              calcBox.innerHTML = `<div class="calc-row"><span style="color:var(--accent2)">Pivot ≈ 0 — skipped</span></div>`;
+            }
+            left.appendChild(calcBox);
+          } else if (step.type === "swap") {
+            left.innerHTML = `<div class="step-col-title">Row Swap (Partial Pivoting)</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.67rem;color:var(--text-dim);margin-bottom:0.5rem;">
+          Ensures largest pivot in column ${step.pivotCol + 1}
+        </div>`;
+            const calcBox = document.createElement("div");
+            calcBox.className = "calc-box";
+            calcBox.innerHTML = `<div class="calc-row">
+        <span class="calc-label">Swap:</span>
+        <span style="color:var(--accent2);">R${step.changedRows[0] + 1} ↔ R${step.changedRows[1] + 1}</span>
+      </div>
+      <div class="calc-row" style="margin-top:0.3rem;">
+        <span class="calc-label">Reason:</span>
+        <span style="color:var(--text-dim);font-size:0.65rem;">Max |pivot| moved to diagonal</span>
+      </div>`;
+            left.appendChild(calcBox);
+          }
+
+          body.appendChild(left);
+
+          // ── MIDDLE: Matrix table ──────────────────────────────────
+          const mid = document.createElement("div");
+          const midTitle = document.createElement("div");
+          midTitle.className = "step-col-title";
+          midTitle.textContent =
+            step.type === "normalize"
+              ? "Step 2 — Normalized [A|b]"
+              : step.type === "elim"
+                ? "Step 2 — After Elimination [A|b]"
+                : "Step 2 — After Swap [A|b]";
+          mid.appendChild(midTitle);
+          const matSub = document.createElement("div");
+          matSub.style.cssText =
+            'font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.4rem;';
+          matSub.textContent = step.op;
+          mid.appendChild(matSub);
+          mid.appendChild(
+            buildMatrixTable(
+              step.matrix.A,
+              step.matrix.b,
+              dp,
+              step.changedRows,
+              step.pivotRow,
+              step.pivotCol,
+              [],
+            ),
+          );
+          body.appendChild(mid);
+
+          // ── RIGHT: Mini line chart + diagonal bars ────────────────
+          const chartPanel = document.createElement("div");
+          chartPanel.className = "step-chart-panel";
+
+          const chartColTitle = document.createElement("div");
+          chartColTitle.className = "step-col-title";
+          chartColTitle.textContent = "Step 3 — Diagonal Trace";
+          chartPanel.appendChild(chartColTitle);
+
+          const chartSub = document.createElement("div");
+          chartSub.style.cssText =
+            'font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.4rem;';
+          chartSub.textContent = `Diagonal elements after step on col ${step.pivotCol + 1}`;
+          chartPanel.appendChild(chartSub);
+
+          // Mini chart canvas
+          const miniChartWrap = document.createElement("div");
+          miniChartWrap.className = "step-mini-chart-wrap";
+          miniChartWrap.style.height = "155px";
+          const miniCanvas = document.createElement("canvas");
+          const cid = "sc_" + ++stepChartCounter;
+          miniCanvas.id = cid;
+          miniCanvas.style.cssText = "width:100%;height:155px;display:block;";
+          miniChartWrap.appendChild(miniCanvas);
+          chartPanel.appendChild(miniChartWrap);
+
+          // Bar title
+          const barTitle = document.createElement("div");
+          barTitle.className = "step-col-title";
+          barTitle.style.marginTop = "0.6rem";
+          barTitle.textContent = "Diagonal Values";
+          chartPanel.appendChild(barTitle);
+
+          // Mini horizontal bars — diagonal values
+          const barWrap = document.createElement("div");
+          const barData = step.matrix.A.map((row, i) => ({
+            label: `a${i + 1}${i + 1}`,
+            v: row[i],
+            color: COLORS[i % COLORS.length],
+          }));
+          const maxAbsBar = Math.max(...barData.map((d) => Math.abs(d.v)), 1);
+          barData.forEach((bd) => {
+            const pct = Math.min(100, (Math.abs(bd.v) / maxAbsBar) * 100);
+            const barItem = document.createElement("div");
+            barItem.style.marginBottom = "0.45rem";
+            const lbl = document.createElement("div");
+            lbl.style.cssText =
+              'display:flex;justify-content:space-between;font-family:"Space Mono",monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:2px;';
+            lbl.innerHTML = `<span>${bd.label}</span><span style="color:${bd.color};">${fmt(bd.v)}</span>`;
+            const track = document.createElement("div");
+            track.style.cssText =
+              "height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;";
+            const fill = document.createElement("div");
+            fill.style.cssText = `width:${pct}%;height:100%;background:${bd.color};border-radius:3px;transition:width 0.4s;`;
+            track.appendChild(fill);
+            barItem.appendChild(lbl);
+            barItem.appendChild(track);
+            barWrap.appendChild(barItem);
+          });
+          chartPanel.appendChild(barWrap);
+          body.appendChild(chartPanel);
+          card.appendChild(body);
+
+          // Render mini chart after DOM insertion
+          setTimeout(() => {
+            const ctx = miniCanvas.getContext("2d");
+            const diagLabels = step.matrix.A.map((_, i) => `a${i + 1}${i + 1}`);
+            const diagVals = step.matrix.A.map((row, i) => row[i]);
+            const datasets = [
+              {
+                label: "Diagonal",
+                data: diagVals,
+                borderColor: "#00d4ff",
+                backgroundColor: "rgba(0,212,255,0.07)",
+                borderWidth: 2,
+                pointRadius: diagVals.map((_, i) =>
+                  i === step.pivotRow ? 7 : 4,
+                ),
+                pointBackgroundColor: diagVals.map((_, i) =>
+                  i === step.pivotRow ? "#77dc1e" : COLORS[i % COLORS.length],
+                ),
+                pointBorderColor: "#050a0e",
+                pointBorderWidth: 1.5,
+                fill: true,
+                tension: 0.3,
+              },
+            ];
+            datasets.push({
+              label: "b'",
+              data: step.matrix.b,
+              borderColor: "#ff6b35",
+              backgroundColor: "transparent",
+              borderWidth: 1.5,
+              borderDash: [4, 3],
+              pointRadius: 3,
+              pointBackgroundColor: "#ff6b35",
+              pointBorderColor: "#050a0e",
+              pointBorderWidth: 1,
+              fill: false,
+              tension: 0.3,
+            });
+            const miniCfg = {
+              type: "line",
+              data: { labels: diagLabels, datasets },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 400 },
+                plugins: {
+                  legend: {
+                    display: true,
+                    labels: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                      boxWidth: 10,
+                      padding: 6,
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: "#0d1a22",
+                    borderColor: "#1a3545",
+                    borderWidth: 1,
+                    titleColor: "#00d4ff",
+                    bodyColor: "#e8f4f8",
+                    titleFont: { family: "Space Mono", size: 9 },
+                    bodyFont: { family: "Space Mono", size: 9 },
+                    callbacks: {
+                      label: (c) => ` ${c.dataset.label}: ${fmt(c.parsed.y)}`,
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                    },
+                    title: {
+                      display: true,
+                      text: "Diagonal index",
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                    },
+                  },
+                  y: {
+                    grid: { color: "rgba(26,53,69,0.5)" },
+                    ticks: {
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                      maxTicksLimit: 5,
+                    },
+                    title: {
+                      display: true,
+                      text: "Value",
+                      color: "#7a9aaa",
+                      font: { family: "Space Mono", size: 8 },
+                    },
+                  },
+                },
+              },
+            };
+            if (stepChartRegistry[cid]) {
+              stepChartRegistry[cid].destroy();
+            }
+            stepChartRegistry[cid] = new Chart(ctx, miniCfg);
+          }, 0);
+
+          // Summary bar
+          const summary = document.createElement("div");
+          summary.className = "step-summary";
+          if (step.type === "normalize") {
+            summary.innerHTML = `<span style="color:var(--text-dim)">Pivot:</span>
+        <span style="color:var(--accent)">${fmt(step.pivotVal)}</span>
+        <span style="color:var(--accent2)">÷</span>
+        <span style="color:var(--text-dim)">Row normalized:</span>
+        <span style="color:var(--accent3)">R${step.pivotRow + 1}</span>
+        <span style="color:var(--accent2)">→</span>
+        <span style="color:var(--text)">diagonal = 1</span>`;
+          } else if (step.type === "elim" && step.multipliers) {
+            summary.innerHTML = `<span style="color:var(--text-dim)">Col:</span>
+        <span style="color:var(--accent)">${step.pivotCol + 1}</span>
+        <span style="color:var(--accent2)">→</span>
+        <span style="color:var(--text-dim)">Eliminated:</span>
+        <span style="color:var(--accent3)">${step.multipliers.length} row(s)</span>
+        <span style="color:var(--accent2)">→</span>
+        <span style="color:var(--text)">${step.op}</span>`;
+          } else if (step.type === "swap") {
+            summary.innerHTML = `<span style="color:var(--accent2)">↕ R${step.changedRows[0] + 1} ↔ R${step.changedRows[1] + 1}</span>
+        <span style="color:var(--text-dim)">— partial pivoting applied</span>`;
+          }
+          card.appendChild(summary);
+
+          return card;
+        }
+
+        // ── Step Navigation ───────────────────────────────────────
+        function destroyStepCharts(container) {
+          container.querySelectorAll("canvas").forEach((cv) => {
+            if (stepChartRegistry[cv.id]) {
+              stepChartRegistry[cv.id].destroy();
+              delete stepChartRegistry[cv.id];
+            }
+          });
+        }
+
+        function renderStep(idx) {
+          const decimals =
+            parseInt(document.getElementById("decimals").value) || 4;
+          const c = document.getElementById("stepCardContainer");
+          destroyStepCharts(c);
+          c.innerHTML = "";
+          c.appendChild(buildStepCard(stepsData[idx], decimals));
+        }
+
+        function changeStep(dir) {
+          currentStep = Math.max(
+            0,
+            Math.min(stepsData.length - 1, currentStep + dir),
+          );
+          renderStep(currentStep);
+          updateNav();
+        }
+
+        function updateNav() {
+          document.getElementById("prevBtn").disabled = currentStep === 0;
+          document.getElementById("nextBtn").disabled =
+            currentStep === stepsData.length - 1;
+          document.getElementById("stepCounter").textContent =
+            `Step ${currentStep + 1} / ${stepsData.length}`;
+        }
+
+        function toggleAllSteps() {
+          showingAll = !showingAll;
+          document.getElementById("toggleAllBtn").textContent = showingAll
+            ? "Show One Step"
+            : "Show All Steps";
+          document.getElementById("singleStepView").style.display = showingAll
+            ? "none"
+            : "block";
+          document.getElementById("allStepsView").style.display = showingAll
+            ? "block"
+            : "none";
+          if (showingAll) {
+            const decimals =
+              parseInt(document.getElementById("decimals").value) || 4;
+            const c = document.getElementById("allStepsContainer");
+            destroyStepCharts(c);
+            c.innerHTML = "";
+            stepsData.forEach((s) => c.appendChild(buildStepCard(s, decimals)));
+          }
+        }
+
+        function showError(msg) {
+          const el = document.getElementById("errorAlert");
+          el.textContent = "✕ Error: " + msg;
+          el.style.display = "block";
+        }
+
+        function resetAll() {
+          document.getElementById("errorAlert").style.display = "none";
+          document.getElementById("successAlert").style.display = "none";
+          document.getElementById("emptyState").style.display = "block";
+          document.getElementById("resultsContent").style.display = "none";
+          if (solChartObj) {
+            solChartObj.destroy();
+            solChartObj = null;
+          }
+          if (pivotChartObj) {
+            pivotChartObj.destroy();
+            pivotChartObj = null;
+          }
+          destroyStepCharts(document.getElementById("stepCardContainer"));
+          destroyStepCharts(document.getElementById("allStepsContainer"));
+          stepsData = [];
+          currentStep = 0;
+          showingAll = false;
+          stepChartCounter = 0;
+          generateMatrix();
+        }
+
+        // ── Init ──────────────────────────────────────────────────
+        generateMatrix();
+
+        // ── Background Animation ──────────────────────────────────
+        (() => {
+          const gridCv = document.getElementById("bgGrid");
+          const partCv = document.getElementById("bgParticles");
+          const symbolsWrap = document.getElementById("bgSymbols");
+          if (!gridCv || !partCv || !symbolsWrap) return;
+          const gctx = gridCv.getContext("2d");
+          const pctx = partCv.getContext("2d");
+          const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+          const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+          const particles = [];
+          const particleCount = 90;
+          let w = 0,
+            h = 0,
+            dpr = 1;
+
+          function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = window.innerWidth;
+            h = window.innerHeight;
+            [gridCv, partCv].forEach((cv) => {
+              cv.width = Math.floor(w * dpr);
+              cv.height = Math.floor(h * dpr);
+              cv.style.width = w + "px";
+              cv.style.height = h + "px";
+            });
+            gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+
+          function seedParticles() {
+            particles.length = 0;
+            for (let i = 0; i < particleCount; i++)
+              particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 1.5 + Math.random() * 2.3,
+                c: palette[(Math.random() * palette.length) | 0],
+              });
+          }
+
+          function seedSymbols() {
+            const symbols = [
+              "∑",
+              "I",
+              "Δ",
+              "R",
+              "x₁",
+              "x₂",
+              "RREF",
+              "∫",
+              "bᵢ",
+              "Ax=b",
+              "[I|x]",
+            ];
+            symbolsWrap.innerHTML = "";
+            for (let i = 0; i < 22; i++) {
+              const s = document.createElement("span");
+              const type = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+              s.className = "bg-symbol " + type;
+              s.textContent = symbols[i % symbols.length];
+              s.style.left = Math.random() * 98 + "%";
+              s.style.top = 80 + Math.random() * 50 + "%";
+              s.style.fontSize = 13 + Math.random() * 20 + "px";
+              s.style.animationDuration = 22 + Math.random() * 20 + "s";
+              s.style.animationDelay = -Math.random() * 26 + "s";
+              symbolsWrap.appendChild(s);
+            }
+          }
+
+          function drawGrid(t) {
+            gctx.clearRect(0, 0, w, h);
+            const gap = 56,
+              ox = (t * 0.008) % gap,
+              oy = (t * 0.005) % gap;
+            gctx.strokeStyle = "rgba(0,212,255,.11)";
+            gctx.lineWidth = 1;
+            for (let x = -gap; x < w + gap; x += gap) {
+              gctx.beginPath();
+              gctx.moveTo(x + ox, 0);
+              gctx.lineTo(x + ox, h);
+              gctx.stroke();
+            }
+            for (let y = -gap; y < h + gap; y += gap) {
+              gctx.beginPath();
+              gctx.moveTo(0, y + oy);
+              gctx.lineTo(w, y + oy);
+              gctx.stroke();
+            }
+            gctx.strokeStyle = "rgba(124,58,237,.08)";
+            for (let x = -h; x < w + h; x += gap * 1.5) {
+              gctx.beginPath();
+              gctx.moveTo(x - ox * 0.7, 0);
+              gctx.lineTo(x + h - oy * 0.7, h);
+              gctx.stroke();
+            }
+          }
+
+          function drawParticles() {
+            pctx.clearRect(0, 0, w, h);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > w) p.vx *= -1;
+              if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            for (let i = 0; i < particles.length; i++) {
+              const a = particles[i];
+              for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j],
+                  dx = a.x - b.x,
+                  dy = a.y - b.y,
+                  dist = Math.hypot(dx, dy);
+                if (dist < 120) {
+                  pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                  pctx.lineWidth = 1;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(b.x, b.y);
+                  pctx.stroke();
+                }
+              }
+              if (mouse.active) {
+                const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (md < mouse.r) {
+                  const alpha = (1 - md / mouse.r) * 0.45;
+                  pctx.strokeStyle = `rgba(124,58,237,${alpha})`;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(mouse.x, mouse.y);
+                  pctx.stroke();
+                }
+              }
+            }
+            for (const p of particles) {
+              const near = mouse.active
+                ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r
+                : false;
+              pctx.beginPath();
+              pctx.fillStyle = p.c;
+              pctx.globalAlpha = near ? 1 : 0.82;
+              pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+              pctx.fill();
+              if (near) {
+                pctx.beginPath();
+                pctx.globalAlpha = 0.15;
+                pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+                pctx.fill();
+              }
+            }
+            pctx.globalAlpha = 1;
+          }
+
+          function loop(t) {
+            drawGrid(t);
+            drawParticles();
+            requestAnimationFrame(loop);
+          }
+          window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+          });
+          window.addEventListener("mouseleave", () => {
+            mouse.active = false;
+          });
+          window.addEventListener("resize", resize);
+          resize();
+          seedParticles();
+          seedSymbols();
+          requestAnimationFrame(loop);
+        })();
+
+        // expose to global scope
+        window.switchTab = switchTab;
+        window.generateMatrix = generateMatrix;
+        window.loadExample = loadExample;
+        window.randomMatrix = randomMatrix;
+        window.parseEquation = parseEquation;
+        window.runGaussJordan = runGaussJordan;
+        window.resetAll = resetAll;
+        window.changeStep = changeStep;
+        window.toggleAllSteps = toggleAllSteps;
+      })();
+    </script>
+  </body>
+</html>

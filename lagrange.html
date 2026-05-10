@@ -1,0 +1,3365 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lagrange Interpolation Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.2rem, 6vw, 4.2rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.82rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+        line-height: 1.9;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+        position: relative;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+      /* Points table */
+      .points-section {
+        margin-bottom: 1.2rem;
+      }
+      .points-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.7rem;
+      }
+      .points-header-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .add-pt-btn {
+        background: rgba(119, 220, 30, 0.1);
+        border: 1px solid rgba(119, 220, 30, 0.3);
+        color: var(--accent3);
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .add-pt-btn:hover {
+        background: rgba(119, 220, 30, 0.2);
+        border-color: var(--accent3);
+      }
+      .points-table-wrap {
+        overflow-x: auto;
+      }
+      .points-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+      }
+      .points-table th {
+        padding: 0.4rem 0.6rem;
+        text-align: center;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+      }
+      .points-table td {
+        padding: 0.28rem 0.4rem;
+        text-align: center;
+        border-bottom: 1px solid rgba(26, 53, 69, 0.4);
+      }
+      .pt-idx {
+        color: var(--text-dim);
+        font-size: 0.65rem;
+      }
+      .points-table input {
+        background: transparent;
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        color: var(--text);
+        padding: 0.38rem 0.5rem;
+        border-radius: 6px;
+        width: 88px;
+        text-align: center;
+        transition: border-color 0.2s;
+        font-family: "Space Mono", monospace;
+        font-size: 0.78rem;
+      }
+      .points-table input.x-inp:focus {
+        border-color: var(--accent);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.12);
+      }
+      .points-table input.y-inp {
+        border-color: rgba(255, 107, 53, 0.2);
+      }
+      .points-table input.y-inp:focus {
+        border-color: var(--accent2);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.12);
+      }
+      .rm-pt-btn {
+        background: transparent;
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .rm-pt-btn:hover:not(:disabled) {
+        background: rgba(255, 51, 85, 0.15);
+      }
+      .rm-pt-btn:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+      }
+      .points-info {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-top: 0.5rem;
+        padding: 0.4rem 0.6rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.25);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+        line-height: 1.7;
+      }
+      /* Buttons */
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      /* Info popup */
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.61rem;
+        color: var(--text);
+        line-height: 1.75;
+        z-index: 99;
+        width: 260px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.64rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      /* Alert */
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+      /* Stats */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+        word-break: break-all;
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+      /* Solution display */
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.82rem;
+        color: var(--accent);
+      }
+      .sol-chip.result {
+        background: rgba(119, 220, 30, 0.1);
+        border-color: rgba(119, 220, 30, 0.3);
+        color: var(--accent3);
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      .sol-chip.exact {
+        background: rgba(255, 107, 53, 0.08);
+        border-color: rgba(255, 107, 53, 0.25);
+        color: var(--accent2);
+      }
+      .sol-chip.warn {
+        background: rgba(255, 163, 0, 0.08);
+        border-color: rgba(255, 163, 0, 0.3);
+        color: #ffa300;
+      }
+      /* Charts */
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.7rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .chart-title::before {
+        content: "";
+        width: 4px;
+        height: 4px;
+        background: var(--accent3);
+        border-radius: 50%;
+      }
+      .chart-canvas-wrap {
+        height: 280px;
+        position: relative;
+      }
+      .step-chart-wrap {
+        height: 155px;
+        position: relative;
+      }
+      /* Contribution bars */
+      .contrib-bar-wrap {
+        margin-bottom: 1.2rem;
+      }
+      .contrib-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .contrib-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 0.3rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.64rem;
+      }
+      .contrib-label {
+        min-width: 62px;
+      }
+      .contrib-track {
+        flex: 1;
+        height: 7px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .contrib-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s;
+      }
+      .contrib-val {
+        min-width: 95px;
+        text-align: right;
+      }
+      /* Step card */
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: visible;
+        animation: fadeUp 0.35s ease forwards;
+        margin-bottom: 1rem;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+        border-radius: 12px 12px 0 0;
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 1rem;
+      }
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 900px) {
+        .step-body {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .mini-val-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        width: 100%;
+      }
+      .mini-val-table td {
+        padding: 0.28rem 0.5rem;
+        border: 1px solid rgba(26, 53, 69, 0.6);
+      }
+      .mini-val-table td:first-child {
+        color: var(--text-dim);
+      }
+      .mini-val-table td:last-child {
+        color: var(--text);
+        text-align: right;
+        font-weight: 600;
+      }
+      .mini-val-table tr.hl td:last-child {
+        color: var(--accent3);
+      }
+      .formula-box {
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.63rem;
+        line-height: 1.9;
+      }
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+      }
+      .sum-chip {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.2rem 0.6rem;
+      }
+      /* Step nav */
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .all-steps-wrap {
+        display: flex;
+        flex-direction: column;
+      }
+      /* Empty state */
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.78rem;
+        line-height: 2.1;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+      /* Background */
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      /* Footer */
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+      /* Summary final card */
+      .final-summary {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.04),
+          rgba(119, 220, 30, 0.04)
+        );
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-top: 0.5rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .fs-title {
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.8rem;
+      }
+      .fs-sum-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+        line-height: 2;
+      }
+      .fs-term {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 0.15rem 0.5rem;
+        font-size: 0.65rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">
+          Numerical Methods &mdash; Polynomial Interpolation
+        </div>
+        <h1>Lagrange Interpolation</h1>
+        <p>
+          P(x) = &sum;<sub>i=0</sub><sup>n</sup> y<sub>i</sub> &middot;
+          L<sub>i</sub>(x) &nbsp;&nbsp;&mdash;&nbsp;&nbsp; L<sub>i</sub>(x) =
+          &prod;<sub>j&ne;i</sub> (x &minus; x<sub>j</sub>) &frasl; (x<sub
+            >i</sub
+          >
+          &minus; x<sub>j</sub>) &nbsp;&nbsp;&mdash;&nbsp;&nbsp; Unique
+          polynomial of degree &le; n passing through n+1 data points
+        </p>
+        <div
+          style="
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            flex-wrap: wrap;
+          "
+        >
+          <button
+            class="mode-btn active"
+            onclick="switchMode('forward')"
+            id="modeForward"
+            style="
+              padding: 0.5rem 1.2rem;
+              background: rgba(0, 212, 255, 0.15);
+              border: 1px solid rgba(0, 212, 255, 0.4);
+              color: var(--accent);
+              border-radius: 8px;
+              cursor: pointer;
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.75rem;
+              letter-spacing: 0.1em;
+              text-transform: uppercase;
+              transition: all 0.2s;
+            "
+          >
+            ▶ Forward Interpolation
+          </button>
+          <button
+            class="mode-btn"
+            onclick="switchMode('reverse')"
+            id="modeReverse"
+            style="
+              padding: 0.5rem 1.2rem;
+              background: transparent;
+              border: 1px solid rgba(255, 107, 53, 0.3);
+              color: var(--text-dim);
+              border-radius: 8px;
+              cursor: pointer;
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.75rem;
+              letter-spacing: 0.1em;
+              text-transform: uppercase;
+              transition: all 0.2s;
+            "
+          >
+            ◀ Reverse Interpolation
+          </button>
+        </div>
+      </header>
+
+      <div class="main-grid" id="forwardMode">
+        <!-- ── INPUT PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Data Points &amp; Target</div>
+
+          <!-- Examples -->
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.63rem;
+              color: var(--text-dim);
+              letter-spacing: 0.1em;
+              text-transform: uppercase;
+              margin-bottom: 0.5rem;
+              display: flex;
+              align-items: center;
+              gap: 0.4rem;
+            "
+          >
+            <span style="color: var(--accent2)">Quick Examples</span>
+            <span class="info-btn" onclick="togglePop('pop-ex')">?</span>
+            <div class="info-popup" id="pop-ex" style="z-index: 200">
+              <div class="pop-title">Quick Examples</div>
+              Click a chip to auto-fill data points and target x*.<br /><br />
+              Each example uses sampled function values and compares the
+              Lagrange estimate to the exact answer.
+            </div>
+          </div>
+          <div class="examples-strip">
+            <span class="ex-chip" onclick="loadEx(0)">x&sup2; 4-pt</span>
+            <span class="ex-chip" onclick="loadEx(1)">sin(x) 4-pt</span>
+            <span class="ex-chip" onclick="loadEx(2)">1/x 4-pt</span>
+            <span class="ex-chip" onclick="loadEx(3)">e^x cubic</span>
+            <span class="ex-chip" onclick="loadEx(4)">linear 3-pt</span>
+          </div>
+
+          <div class="sep"></div>
+
+          <!-- Data Points Table -->
+          <div class="points-section">
+            <div class="points-header">
+              <div class="points-header-label" style="position: relative">
+                Data Points (x<sub>i</sub>, y<sub>i</sub>)
+                <span class="info-btn" onclick="togglePop('pop-pts')">?</span>
+                <div class="info-popup" id="pop-pts" style="z-index: 200">
+                  <div class="pop-title">Data Points</div>
+                  Enter at least 2 known (x, y) pairs.<br />
+                  All
+                  <strong style="color: var(--accent)"
+                    >x values must be distinct</strong
+                  >
+                  — no duplicates.<br /><br />
+                  For n+1 points the polynomial has degree &le; n.<br /><br />
+                  <span style="color: var(--accent3)">Tip:</span> Use 3–6 points
+                  for best results.
+                </div>
+              </div>
+              <button class="add-pt-btn" onclick="addPoint()">
+                + Add Point
+              </button>
+            </div>
+            <div class="points-table-wrap">
+              <table class="points-table">
+                <thead>
+                  <tr>
+                    <th>i</th>
+                    <th style="color: var(--accent)">x<sub>i</sub></th>
+                    <th style="color: var(--accent2)">
+                      y<sub>i</sub> = f(x<sub>i</sub>)
+                    </th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="pointsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="points-info" id="pointsInfo">
+              Enter at least 2 data points with distinct x values.
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <!-- Target & Decimals -->
+          <div class="controls-row">
+            <div class="control-group" style="position: relative">
+              <label>
+                Target x*
+                <span class="info-btn" onclick="togglePop('pop-xstar')">?</span>
+                <div class="info-popup" id="pop-xstar" style="z-index: 200">
+                  <div class="pop-title">Interpolation Target</div>
+                  The x value at which you want to estimate f(x).<br /><br />
+                  For best accuracy keep x* within [x<sub>min</sub>,
+                  x<sub>max</sub>].<br /><br />
+                  <span style="color: var(--accent2)"
+                    >Outside that range = extrapolation (less reliable).</span
+                  >
+                </div>
+              </label>
+              <input
+                type="number"
+                id="xStar"
+                value="1.5"
+                step="any"
+                placeholder="e.g. 1.5"
+              />
+            </div>
+            <div class="control-group">
+              <label>Decimal Places</label>
+              <select id="decimals">
+                <option value="4">4</option>
+                <option value="6" selected>6</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runLagrange()">
+              &#9654; Compute P(x*)
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+              &#8635; Reset
+            </button>
+          </div>
+
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+        </div>
+
+        <!-- ── RESULTS PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Results &amp; Step-by-Step</div>
+
+          <!-- Empty state -->
+          <div class="empty-state" id="emptyState">
+            <span class="icon">&#8767;</span>
+            Enter data points &amp; target x*<br />
+            then click
+            <strong style="color: var(--accent)">&#9654; Compute P(x*)</strong
+            ><br />
+            to see full interpolation with<br />
+            step-by-step basis polynomial charts
+          </div>
+
+          <!-- Results -->
+          <div id="resultsContent" style="display: none">
+            <!-- Result banner -->
+            <div class="solution-display">
+              <div class="sol-title">Interpolation Result</div>
+              <div class="sol-values" id="solValues"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Main chart -->
+            <div class="chart-wrap">
+              <div class="chart-title">
+                Interpolating Polynomial P(x) &amp; Data Points
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="mainChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Contribution bars -->
+            <div class="contrib-bar-wrap" id="contribBars"></div>
+
+            <!-- Step navigation -->
+            <div class="steps-header">
+              <div class="steps-header-title">
+                Basis Polynomials L<sub>i</sub>(x)
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.5rem;
+                  flex-wrap: wrap;
+                "
+              >
+                <button
+                  class="step-all-btn"
+                  id="toggleAllBtn"
+                  onclick="toggleAllSteps()"
+                >
+                  Show All Terms
+                </button>
+                <div class="step-nav">
+                  <button id="prevBtn" onclick="changeStep(-1)" disabled>
+                    &#9664; Prev
+                  </button>
+                  <span class="step-counter" id="stepCounter"
+                    >L&#x2080; &middot; 1/1</span
+                  >
+                  <button id="nextBtn" onclick="changeStep(1)">
+                    Next &#9654;
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="singleStepView"><div id="stepCardContainer"></div></div>
+            <div id="allStepsView" style="display: none">
+              <div class="all-steps-wrap" id="allStepsContainer"></div>
+            </div>
+
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.58rem;
+                color: var(--text-dim);
+                margin-top: 1rem;
+                padding-top: 0.8rem;
+                border-top: 1px solid var(--border);
+              "
+            >
+              * P(x) passes exactly through all n+1 data points. The property
+              &Sigma;L<sub>i</sub>(x*) = 1 can be used to verify correctness.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REVERSE LAGRANGE INTERPOLATION MODE ── -->
+      <div class="main-grid" id="reverseMode" style="display: none">
+        <!-- ── REVERSE INPUT PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Data Points &amp; Target (Reverse)</div>
+
+          <!-- Examples for reverse -->
+          <div
+            style="
+              font-family: &quot;Space Mono&quot;, monospace;
+              font-size: 0.63rem;
+              color: var(--text-dim);
+              letter-spacing: 0.1em;
+              text-transform: uppercase;
+              margin-bottom: 0.5rem;
+              display: flex;
+              align-items: center;
+              gap: 0.4rem;
+            "
+          >
+            <span style="color: var(--accent2)">Quick Examples</span>
+            <span class="info-btn" onclick="togglePop('pop-rev-ex')">?</span>
+            <div class="info-popup" id="pop-rev-ex" style="z-index: 200">
+              <div class="pop-title">Reverse Interpolation</div>
+              Given y-values, find the corresponding x-value.<br /><br />
+              Enter (x<sub>i</sub>, y<sub>i</sub>) pairs, then specify a target
+              y* to find x.
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <!-- Data Points Table for Reverse -->
+          <div class="points-section">
+            <div class="points-header">
+              <div class="points-header-label" style="position: relative">
+                Data Points (x<sub>i</sub>, y<sub>i</sub>)
+                <span class="info-btn" onclick="togglePop('pop-rev-pts')"
+                  >?</span
+                >
+                <div class="info-popup" id="pop-rev-pts" style="z-index: 200">
+                  <div class="pop-title">Data Points</div>
+                  Enter at least 2 known (x, y) pairs.<br />
+                  All
+                  <strong style="color: var(--accent)"
+                    >y values must be distinct</strong
+                  >
+                  — no duplicates for reverse.<br /><br />
+                  The x and y roles are swapped compared to forward
+                  interpolation.
+                </div>
+              </div>
+              <button class="add-pt-btn" onclick="addPointReverse()">
+                + Add Point
+              </button>
+            </div>
+            <div class="points-table-wrap">
+              <table class="points-table">
+                <thead>
+                  <tr>
+                    <th>i</th>
+                    <th style="color: var(--accent)">x<sub>i</sub></th>
+                    <th style="color: var(--accent2)">
+                      y<sub>i</sub> = f(x<sub>i</sub>)
+                    </th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="pointsTableBodyReverse"></tbody>
+              </table>
+            </div>
+            <div class="points-info" id="pointsInfoReverse">
+              Enter at least 2 data points with distinct y values.
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <!-- Target y* & Decimals -->
+          <div class="controls-row">
+            <div class="control-group" style="position: relative">
+              <label>
+                Target y*
+                <span class="info-btn" onclick="togglePop('pop-ystar')">?</span>
+                <div class="info-popup" id="pop-ystar" style="z-index: 200">
+                  <div class="pop-title">Reverse Interpolation Target</div>
+                  The y value at which you want to estimate x(y).<br /><br />
+                  For best accuracy keep y* within [y<sub>min</sub>,
+                  y<sub>max</sub>].
+                </div>
+              </label>
+              <input
+                type="number"
+                id="yStar"
+                value="1.5"
+                step="any"
+                placeholder="e.g. 1.5"
+              />
+            </div>
+            <div class="control-group">
+              <label>Decimal Places</label>
+              <select id="decimalsReverse">
+                <option value="4">4</option>
+                <option value="6" selected>6</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runReverseLagrange()">
+              ◀ Compute x(y*)
+            </button>
+            <button class="btn btn-danger" onclick="resetReverse()">
+              &#8635; Reset
+            </button>
+          </div>
+
+          <div class="alert alert-error" id="errorAlertReverse"></div>
+          <div class="alert alert-success" id="successAlertReverse"></div>
+        </div>
+
+        <!-- ── REVERSE RESULTS PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Results &amp; Step-by-Step</div>
+
+          <!-- Empty state -->
+          <div class="empty-state" id="emptyStateReverse">
+            <span class="icon">&#8767;</span>
+            Enter data points &amp; target y*<br />
+            then click
+            <strong style="color: var(--accent)">◀ Compute x(y*)</strong><br />
+            to see full reverse interpolation
+          </div>
+
+          <!-- Results -->
+          <div id="resultsContentReverse" style="display: none">
+            <!-- Result banner -->
+            <div class="solution-display">
+              <div class="sol-title">Reverse Interpolation Result</div>
+              <div class="sol-values" id="solValuesReverse"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid" id="statsGridReverse"></div>
+
+            <!-- Main chart -->
+            <div class="chart-wrap">
+              <div class="chart-title">
+                Interpolating Polynomial x(y) &amp; Data Points
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="mainChartReverse"></canvas>
+              </div>
+            </div>
+
+            <!-- Contribution bars for Reverse -->
+            <div class="contrib-bar-wrap" id="contribBarsReverse"></div>
+
+            <!-- Step-by-step section for Reverse -->
+            <div style="margin-top: 1.5rem">
+              <div class="steps-header">
+                <div class="steps-header-title">
+                  Step-by-Step Calculation &mdash; Basis Polynomials
+                  L<sub>i</sub>(y)
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <button
+                    class="step-all-btn"
+                    id="toggleAllBtnReverse"
+                    onclick="toggleAllStepsReverse()"
+                  >
+                    Show All Terms
+                  </button>
+                  <div class="step-nav">
+                    <button
+                      id="prevBtnReverse"
+                      onclick="changeStepReverse(-1)"
+                      disabled
+                    >
+                      &#9664; Prev
+                    </button>
+                    <span class="step-counter" id="stepCounterReverse"
+                      >L&#x2080; · 1/1</span
+                    >
+                    <button id="nextBtnReverse" onclick="changeStepReverse(1)">
+                      Next &#9654;
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="singleStepViewReverse">
+                <div id="stepCardContainerReverse"></div>
+              </div>
+              <div id="allStepsViewReverse" style="display: none">
+                <div class="all-steps-wrap" id="allStepsContainerReverse"></div>
+              </div>
+            </div>
+
+            <div
+              style="
+                font-family: &quot;Space Mono&quot;, monospace;
+                font-size: 0.58rem;
+                color: var(--text-dim);
+                margin-top: 1rem;
+                padding-top: 0.8rem;
+                border-top: 1px solid var(--border);
+              "
+            >
+              * x(y) is found by swapping x and y roles: interpolate using
+              y-values as the independent variable. The Lagrange basis
+              polynomial L<sub>i</sub>(y) = 1 when y = y<sub>i</sub>, and
+              L<sub>i</sub>(y) = 0 at all other y<sub>j</sub>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">&#8767;</span>Lagrange Interpolation Calculator
+        &mdash; Polynomial Interpolation
+      </div>
+      <div class="foot-links">
+        <a href="/euler.html">Euler's Method</a>
+        <a href="/gauss_elimination.html">Gauss Elimination</a>
+        <a href="/gauss_seidel.html">Gauss-Seidel</a>
+        <a href="/gauss_jordan.html">Gauss-Jordan</a>
+        <a href="/adam.html">Adam's Method</a>
+        <a href="/power1.html">Power Method</a>
+        <a href="/milins.html">Milne's Method</a>
+        <a href="/Newton_divide.html">Newton's divide</a>
+        <a href="/newton_raphson.html">Newton-Raphson</a>
+        <a href="/rk method.html">RK4 Method</a>
+        <a href="/simpson.html">Simpson's Rule</a>
+        <a href="/taylor.html">Taylor's Method</a>
+        <a href="/trapezoidel.html">Trapezoidal Rule</a>
+        <a href="/index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ── State ──────────────────────────────────────────────────────
+        let stepsData = [];
+        let currentStep = 0;
+        let showingAll = false;
+        let mainChartObj = null;
+        const stepChartMap = {};
+        let currentExact = null;
+
+        // ── Initial data points ────────────────────────────────────────
+        let pointsData = [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 },
+          { x: 2, y: 4 },
+          { x: 3, y: 9 },
+        ];
+
+        // ── Examples ──────────────────────────────────────────────────
+        const EXAMPLES = [
+          {
+            label: "x² approx",
+            points: [
+              { x: 0, y: 0 },
+              { x: 1, y: 1 },
+              { x: 2, y: 4 },
+              { x: 3, y: 9 },
+            ],
+            xStar: 1.5,
+            exact: 2.25,
+            exactStr: "2.250000 (= 1.5²)",
+          },
+          {
+            label: "sin(x)",
+            points: [
+              { x: 0, y: 0 },
+              { x: +(Math.PI / 6).toFixed(8), y: 0.5 },
+              {
+                x: +(Math.PI / 3).toFixed(8),
+                y: +(Math.sqrt(3) / 2).toFixed(8),
+              },
+              { x: +(Math.PI / 2).toFixed(8), y: 1 },
+            ],
+            xStar: +(Math.PI / 4).toFixed(8),
+            exact: Math.sin(Math.PI / 4),
+            exactStr: Math.sin(Math.PI / 4).toFixed(6) + " (= sin(π/4))",
+          },
+          {
+            label: "1/x",
+            points: [
+              { x: 1, y: 1 },
+              { x: 2, y: 0.5 },
+              { x: 3, y: +(1 / 3).toFixed(8) },
+              { x: 4, y: 0.25 },
+            ],
+            xStar: 1.5,
+            exact: 1 / 1.5,
+            exactStr: (1 / 1.5).toFixed(6) + " (= 1/1.5)",
+          },
+          {
+            label: "e^x cubic",
+            points: [
+              { x: 0, y: 1 },
+              { x: 1, y: +Math.E.toFixed(8) },
+              { x: 2, y: +(Math.E ** 2).toFixed(8) },
+              { x: 3, y: +(Math.E ** 3).toFixed(8) },
+            ],
+            xStar: 0.5,
+            exact: Math.sqrt(Math.E),
+            exactStr: Math.sqrt(Math.E).toFixed(6) + " (= e^0.5)",
+          },
+          {
+            label: "linear 3-pt",
+            points: [
+              { x: 1, y: 3 },
+              { x: 3, y: 7 },
+              { x: 5, y: 11 },
+            ],
+            xStar: 2,
+            exact: 5,
+            exactStr: "5.000000 (= 2×2+1)",
+          },
+        ];
+
+        window.loadEx = function (i) {
+          const e = EXAMPLES[i];
+          pointsData = e.points.map((p) => ({ x: p.x, y: p.y }));
+          document.getElementById("xStar").value = +e.xStar.toFixed(8);
+          currentExact = e;
+          renderPointsTable();
+        };
+
+        // ── Formatting ─────────────────────────────────────────────────
+        function getDecimals() {
+          return parseInt(document.getElementById("decimals").value) || 6;
+        }
+        function fmtF(v, d) {
+          if (d === undefined) d = getDecimals();
+          return isFinite(v) ? v.toFixed(d) : "NaN";
+        }
+        function fmtS(v, d) {
+          if (d === undefined) d = Math.min(getDecimals(), 4);
+          return isFinite(v) ? parseFloat(v.toFixed(d)).toString() : "NaN";
+        }
+
+        // Subscript helper
+        function sub(n) {
+          const s = ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"];
+          return String(n)
+            .split("")
+            .map((c) => (s[+c] !== undefined ? s[+c] : c))
+            .join("");
+        }
+
+        // ── Points table ───────────────────────────────────────────────
+        function renderPointsTable() {
+          const tbody = document.getElementById("pointsTableBody");
+          tbody.innerHTML = "";
+          const n = pointsData.length;
+          pointsData.forEach((pt, i) => {
+            const tr = document.createElement("tr");
+            const canRemove = n > 2;
+            tr.innerHTML = `
+          <td class="pt-idx">${i}</td>
+          <td><input type="number" class="x-inp" value="${+pt.x.toFixed(8)}" step="any"
+               onchange="updatePt(${i},'x',this.value)" data-idx="${i}" data-field="x"/></td>
+          <td><input type="number" class="y-inp" value="${+pt.y.toFixed(8)}" step="any"
+               onchange="updatePt(${i},'y',this.value)" data-idx="${i}" data-field="y"/></td>
+          <td><button class="rm-pt-btn" onclick="removePt(${i})" ${canRemove ? "" : "disabled"} title="Remove point">&times;</button></td>
+        `;
+            tbody.appendChild(tr);
+          });
+          updatePointsInfo();
+        }
+
+        window.updatePt = function (idx, field, val) {
+          const v = parseFloat(val);
+          if (!isNaN(v)) {
+            pointsData[idx][field] = v;
+            currentExact = null;
+          }
+          updatePointsInfo();
+        };
+
+        window.addPoint = function () {
+          const last =
+            pointsData.length > 0 ? pointsData[pointsData.length - 1].x + 1 : 0;
+          pointsData.push({ x: last, y: 0 });
+          renderPointsTable();
+        };
+
+        window.removePt = function (idx) {
+          if (pointsData.length <= 2) return;
+          pointsData.splice(idx, 1);
+          currentExact = null;
+          renderPointsTable();
+        };
+
+        function getTablePoints() {
+          const rows = document.querySelectorAll("#pointsTableBody tr");
+          const pts = [];
+          rows.forEach((row) => {
+            const xi = row.querySelector('input[data-field="x"]');
+            const yi = row.querySelector('input[data-field="y"]');
+            if (xi && yi)
+              pts.push({ x: parseFloat(xi.value), y: parseFloat(yi.value) });
+          });
+          return pts;
+        }
+
+        function updatePointsInfo() {
+          const n = pointsData.length;
+          const el = document.getElementById("pointsInfo");
+          const xVals = pointsData.map((p) => p.x);
+          const hasDup = xVals.some(
+            (v, i) => xVals.findIndex((u) => Math.abs(u - v) < 1e-12) !== i,
+          );
+          if (hasDup) {
+            el.innerHTML = `<span style="color:#ff3355;">⚠ Duplicate x values detected — all x values must be distinct.</span>`;
+            el.style.borderLeftColor = "#ff3355";
+            return;
+          }
+          el.innerHTML = `${n} point${n > 1 ? "s" : ""} &rarr; degree-<strong style="color:var(--accent);">${n - 1}</strong> polynomial &middot; ${n} basis terms`;
+          el.style.borderLeftColor = "";
+        }
+
+        // ── Lagrange Math ──────────────────────────────────────────────
+        function evalBasis(pts, i, x) {
+          let v = 1;
+          for (let j = 0; j < pts.length; j++) {
+            if (j !== i) v *= (x - pts[j].x) / (pts[i].x - pts[j].x);
+          }
+          return v;
+        }
+
+        function evalPoly(pts, x) {
+          let v = 0;
+          for (let i = 0; i < pts.length; i++)
+            v += pts[i].y * evalBasis(pts, i, x);
+          return v;
+        }
+
+        function computeLagrange(pts, xStar) {
+          const n = pts.length;
+          // Validate distinct x
+          for (let i = 0; i < n; i++)
+            for (let j = i + 1; j < n; j++)
+              if (Math.abs(pts[i].x - pts[j].x) < 1e-12)
+                throw new Error(
+                  `Duplicate x values at x = ${pts[i].x}. All x values must be distinct.`,
+                );
+
+          const basisDetails = [];
+          let result = 0;
+          let runningSum = 0;
+
+          for (let i = 0; i < n; i++) {
+            let numerator = 1;
+            let denominator = 1;
+            const numFactors = [];
+            const denFactors = [];
+
+            for (let j = 0; j < n; j++) {
+              if (j !== i) {
+                const nf = xStar - pts[j].x;
+                const df = pts[i].x - pts[j].x;
+                numerator *= nf;
+                denominator *= df;
+                numFactors.push({ j, xj: pts[j].x, factor: nf });
+                denFactors.push({ j, xj: pts[j].x, xi: pts[i].x, factor: df });
+              }
+            }
+
+            const Li = numerator / denominator;
+            const contribution = pts[i].y * Li;
+            result += contribution;
+            runningSum = result;
+
+            basisDetails.push({
+              i,
+              xi: pts[i].x,
+              yi: pts[i].y,
+              numerator,
+              denominator,
+              Li,
+              contribution,
+              runningSum,
+              numFactors,
+              denFactors,
+            });
+          }
+
+          return { result, basisDetails, n, degree: n - 1, xStar, points: pts };
+        }
+
+        // ── Run ────────────────────────────────────────────────────────
+        window.runLagrange = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+
+          const pts = getTablePoints();
+          if (pts.some((p) => isNaN(p.x) || isNaN(p.y))) {
+            showError("All x and y values must be valid numbers.");
+            return;
+          }
+          const xStar = parseFloat(document.getElementById("xStar").value);
+          if (isNaN(xStar)) {
+            showError("Please enter a valid target x*.");
+            return;
+          }
+          if (pts.length < 2) {
+            showError("At least 2 data points are required.");
+            return;
+          }
+
+          let res;
+          try {
+            res = computeLagrange(pts, xStar);
+          } catch (e) {
+            showError(e.message);
+            return;
+          }
+
+          stepsData = res.basisDetails;
+          currentStep = 0;
+          showingAll = false;
+
+          document.getElementById("emptyState").style.display = "none";
+          document.getElementById("resultsContent").style.display = "block";
+          document.getElementById("toggleAllBtn").textContent =
+            "Show All Terms";
+          document.getElementById("singleStepView").style.display = "block";
+          document.getElementById("allStepsView").style.display = "none";
+
+          renderResultBanner(res);
+          renderStatsGrid(res);
+          renderMainChart(res);
+          renderContribBars(res);
+          renderStep(0);
+          updateNav();
+
+          const d = getDecimals();
+          showSuccess(
+            `✓ P(${fmtS(xStar)}) = ${fmtF(res.result, d)} — degree-${res.degree} polynomial through ${res.n} points`,
+          );
+        };
+
+        // ── Result Banner ──────────────────────────────────────────────
+        function renderResultBanner(res) {
+          const d = getDecimals();
+          const xStr = fmtS(res.xStar);
+          const pts = res.points;
+          const xMin = Math.min(...pts.map((p) => p.x));
+          const xMax = Math.max(...pts.map((p) => p.x));
+          const isExtrap = res.xStar < xMin || res.xStar > xMax;
+
+          let html = `<span class="sol-chip">x* = ${xStr}</span>`;
+          html += `<span class="sol-chip">${res.n} points</span>`;
+          html += `<span class="sol-chip">degree-${res.degree}</span>`;
+          html += `<span class="sol-chip result">P(${xStr}) = ${fmtF(res.result, d)}</span>`;
+          if (currentExact) {
+            const err = Math.abs(res.result - currentExact.exact);
+            const relErr = Math.abs(err / (currentExact.exact || 1)) * 100;
+            html += `<span class="sol-chip exact">Exact = ${currentExact.exactStr}</span>`;
+            html += `<span class="sol-chip" style="border-color:rgba(255,80,80,.3);color:#ff6060;">|Error| = ${err.toExponential(3)} (${relErr.toFixed(4)}%)</span>`;
+          }
+          if (isExtrap)
+            html += `<span class="sol-chip warn">⚠ x* outside data range — extrapolation</span>`;
+
+          document.getElementById("solValues").innerHTML = html;
+        }
+
+        // ── Stats Grid ─────────────────────────────────────────────────
+        function renderStatsGrid(res) {
+          const d = Math.min(getDecimals(), 6);
+          const sumLi = res.basisDetails.reduce((s, bd) => s + bd.Li, 0);
+          document.getElementById("statsGrid").innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${fmtF(res.result, Math.min(d, 5))}</div>
+          <div class="stat-label">P(x*) Result</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${res.n}</div>
+          <div class="stat-label">Data Points</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--accent2);">${res.degree}</div>
+          <div class="stat-label">Poly Degree</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--accent3);">${fmtF(sumLi, 4)}</div>
+          <div class="stat-label">&Sigma;L<sub>i</sub>(x*) &asymp; 1</div>
+        </div>
+      `;
+        }
+
+        // ── Main Chart ─────────────────────────────────────────────────
+        function renderMainChart(res) {
+          if (mainChartObj) {
+            mainChartObj.destroy();
+            mainChartObj = null;
+          }
+          const pts = res.points;
+          const xMin = Math.min(...pts.map((p) => p.x));
+          const xMax = Math.max(...pts.map((p) => p.x));
+          const pad = Math.max((xMax - xMin) * 0.12, 0.5);
+          const xL = xMin - pad;
+          const xR = xMax + pad;
+          const NS = 300;
+          const step = (xR - xL) / (NS - 1);
+
+          // Clamp y to avoid wild oscillations distorting the chart
+          const yVals = pts.map((p) => p.y);
+          const yMinPt = Math.min(...yVals);
+          const yMaxPt = Math.max(...yVals);
+          const yRange = Math.max(Math.abs(yMaxPt - yMinPt), 1);
+          const yClamp = yRange * 5;
+
+          const curve = [];
+          for (let k = 0; k < NS; k++) {
+            const x = xL + k * step;
+            const y = evalPoly(pts, x);
+            if (
+              isFinite(y) &&
+              Math.abs(y) < yClamp + Math.abs(yMinPt) + Math.abs(yMaxPt) + 10
+            )
+              curve.push({ x, y });
+            else curve.push({ x, y: null });
+          }
+
+          const canvas = document.getElementById("mainChart");
+          mainChartObj = new Chart(canvas, {
+            type: "scatter",
+            data: {
+              datasets: [
+                {
+                  label: "P(x) — Interpolating Polynomial",
+                  data: curve,
+                  type: "line",
+                  borderColor: "#00d4ff",
+                  borderWidth: 2.5,
+                  backgroundColor: "rgba(0,212,255,0.06)",
+                  pointRadius: 0,
+                  tension: 0.15,
+                  fill: false,
+                  spanGaps: false,
+                  order: 3,
+                },
+                {
+                  label: "Data Points (xᵢ, yᵢ)",
+                  data: pts.map((p) => ({ x: p.x, y: p.y })),
+                  type: "scatter",
+                  backgroundColor: "#ff6b35",
+                  borderColor: "#ff6b35",
+                  borderWidth: 2,
+                  pointRadius: 7,
+                  pointHoverRadius: 9,
+                  order: 1,
+                },
+                {
+                  label: `P(x*) at x* = ${fmtS(res.xStar)}`,
+                  data: [{ x: res.xStar, y: res.result }],
+                  type: "scatter",
+                  backgroundColor: "#77dc1e",
+                  borderColor: "#77dc1e",
+                  pointRadius: 11,
+                  pointStyle: "star",
+                  pointHoverRadius: 13,
+                  order: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: "nearest", intersect: false },
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                    boxWidth: 14,
+                  },
+                },
+                tooltip: {
+                  backgroundColor: "#0d1a22",
+                  borderColor: "#1a3545",
+                  borderWidth: 1,
+                  titleColor: "#00d4ff",
+                  bodyColor: "#e8f4f8",
+                  titleFont: { family: "Space Mono", size: 10 },
+                  bodyFont: { family: "Space Mono", size: 10 },
+                  callbacks: {
+                    label: (ctx) =>
+                      `(${ctx.parsed.x.toFixed(4)}, ${ctx.parsed.y.toFixed(6)})`,
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  type: "linear",
+                  grid: { color: "rgba(26,53,69,.6)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                },
+                y: {
+                  grid: { color: "rgba(26,53,69,.6)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                },
+              },
+            },
+          });
+        }
+
+        // ── Contribution bars ──────────────────────────────────────────
+        const COLORS = [
+          "#00d4ff",
+          "#ff6b35",
+          "#77dc1e",
+          "#a855f7",
+          "#f59e0b",
+          "#06b6d4",
+          "#ec4899",
+          "#10b981",
+        ];
+
+        function renderContribBars(res) {
+          const d = getDecimals();
+          const maxAbs = Math.max(
+            ...res.basisDetails.map((bd) => Math.abs(bd.contribution)),
+            0.001,
+          );
+          let html = `<div class="contrib-title">Contributions y<sub>i</sub> &middot; L<sub>i</sub>(x*) to P(x*)</div>`;
+          res.basisDetails.forEach((bd, i) => {
+            const pct = Math.min(
+              100,
+              (Math.abs(bd.contribution) / maxAbs) * 100,
+            );
+            const clr = COLORS[i % COLORS.length];
+            const isPos = bd.contribution >= 0;
+            html += `
+          <div class="contrib-row">
+            <div class="contrib-label" style="color:${clr};">L${sub(i)}·y${sub(i)}</div>
+            <div class="contrib-track">
+              <div class="contrib-fill" style="width:${pct}%;background:${clr};"></div>
+            </div>
+            <div class="contrib-val" style="color:${isPos ? "var(--accent3)" : "#ff6060"};">${fmtF(bd.contribution, d)}</div>
+          </div>`;
+          });
+          document.getElementById("contribBars").innerHTML = html;
+        }
+
+        // ── Step card ──────────────────────────────────────────────────
+        function buildStepCard(detail, allPts, xStar) {
+          const d = getDecimals();
+          const clr = COLORS[detail.i % COLORS.length];
+          const uid = `sc-${detail.i}-${Date.now()}`;
+
+          // Build formula strings
+          const numParts = detail.numFactors
+            .map((nf) => `(x* − ${fmtS(nf.xj, 4)})`)
+            .join(" × ");
+          const denParts = detail.denFactors
+            .map((df) => `(${fmtS(df.xi, 4)} − ${fmtS(df.xj, 4)})`)
+            .join(" × ");
+          const numEval =
+            detail.numFactors.map((nf) => fmtF(nf.factor, 6)).join(" × ") ||
+            "1";
+          const denEval =
+            detail.denFactors.map((df) => fmtF(df.factor, 6)).join(" × ") ||
+            "1";
+          const isPos = detail.contribution >= 0;
+
+          const div = document.createElement("div");
+          div.className = "step-card";
+          div.innerHTML = `
+        <div class="step-badge" style="background:rgba(${hexR(clr)},0.12);border:1px solid rgba(${hexR(clr)},0.35);color:${clr};">
+          ● Basis Term L${sub(detail.i)}(x) &nbsp;&middot;&nbsp; i = ${detail.i}
+          &nbsp;&middot;&nbsp; x${sub(detail.i)} = ${fmtS(detail.xi, 4)},
+          y${sub(detail.i)} = ${fmtS(detail.yi, 4)}
+        </div>
+        <div class="step-body">
+
+          <!-- Column 1: Formula -->
+          <div>
+            <div class="step-col-title" style="color:${clr};">Formula</div>
+            <div class="formula-box">
+              <div style="font-size:.6rem;color:var(--text-dim);margin-bottom:.5rem;">L${sub(detail.i)}(x*) = Numerator / Denominator</div>
+
+              <div style="margin-bottom:.6rem;">
+                <div style="color:var(--accent);font-size:.62rem;margin-bottom:.2rem;">▸ Numerator &Pi;<sub>j&ne;${detail.i}</sub>(x* &minus; x<sub>j</sub>)</div>
+                <div style="color:var(--text);font-size:.6rem;padding-left:.5rem;">${numParts || "1"}</div>
+                <div style="color:var(--text-dim);font-size:.58rem;padding-left:.5rem;margin-top:.15rem;">= ${numEval} = <strong style="color:var(--accent);">${fmtF(detail.numerator, d)}</strong></div>
+              </div>
+
+              <div style="border-top:1px solid var(--border);padding-top:.5rem;">
+                <div style="color:var(--accent2);font-size:.62rem;margin-bottom:.2rem;">▸ Denominator &Pi;<sub>j&ne;${detail.i}</sub>(x<sub>${detail.i}</sub> &minus; x<sub>j</sub>)</div>
+                <div style="color:var(--text);font-size:.6rem;padding-left:.5rem;">${denParts || "1"}</div>
+                <div style="color:var(--text-dim);font-size:.58rem;padding-left:.5rem;margin-top:.15rem;">= ${denEval} = <strong style="color:var(--accent2);">${fmtF(detail.denominator, d)}</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Numerical Calculation -->
+          <div>
+            <div class="step-col-title" style="color:${clr};">Calculation</div>
+            <div class="calc-box">
+              <table class="mini-val-table">
+                <tr><td>x* =</td><td>${fmtF(xStar, d)}</td></tr>
+                <tr><td>x${sub(detail.i)} =</td><td style="color:${clr};">${fmtF(detail.xi, d)}</td></tr>
+                <tr><td>y${sub(detail.i)} =</td><td style="color:var(--accent2);">${fmtF(detail.yi, d)}</td></tr>
+                <tr><td colspan="2" style="padding:.15rem;"></td></tr>
+                <tr><td>Numerator =</td><td style="color:var(--accent);">${fmtF(detail.numerator, d)}</td></tr>
+                <tr><td>Denominator =</td><td style="color:var(--accent2);">${fmtF(detail.denominator, d)}</td></tr>
+                <tr class="hl"><td>L${sub(detail.i)}(x*) =</td><td>${fmtF(detail.Li, d)}</td></tr>
+                <tr><td colspan="2" style="padding:.15rem;"></td></tr>
+                <tr class="hl"><td>y${sub(detail.i)} × L${sub(detail.i)} =</td>
+                  <td style="color:${isPos ? "var(--accent3)" : "#ff6060"};">${fmtF(detail.contribution, d)}</td></tr>
+              </table>
+            </div>
+            <div class="step-summary">
+              <span class="sum-chip">Running &Sigma;: <strong style="color:${clr};">${fmtF(detail.runningSum, d)}</strong></span>
+            </div>
+          </div>
+
+          <!-- Column 3: Mini chart -->
+          <div>
+            <div class="step-col-title" style="color:${clr};">Graph of L${sub(detail.i)}(x)</div>
+            <div class="step-chart-wrap">
+              <canvas id="${uid}"></canvas>
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:.56rem;color:var(--text-dim);margin-top:.4rem;line-height:1.6;">
+              <span style="color:#77dc1e;">●</span> L${sub(detail.i)}(x${sub(detail.i)})=1
+              &nbsp;<span style="color:var(--accent2);">●</span> L${sub(detail.i)}(x<sub>j≠i</sub>)=0
+              &nbsp;<span style="color:#f59e0b;">▲</span> x*
+            </div>
+          </div>
+
+        </div>
+      `;
+
+          setTimeout(() => {
+            const canvas = document.getElementById(uid);
+            if (!canvas) return;
+            createBasisChart(canvas, detail, allPts, xStar, clr, uid);
+          }, 60);
+
+          return div;
+        }
+
+        // ── Basis chart ────────────────────────────────────────────────
+        function createBasisChart(canvas, detail, allPts, xStar, clr, uid) {
+          const xMin = Math.min(...allPts.map((p) => p.x));
+          const xMax = Math.max(...allPts.map((p) => p.x));
+          const pad = Math.max((xMax - xMin) * 0.12, 0.4);
+          const xL = xMin - pad;
+          const xR = xMax + pad;
+          const NS = 200;
+          const step = (xR - xL) / (NS - 1);
+
+          const curve = [];
+          for (let k = 0; k < NS; k++) {
+            const x = xL + k * step;
+            const y = evalBasis(allPts, detail.i, x);
+            curve.push(
+              isFinite(y) && Math.abs(y) < 50 ? { x, y } : { x, y: null },
+            );
+          }
+
+          // Active node: L_i(xi)=1
+          const activeNode = [{ x: detail.xi, y: 1 }];
+          // Other nodes: L_i(xj)=0 for j≠i
+          const otherNodes = allPts
+            .filter((_, j) => j !== detail.i)
+            .map((p) => ({ x: p.x, y: evalBasis(allPts, detail.i, p.x) }));
+          // Query point
+          const queryPt = [{ x: xStar, y: detail.Li }];
+          // Reference lines
+          const y0line = [
+            { x: xL, y: 0 },
+            { x: xR, y: 0 },
+          ];
+          const y1line = [
+            { x: xL, y: 1 },
+            { x: xR, y: 1 },
+          ];
+
+          const chart = new Chart(canvas, {
+            type: "scatter",
+            data: {
+              datasets: [
+                {
+                  label: `L${sub(detail.i)}(x)`,
+                  data: curve,
+                  type: "line",
+                  borderColor: clr,
+                  borderWidth: 2,
+                  backgroundColor: `${clr}18`,
+                  pointRadius: 0,
+                  tension: 0.1,
+                  fill: false,
+                  spanGaps: false,
+                  order: 4,
+                },
+                {
+                  label: "y=0",
+                  data: y0line,
+                  type: "line",
+                  borderColor: "rgba(255,255,255,0.1)",
+                  borderWidth: 1,
+                  borderDash: [3, 3],
+                  pointRadius: 0,
+                  fill: false,
+                  order: 5,
+                },
+                {
+                  label: "y=1",
+                  data: y1line,
+                  type: "line",
+                  borderColor: "rgba(119,220,30,0.2)",
+                  borderWidth: 1,
+                  borderDash: [3, 3],
+                  pointRadius: 0,
+                  fill: false,
+                  order: 5,
+                },
+                {
+                  label: `x${sub(detail.i)} (=1)`,
+                  data: activeNode,
+                  type: "scatter",
+                  backgroundColor: "#77dc1e",
+                  borderColor: "#77dc1e",
+                  pointRadius: 6,
+                  order: 1,
+                },
+                {
+                  label: "Other nodes (=0)",
+                  data: otherNodes,
+                  type: "scatter",
+                  backgroundColor: "#ff6b35",
+                  borderColor: "#ff6b35",
+                  pointRadius: 5,
+                  order: 2,
+                },
+                {
+                  label: `L${sub(detail.i)}(x*)`,
+                  data: queryPt,
+                  type: "scatter",
+                  backgroundColor: "#f59e0b",
+                  borderColor: "#f59e0b",
+                  pointRadius: 7,
+                  pointStyle: "triangle",
+                  order: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: "#0d1a22",
+                  borderColor: "#1a3545",
+                  borderWidth: 1,
+                  titleColor: clr,
+                  bodyColor: "#e8f4f8",
+                  titleFont: { family: "Space Mono", size: 9 },
+                  bodyFont: { family: "Space Mono", size: 9 },
+                  callbacks: {
+                    label: (ctx) =>
+                      `(${ctx.parsed.x.toFixed(4)}, ${ctx.parsed.y.toFixed(6)})`,
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  type: "linear",
+                  grid: { color: "rgba(26,53,69,.5)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 9 },
+                    maxTicksLimit: 5,
+                  },
+                },
+                y: {
+                  grid: { color: "rgba(26,53,69,.5)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 9 },
+                    maxTicksLimit: 5,
+                  },
+                },
+              },
+            },
+          });
+
+          if (stepChartMap[uid]) {
+            try {
+              stepChartMap[uid].destroy();
+            } catch (e) {}
+          }
+          stepChartMap[uid] = chart;
+        }
+
+        // ── Step navigation ────────────────────────────────────────────
+        function renderStep(idx) {
+          const c = document.getElementById("stepCardContainer");
+          c.innerHTML = "";
+          if (!stepsData[idx]) return;
+          const pts = getTablePoints();
+          const xStar = parseFloat(document.getElementById("xStar").value);
+          c.appendChild(buildStepCard(stepsData[idx], pts, xStar));
+        }
+
+        window.changeStep = function (dir) {
+          currentStep = Math.max(
+            0,
+            Math.min(stepsData.length - 1, currentStep + dir),
+          );
+          renderStep(currentStep);
+          updateNav();
+        };
+
+        function updateNav() {
+          document.getElementById("prevBtn").disabled = currentStep === 0;
+          document.getElementById("nextBtn").disabled =
+            currentStep === stepsData.length - 1;
+          document.getElementById("stepCounter").textContent =
+            `L${sub(currentStep)} · ${currentStep + 1} / ${stepsData.length}`;
+        }
+
+        window.toggleAllSteps = function () {
+          showingAll = !showingAll;
+          document.getElementById("toggleAllBtn").textContent = showingAll
+            ? "Show One Term"
+            : "Show All Terms";
+          document.getElementById("singleStepView").style.display = showingAll
+            ? "none"
+            : "block";
+          document.getElementById("allStepsView").style.display = showingAll
+            ? "block"
+            : "none";
+
+          if (showingAll) {
+            const c = document.getElementById("allStepsContainer");
+            c.innerHTML = "";
+            const pts = getTablePoints();
+            const xStar = parseFloat(document.getElementById("xStar").value);
+            stepsData.forEach((d) =>
+              c.appendChild(buildStepCard(d, pts, xStar)),
+            );
+
+            // Final summary card
+            const d = getDecimals();
+            const sumDiv = document.createElement("div");
+            sumDiv.className = "final-summary";
+            const termParts = stepsData
+              .map(
+                (bd, i) => `
+          <span class="fs-term" style="border-color:rgba(${hexR(COLORS[i % COLORS.length])},0.4);color:${COLORS[i % COLORS.length]};">
+            ${fmtS(bd.yi, 4)} × ${fmtF(bd.Li, 4)}
+          </span>`,
+              )
+              .join('<span style="color:var(--text-dim)"> + </span>');
+
+            sumDiv.innerHTML = `
+          <div class="fs-title">&#9654; Final Sum: P(x*) = &Sigma; y<sub>i</sub> &middot; L<sub>i</sub>(x*)</div>
+          <div class="fs-sum-row">
+            P(x*) = ${termParts}
+            <span style="color:var(--text-dim);"> = </span>
+            <span class="fs-term" style="border-color:rgba(119,220,30,0.5);color:var(--accent3);font-size:.75rem;font-weight:700;">
+              ${fmtF(stepsData[stepsData.length - 1].runningSum, d)}
+            </span>
+          </div>
+        `;
+            c.appendChild(sumDiv);
+          }
+        };
+
+        // ── Reset ──────────────────────────────────────────────────────
+        window.resetAll = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          document.getElementById("emptyState").style.display = "block";
+          document.getElementById("resultsContent").style.display = "none";
+          if (mainChartObj) {
+            mainChartObj.destroy();
+            mainChartObj = null;
+          }
+          Object.values(stepChartMap).forEach((c) => {
+            try {
+              c.destroy();
+            } catch (e) {}
+          });
+          Object.keys(stepChartMap).forEach((k) => delete stepChartMap[k]);
+          stepsData = [];
+          currentStep = 0;
+          showingAll = false;
+          currentExact = null;
+          pointsData = [
+            { x: 0, y: 0 },
+            { x: 1, y: 1 },
+            { x: 2, y: 4 },
+            { x: 3, y: 9 },
+          ];
+          document.getElementById("xStar").value = "1.5";
+          renderPointsTable();
+        };
+
+        // ── Info popup ────────────────────────────────────────────────
+        window.togglePop = function (id) {
+          const p = document.getElementById(id);
+          if (!p) return;
+          const wasOpen = p.classList.contains("show");
+          document
+            .querySelectorAll(".info-popup")
+            .forEach((x) => x.classList.remove("show"));
+          if (!wasOpen) p.classList.add("show");
+        };
+        document.addEventListener("click", (e) => {
+          if (!e.target.classList.contains("info-btn"))
+            document
+              .querySelectorAll(".info-popup")
+              .forEach((p) => p.classList.remove("show"));
+        });
+
+        // ── Alerts ────────────────────────────────────────────────────
+        function showError(msg) {
+          const e = document.getElementById("errorAlert");
+          e.textContent = "✕ " + msg;
+          e.style.display = "block";
+        }
+        function showSuccess(msg) {
+          const e = document.getElementById("successAlert");
+          e.textContent = msg;
+          e.style.display = "block";
+        }
+        function hideAlert(id) {
+          document.getElementById(id).style.display = "none";
+        }
+
+        // ── Hex to RGB ────────────────────────────────────────────────
+        function hexR(hex) {
+          const r = parseInt(hex.slice(1, 3), 16),
+            g = parseInt(hex.slice(3, 5), 16),
+            b = parseInt(hex.slice(5, 7), 16);
+          return `${r},${g},${b}`;
+        }
+
+        // ── Background animation (same as template) ───────────────────
+        (() => {
+          const gridCv = document.getElementById("bgGrid");
+          const partCv = document.getElementById("bgParticles");
+          const symW = document.getElementById("bgSymbols");
+          if (!gridCv || !partCv || !symW) return;
+          const gctx = gridCv.getContext("2d"),
+            pctx = partCv.getContext("2d");
+          const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+          const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+          const particles = [];
+          let w = 0,
+            h = 0,
+            dpr = 1;
+          function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = window.innerWidth;
+            h = window.innerHeight;
+            [gridCv, partCv].forEach((cv) => {
+              cv.width = Math.floor(w * dpr);
+              cv.height = Math.floor(h * dpr);
+              cv.style.width = w + "px";
+              cv.style.height = h + "px";
+            });
+            gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          function seed() {
+            particles.length = 0;
+            for (let i = 0; i < 90; i++)
+              particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 1.5 + Math.random() * 2.3,
+                c: palette[(Math.random() * palette.length) | 0],
+              });
+          }
+          function seedSym() {
+            const syms = [
+              "P(x)",
+              "Lᵢ",
+              "∑yᵢ",
+              "xᵢ",
+              "yᵢ",
+              "Πⱼ",
+              "≠i",
+              "∿",
+              "λ",
+              "ω",
+              "basis",
+              "degree",
+              "∫",
+              "n+1",
+              "f(x)",
+            ];
+            symW.innerHTML = "";
+            for (let i = 0; i < 22; i++) {
+              const s = document.createElement("span");
+              const t = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+              s.className = "bg-symbol " + t;
+              s.textContent = syms[i % syms.length];
+              s.style.left = Math.random() * 98 + "%";
+              s.style.top = 80 + Math.random() * 50 + "%";
+              s.style.fontSize = 13 + Math.random() * 18 + "px";
+              s.style.animationDuration = 22 + Math.random() * 20 + "s";
+              s.style.animationDelay = -Math.random() * 26 + "s";
+              symW.appendChild(s);
+            }
+          }
+          function drawGrid(t) {
+            gctx.clearRect(0, 0, w, h);
+            const gap = 56,
+              ox = (t * 0.008) % gap,
+              oy = (t * 0.005) % gap;
+            gctx.strokeStyle = "rgba(0,212,255,.11)";
+            gctx.lineWidth = 1;
+            for (let x = -gap; x < w + gap; x += gap) {
+              gctx.beginPath();
+              gctx.moveTo(x + ox, 0);
+              gctx.lineTo(x + ox, h);
+              gctx.stroke();
+            }
+            for (let y = -gap; y < h + gap; y += gap) {
+              gctx.beginPath();
+              gctx.moveTo(0, y + oy);
+              gctx.lineTo(w, y + oy);
+              gctx.stroke();
+            }
+            gctx.strokeStyle = "rgba(124,58,237,.08)";
+            for (let x = -h; x < w + h; x += gap * 1.5) {
+              gctx.beginPath();
+              gctx.moveTo(x - ox * 0.7, 0);
+              gctx.lineTo(x + h - oy * 0.7, h);
+              gctx.stroke();
+            }
+          }
+          function drawPart() {
+            pctx.clearRect(0, 0, w, h);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > w) p.vx *= -1;
+              if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            for (let i = 0; i < particles.length; i++) {
+              const a = particles[i];
+              for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j],
+                  dx = a.x - b.x,
+                  dy = a.y - b.y,
+                  dist = Math.hypot(dx, dy);
+                if (dist < 120) {
+                  pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                  pctx.lineWidth = 1;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(b.x, b.y);
+                  pctx.stroke();
+                }
+              }
+              if (mouse.active) {
+                const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (md < mouse.r) {
+                  pctx.strokeStyle = `rgba(124,58,237,${(1 - md / mouse.r) * 0.45})`;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(mouse.x, mouse.y);
+                  pctx.stroke();
+                }
+              }
+            }
+            for (const p of particles) {
+              const near =
+                mouse.active &&
+                Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r;
+              pctx.beginPath();
+              pctx.fillStyle = p.c;
+              pctx.globalAlpha = near ? 1 : 0.82;
+              pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+              pctx.fill();
+              if (near) {
+                pctx.beginPath();
+                pctx.globalAlpha = 0.15;
+                pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+                pctx.fill();
+              }
+            }
+            pctx.globalAlpha = 1;
+          }
+          function loop(t) {
+            drawGrid(t);
+            drawPart();
+            requestAnimationFrame(loop);
+          }
+          window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+          });
+          window.addEventListener("mouseleave", () => {
+            mouse.active = false;
+          });
+          window.addEventListener("resize", resize);
+          resize();
+          seed();
+          seedSym();
+          requestAnimationFrame(loop);
+        })();
+
+        // ── Init ──────────────────────────────────────────────────────
+        renderPointsTable();
+
+        // ── Reverse Lagrange Interpolation ────────────────────────────
+        let reversePointsData = [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 },
+          { x: 2, y: 4 },
+          { x: 3, y: 9 },
+        ];
+        let reverseMainChartObj = null;
+        let reverseStepsData = [];
+        let currentStepReverse = 0;
+        let showingAllReverse = false;
+
+        window.switchMode = function (mode) {
+          const forwardEl = document.getElementById("forwardMode");
+          const reverseEl = document.getElementById("reverseMode");
+          const modeForwardBtn = document.getElementById("modeForward");
+          const modeReverseBtn = document.getElementById("modeReverse");
+
+          if (mode === "forward") {
+            forwardEl.style.display = "grid";
+            reverseEl.style.display = "none";
+            modeForwardBtn.style.background = "rgba(0,212,255,0.15)";
+            modeForwardBtn.style.borderColor = "rgba(0,212,255,0.4)";
+            modeForwardBtn.style.color = "var(--accent)";
+            modeReverseBtn.style.background = "transparent";
+            modeReverseBtn.style.borderColor = "rgba(255,107,53,0.3)";
+            modeReverseBtn.style.color = "var(--text-dim)";
+          } else {
+            forwardEl.style.display = "none";
+            reverseEl.style.display = "grid";
+            modeForwardBtn.style.background = "transparent";
+            modeForwardBtn.style.borderColor = "rgba(0,212,255,0.3)";
+            modeForwardBtn.style.color = "var(--text-dim)";
+            modeReverseBtn.style.background = "rgba(255,107,53,0.1)";
+            modeReverseBtn.style.borderColor = "rgba(255,107,53,0.4)";
+            modeReverseBtn.style.color = "var(--accent2)";
+            renderPointsTableReverse();
+          }
+        };
+
+        function getDecimalsReverse() {
+          return (
+            parseInt(document.getElementById("decimalsReverse").value) || 6
+          );
+        }
+
+        function renderPointsTableReverse() {
+          const tbody = document.getElementById("pointsTableBodyReverse");
+          tbody.innerHTML = "";
+          const n = reversePointsData.length;
+          reversePointsData.forEach((pt, i) => {
+            const tr = document.createElement("tr");
+            const canRemove = n > 2;
+            tr.innerHTML = `
+      <td class="pt-idx">${i}</td>
+      <td><input type="number" class="x-inp" value="${+pt.x.toFixed(8)}" step="any"
+           onchange="updatePtReverse(${i},'x',this.value)" data-idx="${i}" data-field="x"/></td>
+      <td><input type="number" class="y-inp" value="${+pt.y.toFixed(8)}" step="any"
+           onchange="updatePtReverse(${i},'y',this.value)" data-idx="${i}" data-field="y"/></td>
+      <td><button class="rm-pt-btn" onclick="removePtReverse(${i})" ${canRemove ? "" : "disabled"} title="Remove point">&times;</button></td>
+    `;
+            tbody.appendChild(tr);
+          });
+          updatePointsInfoReverse();
+        }
+
+        window.updatePtReverse = function (idx, field, val) {
+          const v = parseFloat(val);
+          if (!isNaN(v)) reversePointsData[idx][field] = v;
+          updatePointsInfoReverse();
+        };
+
+        window.addPointReverse = function () {
+          const last =
+            reversePointsData.length > 0
+              ? reversePointsData[reversePointsData.length - 1].x + 1
+              : 0;
+          reversePointsData.push({ x: last, y: 0 });
+          renderPointsTableReverse();
+        };
+
+        window.removePtReverse = function (idx) {
+          if (reversePointsData.length <= 2) return;
+          reversePointsData.splice(idx, 1);
+          renderPointsTableReverse();
+        };
+
+        function getTablePointsReverse() {
+          const rows = document.querySelectorAll("#pointsTableBodyReverse tr");
+          const pts = [];
+          rows.forEach((row) => {
+            const xi = row.querySelector('input[data-field="x"]');
+            const yi = row.querySelector('input[data-field="y"]');
+            if (xi && yi)
+              pts.push({ x: parseFloat(xi.value), y: parseFloat(yi.value) });
+          });
+          return pts;
+        }
+
+        function updatePointsInfoReverse() {
+          const n = reversePointsData.length;
+          const el = document.getElementById("pointsInfoReverse");
+          const yVals = reversePointsData.map((p) => p.y);
+          const hasDup = yVals.some(
+            (v, i) => yVals.findIndex((u) => Math.abs(u - v) < 1e-12) !== i,
+          );
+          if (hasDup) {
+            el.innerHTML = `<span style="color:#ff3355;">⚠ Duplicate y values detected — all y values must be distinct.</span>`;
+            el.style.borderLeftColor = "#ff3355";
+            return;
+          }
+          el.innerHTML = `${n} point${n > 1 ? "s" : ""} &rarr; degree-<strong style="color:var(--accent);">${n - 1}</strong> polynomial &middot; ${n} basis terms`;
+          el.style.borderLeftColor = "";
+        }
+
+        function computeReverseLagrange(swappedPts, yStar) {
+          const n = swappedPts.length;
+          const basisDetails = [];
+          let result = 0;
+          let runningSum = 0;
+
+          for (let i = 0; i < n; i++) {
+            let numerator = 1;
+            let denominator = 1;
+            const numFactors = [];
+            const denFactors = [];
+
+            for (let j = 0; j < n; j++) {
+              if (j !== i) {
+                const nf = yStar - swappedPts[j].x;
+                const df = swappedPts[i].x - swappedPts[j].x;
+                numerator *= nf;
+                denominator *= df;
+                numFactors.push({ j, yj: swappedPts[j].x, factor: nf });
+                denFactors.push({
+                  j,
+                  yj: swappedPts[j].x,
+                  yi: swappedPts[i].x,
+                  factor: df,
+                });
+              }
+            }
+
+            const Li = numerator / denominator;
+            const contribution = swappedPts[i].y * Li;
+            result += contribution;
+            runningSum = result;
+            basisDetails.push({
+              i,
+              yi: swappedPts[i].x,
+              xi: swappedPts[i].y,
+              numerator,
+              denominator,
+              Li,
+              contribution,
+              runningSum,
+              numFactors,
+              denFactors,
+            });
+          }
+
+          return { result, basisDetails };
+        }
+
+        window.runReverseLagrange = function () {
+          hideAlert("errorAlertReverse");
+          hideAlert("successAlertReverse");
+
+          const pts = getTablePointsReverse();
+          if (pts.some((p) => isNaN(p.x) || isNaN(p.y))) {
+            showErrorReverse("All x and y values must be valid numbers.");
+            return;
+          }
+          const yStar = parseFloat(document.getElementById("yStar").value);
+          if (isNaN(yStar)) {
+            showErrorReverse("Please enter a valid target y*.");
+            return;
+          }
+          if (pts.length < 2) {
+            showErrorReverse("At least 2 data points are required.");
+            return;
+          }
+
+          const swappedPts = pts.map((p) => ({ x: p.y, y: p.x }));
+          for (let i = 0; i < swappedPts.length; i++) {
+            for (let j = i + 1; j < swappedPts.length; j++) {
+              if (Math.abs(swappedPts[i].x - swappedPts[j].x) < 1e-12) {
+                showErrorReverse(
+                  `Duplicate y values at y = ${swappedPts[i].x}. All y values must be distinct.`,
+                );
+                return;
+              }
+            }
+          }
+
+          const computed = computeReverseLagrange(swappedPts, yStar);
+          const result = computed.result;
+          if (!isFinite(result)) {
+            showErrorReverse("Computation resulted in invalid value.");
+            return;
+          }
+
+          reverseStepsData = computed.basisDetails;
+          currentStepReverse = 0;
+          showingAllReverse = false;
+
+          document.getElementById("emptyStateReverse").style.display = "none";
+          document.getElementById("resultsContentReverse").style.display =
+            "block";
+          document.getElementById("toggleAllBtnReverse").textContent =
+            "Show All Terms";
+          document.getElementById("singleStepViewReverse").style.display =
+            "block";
+          document.getElementById("allStepsViewReverse").style.display = "none";
+
+          renderResultBannerReverse(yStar, result, pts);
+          renderStatsGridReverse(result, swappedPts);
+          renderMainChartReverse(pts, yStar, result);
+          renderContribBarsReverse(reverseStepsData);
+          renderStepReverse(0);
+          updateNavReverse();
+
+          showSuccessReverse(
+            `✓ x(${fmtS(yStar)}) = ${fmtF(result, getDecimalsReverse())} — degree-${swappedPts.length - 1} polynomial through ${swappedPts.length} points`,
+          );
+        };
+
+        function renderResultBannerReverse(yStar, result, pts) {
+          const d = getDecimalsReverse();
+          const yMin = Math.min(...pts.map((p) => p.y));
+          const yMax = Math.max(...pts.map((p) => p.y));
+          const isExtrap = yStar < yMin || yStar > yMax;
+
+          let html = `<span class="sol-chip">y* = ${fmtS(yStar)}</span>`;
+          html += `<span class="sol-chip">${pts.length} points</span>`;
+          html += `<span class="sol-chip">degree-${pts.length - 1}</span>`;
+          html += `<span class="sol-chip result">x(${fmtS(yStar)}) = ${fmtF(result, d)}</span>`;
+          if (isExtrap)
+            html += `<span class="sol-chip warn">⚠ y* outside data range — extrapolation</span>`;
+          document.getElementById("solValuesReverse").innerHTML = html;
+        }
+
+        function renderStatsGridReverse(result, swappedPts) {
+          const d = Math.min(getDecimalsReverse(), 6);
+          const sumLi = reverseStepsData.reduce((s, bd) => s + bd.Li, 0);
+          document.getElementById("statsGridReverse").innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${fmtF(result, Math.min(d, 5))}</div>
+          <div class="stat-label">x(y*) Result</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${swappedPts.length}</div>
+          <div class="stat-label">Data Points</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--accent2);">${swappedPts.length - 1}</div>
+          <div class="stat-label">Poly Degree</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--accent3);">${fmtF(sumLi, 4)}</div>
+          <div class="stat-label">ΣL<sub>i</sub>(y*) ≈ 1</div>
+        </div>
+      `;
+        }
+
+        function renderMainChartReverse(pts, yStar, result) {
+          if (reverseMainChartObj) {
+            reverseMainChartObj.destroy();
+            reverseMainChartObj = null;
+          }
+          const swappedPts = pts.map((p) => ({ x: p.y, y: p.x }));
+          const xMin = Math.min(...swappedPts.map((p) => p.x));
+          const xMax = Math.max(...swappedPts.map((p) => p.x));
+          const pad = Math.max((xMax - xMin) * 0.12, 0.5);
+          const xL = xMin - pad;
+          const xR = xMax + pad;
+          const NS = 300;
+          const step = (xR - xL) / (NS - 1);
+          const yVals = swappedPts.map((p) => p.y);
+          const yMinPt = Math.min(...yVals);
+          const yMaxPt = Math.max(...yVals);
+          const yRange = Math.max(Math.abs(yMaxPt - yMinPt), 1);
+          const yClamp = yRange * 5;
+          const curve = [];
+          for (let k = 0; k < NS; k++) {
+            const x = xL + k * step;
+            const y = evalPoly(swappedPts, x);
+            curve.push(
+              isFinite(y) &&
+                Math.abs(y) < yClamp + Math.abs(yMinPt) + Math.abs(yMaxPt) + 10
+                ? { x, y }
+                : { x, y: null },
+            );
+          }
+
+          const canvas = document.getElementById("mainChartReverse");
+          reverseMainChartObj = new Chart(canvas, {
+            type: "scatter",
+            data: {
+              datasets: [
+                {
+                  label: "x(y) — Reverse Polynomial",
+                  data: curve,
+                  type: "line",
+                  borderColor: "#ff6b35",
+                  borderWidth: 2.5,
+                  backgroundColor: "rgba(255,107,53,0.06)",
+                  pointRadius: 0,
+                  tension: 0.15,
+                  fill: false,
+                  spanGaps: false,
+                  order: 3,
+                },
+                {
+                  label: "Data Points (y, x)",
+                  data: swappedPts,
+                  type: "scatter",
+                  backgroundColor: "#00d4ff",
+                  borderColor: "#00d4ff",
+                  borderWidth: 2,
+                  pointRadius: 7,
+                  pointHoverRadius: 9,
+                  order: 1,
+                },
+                {
+                  label: `x(y*) at y* = ${fmtS(yStar)}`,
+                  data: [{ x: yStar, y: result }],
+                  type: "scatter",
+                  backgroundColor: "#77dc1e",
+                  borderColor: "#77dc1e",
+                  pointRadius: 11,
+                  pointStyle: "star",
+                  pointHoverRadius: 13,
+                  order: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: "nearest", intersect: false },
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                    boxWidth: 14,
+                  },
+                },
+                tooltip: {
+                  backgroundColor: "#0d1a22",
+                  borderColor: "#1a3545",
+                  borderWidth: 1,
+                  titleColor: "#ff6b35",
+                  bodyColor: "#e8f4f8",
+                  titleFont: { family: "Space Mono", size: 10 },
+                  bodyFont: { family: "Space Mono", size: 10 },
+                  callbacks: {
+                    label: (ctx) =>
+                      `(${ctx.parsed.x.toFixed(4)}, ${ctx.parsed.y.toFixed(6)})`,
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  type: "linear",
+                  grid: { color: "rgba(26,53,69,.6)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                  title: {
+                    display: true,
+                    text: "y (target variable)",
+                    color: "#7a9aaa",
+                  },
+                },
+                y: {
+                  grid: { color: "rgba(26,53,69,.6)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 10 },
+                  },
+                  title: {
+                    display: true,
+                    text: "x (result)",
+                    color: "#7a9aaa",
+                  },
+                },
+              },
+            },
+          });
+        }
+
+        function renderContribBarsReverse(basisDetails) {
+          const d = getDecimalsReverse();
+          const maxAbs = Math.max(
+            ...basisDetails.map((bd) => Math.abs(bd.contribution)),
+            0.001,
+          );
+          let html = `<div class="contrib-title">Contributions x<sub>i</sub> &middot; L<sub>i</sub>(y*) to x(y*)</div>`;
+          basisDetails.forEach((bd, i) => {
+            const pct = Math.min(
+              100,
+              (Math.abs(bd.contribution) / maxAbs) * 100,
+            );
+            const clr = COLORS[i % COLORS.length];
+            html += `
+      <div class="contrib-row">
+        <div class="contrib-label" style="color:${clr};">L${sub(i)}·x${sub(i)}</div>
+        <div class="contrib-track"><div class="contrib-fill" style="width:${pct}%;background:${clr};"></div></div>
+        <div class="contrib-val" style="color:${bd.contribution >= 0 ? "var(--accent3)" : "#ff6060"};">${fmtF(bd.contribution, d)}</div>
+      </div>`;
+          });
+          document.getElementById("contribBarsReverse").innerHTML = html;
+        }
+
+        function buildStepCardReverse(detail, allPts, yStar) {
+          const d = getDecimalsReverse();
+          const clr = COLORS[detail.i % COLORS.length];
+          const uid = `sc-rev-${detail.i}-${Date.now()}`;
+          const numParts = detail.numFactors
+            .map((nf) => `(y* − ${fmtS(nf.yj, 4)})`)
+            .join(" × ");
+          const denParts = detail.denFactors
+            .map((df) => `(${fmtS(df.yi, 4)} − ${fmtS(df.yj, 4)})`)
+            .join(" × ");
+          const numEval =
+            detail.numFactors.map((nf) => fmtF(nf.factor, 6)).join(" × ") ||
+            "1";
+          const denEval =
+            detail.denFactors.map((df) => fmtF(df.factor, 6)).join(" × ") ||
+            "1";
+          const div = document.createElement("div");
+          div.className = "step-card";
+          div.innerHTML = `
+    <div class="step-badge" style="background:rgba(${hexR(clr)},0.12);border:1px solid rgba(${hexR(clr)},0.35);color:${clr};">
+      ● Basis Term L${sub(detail.i)}(y) &nbsp;&middot;&nbsp; i = ${detail.i}
+      &nbsp;&middot;&nbsp; y${sub(detail.i)} = ${fmtS(detail.yi, 4)}, x${sub(detail.i)} = ${fmtS(detail.xi, 4)}
+    </div>
+    <div class="step-body">
+      <div>
+        <div class="step-col-title" style="color:${clr};">Formula</div>
+        <div class="formula-box">
+          <div style="font-size:.6rem;color:var(--text-dim);margin-bottom:.5rem;">L${sub(detail.i)}(y*) = Numerator / Denominator</div>
+          <div style="margin-bottom:.6rem;">
+            <div style="color:var(--accent);font-size:.62rem;margin-bottom:.2rem;">▸ Numerator &Pi;<sub>j&ne;${detail.i}</sub>(y* &minus; y<sub>j</sub>)</div>
+            <div style="color:var(--text);font-size:.6rem;padding-left:.5rem;">${numParts || "1"}</div>
+            <div style="color:var(--text-dim);font-size:.58rem;padding-left:.5rem;margin-top:.15rem;">= ${numEval} = <strong style="color:var(--accent);">${fmtF(detail.numerator, d)}</strong></div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:.5rem;">
+            <div style="color:var(--accent2);font-size:.62rem;margin-bottom:.2rem;">▸ Denominator &Pi;<sub>j&ne;${detail.i}</sub>(y<sub>${detail.i}</sub> &minus; y<sub>j</sub>)</div>
+            <div style="color:var(--text);font-size:.6rem;padding-left:.5rem;">${denParts || "1"}</div>
+            <div style="color:var(--text-dim);font-size:.58rem;padding-left:.5rem;margin-top:.15rem;">= ${denEval} = <strong style="color:var(--accent2);">${fmtF(detail.denominator, d)}</strong></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="step-col-title" style="color:${clr};">Calculation</div>
+        <div class="calc-box"><table class="mini-val-table">
+          <tr><td>y* =</td><td>${fmtF(yStar, d)}</td></tr>
+          <tr><td>y${sub(detail.i)} =</td><td style="color:${clr};">${fmtF(detail.yi, d)}</td></tr>
+          <tr><td>x${sub(detail.i)} =</td><td style="color:var(--accent2);">${fmtF(detail.xi, d)}</td></tr>
+          <tr><td colspan="2" style="padding:.15rem;"></td></tr>
+          <tr><td>Numerator =</td><td style="color:var(--accent);">${fmtF(detail.numerator, d)}</td></tr>
+          <tr><td>Denominator =</td><td style="color:var(--accent2);">${fmtF(detail.denominator, d)}</td></tr>
+          <tr class="hl"><td>L${sub(detail.i)}(y*) =</td><td>${fmtF(detail.Li, d)}</td></tr>
+          <tr><td colspan="2" style="padding:.15rem;"></td></tr>
+          <tr class="hl"><td>x${sub(detail.i)} × L${sub(detail.i)} =</td><td style="color:${detail.contribution >= 0 ? "var(--accent3)" : "#ff6060"};">${fmtF(detail.contribution, d)}</td></tr>
+        </table></div>
+        <div class="step-summary"><span class="sum-chip">Running &Sigma;: <strong style="color:${clr};">${fmtF(detail.runningSum, d)}</strong></span></div>
+      </div>
+      <div>
+        <div class="step-col-title" style="color:${clr};">Graph of L${sub(detail.i)}(y)</div>
+        <div class="step-chart-wrap"><canvas id="${uid}"></canvas></div>
+        <div style="font-family:'Space Mono',monospace;font-size:.56rem;color:var(--text-dim);margin-top:.4rem;line-height:1.6;">L${sub(detail.i)}(y${sub(detail.i)})=1 &nbsp;|&nbsp; L${sub(detail.i)}(y<sub>j≠i</sub>)=0 &nbsp;|&nbsp; y*</div>
+      </div>
+    </div>`;
+          setTimeout(() => {
+            const canvas = document.getElementById(uid);
+            if (canvas)
+              createBasisChartReverse(canvas, detail, allPts, yStar, clr, uid);
+          }, 60);
+          return div;
+        }
+
+        function createBasisChartReverse(
+          canvas,
+          detail,
+          allPts,
+          yStar,
+          clr,
+          uid,
+        ) {
+          const swapped = allPts.map((p) => ({ x: p.y, y: p.x }));
+          const xMin = Math.min(...swapped.map((p) => p.x));
+          const xMax = Math.max(...swapped.map((p) => p.x));
+          const pad = Math.max((xMax - xMin) * 0.12, 0.4);
+          const xL = xMin - pad;
+          const xR = xMax + pad;
+          const NS = 200;
+          const step = (xR - xL) / (NS - 1);
+          const curve = [];
+          for (let k = 0; k < NS; k++) {
+            const x = xL + k * step;
+            const y = evalBasis(swapped, detail.i, x);
+            curve.push(
+              isFinite(y) && Math.abs(y) < 50 ? { x, y } : { x, y: null },
+            );
+          }
+          const activeNode = [{ x: detail.yi, y: 1 }];
+          const otherNodes = swapped
+            .filter((_, j) => j !== detail.i)
+            .map((p) => ({ x: p.x, y: evalBasis(swapped, detail.i, p.x) }));
+          const queryPt = [{ x: yStar, y: detail.Li }];
+          const y0line = [
+            { x: xL, y: 0 },
+            { x: xR, y: 0 },
+          ];
+          const y1line = [
+            { x: xL, y: 1 },
+            { x: xR, y: 1 },
+          ];
+          const chart = new Chart(canvas, {
+            type: "scatter",
+            data: {
+              datasets: [
+                {
+                  label: `L${sub(detail.i)}(y)`,
+                  data: curve,
+                  type: "line",
+                  borderColor: clr,
+                  borderWidth: 2,
+                  backgroundColor: `${clr}18`,
+                  pointRadius: 0,
+                  tension: 0.1,
+                  fill: false,
+                  spanGaps: false,
+                  order: 4,
+                },
+                {
+                  label: "y=0",
+                  data: y0line,
+                  type: "line",
+                  borderColor: "rgba(255,255,255,0.1)",
+                  borderWidth: 1,
+                  borderDash: [3, 3],
+                  pointRadius: 0,
+                  fill: false,
+                  order: 5,
+                },
+                {
+                  label: "y=1",
+                  data: y1line,
+                  type: "line",
+                  borderColor: "rgba(119,220,30,0.2)",
+                  borderWidth: 1,
+                  borderDash: [3, 3],
+                  pointRadius: 0,
+                  fill: false,
+                  order: 5,
+                },
+                {
+                  label: `y${sub(detail.i)} (=1)`,
+                  data: activeNode,
+                  type: "scatter",
+                  backgroundColor: "#77dc1e",
+                  borderColor: "#77dc1e",
+                  pointRadius: 6,
+                  order: 1,
+                },
+                {
+                  label: "Other nodes (=0)",
+                  data: otherNodes,
+                  type: "scatter",
+                  backgroundColor: "#ff6b35",
+                  borderColor: "#ff6b35",
+                  pointRadius: 5,
+                  order: 2,
+                },
+                {
+                  label: `L${sub(detail.i)}(y*)`,
+                  data: queryPt,
+                  type: "scatter",
+                  backgroundColor: "#f59e0b",
+                  borderColor: "#f59e0b",
+                  pointRadius: 7,
+                  pointStyle: "triangle",
+                  order: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: "#0d1a22",
+                  borderColor: "#1a3545",
+                  borderWidth: 1,
+                  titleColor: clr,
+                  bodyColor: "#e8f4f8",
+                  titleFont: { family: "Space Mono", size: 9 },
+                  bodyFont: { family: "Space Mono", size: 9 },
+                  callbacks: {
+                    label: (ctx) =>
+                      `(${ctx.parsed.x.toFixed(4)}, ${ctx.parsed.y.toFixed(6)})`,
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  type: "linear",
+                  grid: { color: "rgba(26,53,69,.5)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 9 },
+                    maxTicksLimit: 5,
+                  },
+                },
+                y: {
+                  grid: { color: "rgba(26,53,69,.5)" },
+                  ticks: {
+                    color: "#7a9aaa",
+                    font: { family: "Space Mono", size: 9 },
+                    maxTicksLimit: 5,
+                  },
+                },
+              },
+            },
+          });
+          if (stepChartMap[uid]) {
+            try {
+              stepChartMap[uid].destroy();
+            } catch (e) {}
+          }
+          stepChartMap[uid] = chart;
+        }
+
+        function renderStepReverse(idx) {
+          const c = document.getElementById("stepCardContainerReverse");
+          c.innerHTML = "";
+          if (!reverseStepsData[idx]) return;
+          const pts = getTablePointsReverse();
+          const yStar = parseFloat(document.getElementById("yStar").value);
+          c.appendChild(
+            buildStepCardReverse(reverseStepsData[idx], pts, yStar),
+          );
+        }
+
+        window.changeStepReverse = function (dir) {
+          currentStepReverse = Math.max(
+            0,
+            Math.min(reverseStepsData.length - 1, currentStepReverse + dir),
+          );
+          renderStepReverse(currentStepReverse);
+          updateNavReverse();
+        };
+
+        function updateNavReverse() {
+          document.getElementById("prevBtnReverse").disabled =
+            currentStepReverse === 0;
+          document.getElementById("nextBtnReverse").disabled =
+            currentStepReverse === reverseStepsData.length - 1;
+          document.getElementById("stepCounterReverse").textContent =
+            `L${sub(currentStepReverse)} · ${currentStepReverse + 1} / ${reverseStepsData.length}`;
+        }
+
+        window.toggleAllStepsReverse = function () {
+          showingAllReverse = !showingAllReverse;
+          document.getElementById("toggleAllBtnReverse").textContent =
+            showingAllReverse ? "Show One Term" : "Show All Terms";
+          document.getElementById("singleStepViewReverse").style.display =
+            showingAllReverse ? "none" : "block";
+          document.getElementById("allStepsViewReverse").style.display =
+            showingAllReverse ? "block" : "none";
+
+          if (showingAllReverse) {
+            const c = document.getElementById("allStepsContainerReverse");
+            c.innerHTML = "";
+            const pts = getTablePointsReverse();
+            const yStar = parseFloat(document.getElementById("yStar").value);
+            reverseStepsData.forEach((d) =>
+              c.appendChild(buildStepCardReverse(d, pts, yStar)),
+            );
+            const sumDiv = document.createElement("div");
+            sumDiv.className = "final-summary";
+            const d = getDecimalsReverse();
+            const termParts = reverseStepsData
+              .map(
+                (bd, i) =>
+                  `<span class="fs-term" style="border-color:rgba(${hexR(COLORS[i % COLORS.length])},0.4);color:${COLORS[i % COLORS.length]};">${fmtS(bd.xi, 4)} × ${fmtF(bd.Li, 4)}</span>`,
+              )
+              .join('<span style="color:var(--text-dim)"> + </span>');
+            sumDiv.innerHTML = `<div class="fs-title">&#9654; Final Sum: x(y*) = &Sigma; x<sub>i</sub> &middot; L<sub>i</sub>(y*)</div><div class="fs-sum-row">x(y*) = ${termParts}<span style="color:var(--text-dim);"> = </span><span class="fs-term" style="border-color:rgba(119,220,30,0.5);color:var(--accent3);font-size:.75rem;font-weight:700;">${fmtF(reverseStepsData[reverseStepsData.length - 1].runningSum, d)}</span></div>`;
+            c.appendChild(sumDiv);
+          }
+        };
+
+        window.resetReverse = function () {
+          hideAlert("errorAlertReverse");
+          hideAlert("successAlertReverse");
+          document.getElementById("emptyStateReverse").style.display = "block";
+          document.getElementById("resultsContentReverse").style.display =
+            "none";
+          if (reverseMainChartObj) {
+            reverseMainChartObj.destroy();
+            reverseMainChartObj = null;
+          }
+          Object.values(stepChartMap).forEach((c) => {
+            try {
+              c.destroy();
+            } catch (e) {}
+          });
+          reverseStepsData = [];
+          currentStepReverse = 0;
+          showingAllReverse = false;
+          reversePointsData = [
+            { x: 0, y: 0 },
+            { x: 1, y: 1 },
+            { x: 2, y: 4 },
+            { x: 3, y: 9 },
+          ];
+          document.getElementById("yStar").value = "1.5";
+          renderPointsTableReverse();
+        };
+
+        function showErrorReverse(msg) {
+          const e = document.getElementById("errorAlertReverse");
+          e.textContent = "✕ " + msg;
+          e.style.display = "block";
+        }
+
+        function showSuccessReverse(msg) {
+          const e = document.getElementById("successAlertReverse");
+          e.textContent = msg;
+          e.style.display = "block";
+        }
+      })();
+    </script>
+  </body>
+</html>
