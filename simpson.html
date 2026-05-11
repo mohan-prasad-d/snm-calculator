@@ -8,6 +8,7 @@
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/14.0.1/math.min.js"></script>
     <style>
       :root {
         --bg: #07101f;
@@ -611,22 +612,63 @@
         gap: 28px;
         margin-top: 28px;
         animation: fup 0.4s ease both;
+        min-height: calc(100vh - 300px);
       }
       @media (max-width: 1100px) {
         .results.show {
           grid-template-columns: 1fr;
+          min-height: calc(100vh - 250px);
         }
       }
-      #graphCard {
+      #graphCard,
+      #surfaceCard {
         grid-column: 1;
         grid-row: 1 / 3;
+        display: flex;
+        flex-direction: column;
+      }
+      #heatCard {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        display: flex;
+        flex-direction: column;
       }
       #rhero {
         grid-column: 2;
         grid-row: 1;
       }
-      .results.show > .card:not(#graphCard):not(:first-child) {
+      .results.show
+        > .card:not(#graphCard):not(#surfaceCard):not(#heatCard):not(
+          :first-child
+        ) {
         grid-column: 2;
+      }
+      .results.show > .card:last-child {
+        grid-column: 1 / -1;
+        min-height: auto;
+      }
+      .results.show > .card {
+        display: flex;
+        flex-direction: column;
+      }
+      .results.show #graphCard .gwrap,
+      .results.show #graphCard .legend,
+      .results.show #surfaceCard .gwrap {
+        flex: 1;
+      }
+      .results.show #graphCard .gwrap,
+      .results.show #surfaceCard .gwrap {
+        min-height: 400px;
+      }
+      .results.show .tbl-wrap {
+        flex: 1;
+        overflow-y: auto;
+      }
+      .results.show > .card:not(#graphCard):not(#heatCard) {
+        flex: 1;
+      }
+      .results.show > .card:not(#graphCard):not(#heatCard) .sec {
+        flex-shrink: 0;
       }
 
       /* ── GRAPH ── */
@@ -656,6 +698,23 @@
         white-space: nowrap;
         box-shadow: 0 4px 24px rgba(0, 212, 255, 0.14);
         min-width: 185px;
+      }
+      #heatTooltip {
+        position: absolute;
+        background: rgba(5, 12, 24, 0.97);
+        border: 1.5px solid rgba(0, 212, 255, 0.4);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--txt);
+        pointer-events: none;
+        display: none;
+        z-index: 20;
+        white-space: normal;
+        box-shadow: 0 8px 32px rgba(0, 212, 255, 0.2);
+        min-width: 200px;
+        max-width: 280px;
       }
       .trow {
         display: flex;
@@ -706,12 +765,14 @@
       .tbl-wrap {
         overflow-x: auto;
         margin-top: 6px;
+        width: 100%;
       }
       table {
         width: 100%;
         border-collapse: collapse;
         font-family: "JetBrains Mono", monospace;
         font-size: 12px;
+        table-layout: fixed;
       }
       thead tr {
         background: linear-gradient(
@@ -945,6 +1006,100 @@
       }
       .step.show {
         display: block;
+      }
+
+      /* ── STEP VISUALIZATION ── */
+      .step-viz-wrap {
+        margin-top: 1.1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0, 212, 255, 0.12);
+      }
+      .step-viz-wrap .step-col-title {
+        margin-bottom: 0.55rem;
+        color: #c4b5fd;
+        font-size: 0.68rem;
+        letter-spacing: 0.18em;
+      }
+      .step-viz-svg {
+        width: 100%;
+        border-radius: 8px;
+        display: block;
+        background: #0a1628;
+      }
+      /* Solution section accent colors */
+      .step-card {
+        border-color: rgba(0, 212, 255, 0.12);
+      }
+      .step-card::before {
+        background: linear-gradient(
+          90deg,
+          var(--acc2),
+          var(--acc3),
+          var(--acc)
+        );
+      }
+      .step-badge {
+        background: rgba(124, 58, 237, 0.15);
+        border-color: rgba(124, 58, 237, 0.35);
+        color: #c4b5fd;
+      }
+      .step-col-title {
+        color: var(--acc);
+      }
+      /* Double table enhancements */
+      .tbl-info {
+        background: rgba(0, 212, 255, 0.04);
+        border: 1px solid rgba(0, 212, 255, 0.12);
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 10px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: var(--dim);
+        line-height: 1.8;
+      }
+      .tbl-info.dbl {
+        background: rgba(192, 38, 211, 0.04);
+        border-color: rgba(192, 38, 211, 0.15);
+      }
+      .tbl-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--bord);
+      }
+      .tbl-leg-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9px;
+        color: var(--dim);
+      }
+      .tbl-leg-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      .col-explain {
+        font-size: 8px;
+        color: var(--muted);
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
+        display: block;
+        font-family: "JetBrains Mono", monospace;
+        margin-top: 2px;
+      }
+      .td-formula {
+        font-size: 9px;
+        color: var(--muted);
+        display: block;
+        margin-top: 2px;
+        font-family: "JetBrains Mono", monospace;
       }
 
       /* ── ANIM ── */
@@ -1466,15 +1621,18 @@
           <!-- Double heatmap -->
           <div class="card" id="heatCard" style="display: none">
             <div class="sec dbl">📊 f(x,y) Heatmap — Integration Grid</div>
-            <canvas
-              id="heatCanvas"
-              style="
-                width: 100%;
-                border-radius: 10px;
-                display: block;
-                background: var(--surf2);
-              "
-            ></canvas>
+            <div style="position: relative">
+              <canvas
+                id="heatCanvas"
+                style="
+                  width: 100%;
+                  border-radius: 10px;
+                  display: block;
+                  background: var(--surf2);
+                "
+              ></canvas>
+              <div id="heatTooltip"></div>
+            </div>
             <div class="legend" style="margin-top: 12px">
               <div class="leg">
                 <div
@@ -1585,7 +1743,8 @@
       /* ═══════════ STATE ═══════════ */
       let MODE = null,
         G = null,
-        gNodes = [];
+        gNodes = [],
+        hNodes = [];
       let currentStep = 0;
       let totalSteps = 0;
       let showingAllSteps = false;
@@ -1674,8 +1833,8 @@
             "∬ Double Simpson's 1/3 Formula";
           document.getElementById("ftxt").innerHTML =
             `∬ f(x,y) dx dy &nbsp;≈&nbsp; <span class="c1">hx/3</span> · <span class="cp">hy/3</span> · Σᵢ Σⱼ <span class="c4">Wᵢ</span>·<span class="cp">Wⱼ</span>·f(xᵢ,yⱼ)<br>
-<span class="c1">hx = (b−a)/nx</span> &nbsp;&nbsp; <span class="cp">hy = (d−c)/ny</span> &nbsp;&nbsp; both nx, ny must be even<br>
-Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd index = 4</span> &nbsp; <span class="c2">even interior = 2</span>`;
+      <span class="c1">hx = (b−a)/nx</span> &nbsp;&nbsp; <span class="cp">hy = (d−c)/ny</span> &nbsp;&nbsp; both nx, ny must be even<br>
+      Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd index = 4</span> &nbsp; <span class="c2">even interior = 2</span>`;
         }
       }
 
@@ -1832,10 +1991,10 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
         document.getElementById("rVal").textContent = fmt(result, 10);
         document.getElementById("rMeta").innerHTML =
           `<div class="mp">h = <span>${fmt(h, 6)}</span></div>
-     <div class="mp">n = <span>${n}</span></div>
-     <div class="mp">a = <span>${fmt(a, 4)}</span></div>
-     <div class="mp">b = <span>${fmt(b, 4)}</span></div>
-     <div class="mp">S = <span>${fmt(S, 6)}</span></div>`;
+           <div class="mp">n = <span>${n}</span></div>
+           <div class="mp">a = <span>${fmt(a, 4)}</span></div>
+           <div class="mp">b = <span>${fmt(b, 4)}</span></div>
+           <div class="mp">S = <span>${fmt(S, 6)}</span></div>`;
 
         document.getElementById("stepsSec").textContent =
           "Step-by-Step Solution";
@@ -1858,7 +2017,8 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
         updateStepNav();
         singleTable(xs, ys, coeffs, h);
 
-        document.getElementById("graphCard").style.display = "block";
+        document.getElementById("graphCard").style.display = "flex";
+        document.getElementById("surfaceCard").style.display = "none";
         document.getElementById("heatCard").style.display = "none";
         document.getElementById("results").classList.add("show");
         setTimeout(() => {
@@ -1978,11 +2138,11 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
         document.getElementById("rVal").textContent = fmt(result, 10);
         document.getElementById("rMeta").innerHTML =
           `<div class="mp">hx = <span>${fmt(hx, 5)}</span></div>
-     <div class="mp">hy = <span>${fmt(hy, 5)}</span></div>
-     <div class="mp">nx = <span>${nx}</span></div>
-     <div class="mp">ny = <span>${ny}</span></div>
-     <div class="mp">[a,b] = <span>[${fmt(a, 3)},${fmt(b, 3)}]</span></div>
-     <div class="mp">[c,d] = <span>[${fmt(c, 3)},${fmt(d, 3)}]</span></div>`;
+           <div class="mp">hy = <span>${fmt(hy, 5)}</span></div>
+           <div class="mp">nx = <span>${nx}</span></div>
+           <div class="mp">ny = <span>${ny}</span></div>
+           <div class="mp">[a,b] = <span>[${fmt(a, 3)},${fmt(b, 3)}]</span></div>
+           <div class="mp">[c,d] = <span>[${fmt(c, 3)},${fmt(d, 3)}]</span></div>`;
 
         document.getElementById("stepsSec").textContent =
           "Step-by-Step Solution";
@@ -2011,20 +2171,401 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
         updateStepNav();
         doubleTable(xs, ys, wx, wy, grid, hx, hy, result);
 
-        document.getElementById("graphCard").style.display = "none";
-        document.getElementById("heatCard").style.display = "block";
+        document.getElementById("graphCard").style.display = "flex";
+        document.getElementById("heatCard").style.display = "flex";
         document.getElementById("results").classList.add("show");
         setTimeout(() => {
           document
             .getElementById("results")
             .scrollIntoView({ behavior: "smooth", block: "start" });
+          G = {
+            type: "double",
+            fn,
+            a: a,
+            b: b,
+            c: c,
+            d: d,
+            ys: ys,
+            nx: nx,
+            ny: ny,
+          };
+          drawGraph();
           drawHeatmap(xs, ys, wx, wy, grid, a, b, c, d, fn, nx, ny);
         }, 120);
+      }
+
+      /* ═══════════ SHORT FORMATTER ═══════════ */
+      function fmtShort(v) {
+        if (typeof v !== "number") return String(v);
+        if (Math.abs(v) < 1e-10) return "0";
+        if (Math.abs(v) >= 1000 || (Math.abs(v) < 0.001 && v !== 0))
+          return v.toExponential(3);
+        return parseFloat(v.toPrecision(4)).toString();
+      }
+
+      /* ═══════════ SINGLE STEP SVG ═══════════ */
+      function singleStepSvg(num, ctx) {
+        const W = 300,
+          H = 110;
+        const bg = "#0a1628",
+          st = "#1a3050";
+        const acc = "#00d4ff",
+          acc3 = "#10b981",
+          warn = "#fbbf24",
+          dim = "#64748b",
+          pur = "#c4b5fd";
+        const wrap = (c) =>
+          `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="step-viz-svg" style="height:110px"><rect width="${W}" height="${H}" rx="8" fill="${bg}"/>${c}</svg>`;
+
+        if (num === 1) {
+          return wrap(`
+            <rect x="12" y="14" width="120" height="82" rx="8" fill="rgba(0,212,255,0.07)" stroke="${acc}" stroke-width="1"/>
+            <text x="72" y="40" fill="${dim}" font-size="10" text-anchor="middle" font-family="JetBrains Mono">Sub-intervals n</text>
+            <text x="72" y="70" fill="${acc}" font-size="26" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">${ctx.n}</text>
+            <line x1="138" y1="55" x2="158" y2="55" stroke="${dim}" stroke-width="1.5"/>
+            <polygon points="158,51 166,55 158,59" fill="${dim}"/>
+            <rect x="172" y="14" width="116" height="82" rx="8" fill="rgba(16,185,129,0.07)" stroke="${acc3}" stroke-width="1"/>
+            <text x="230" y="40" fill="${dim}" font-size="10" text-anchor="middle" font-family="JetBrains Mono">${ctx.n} ÷ 2 =</text>
+            <text x="230" y="70" fill="${acc3}" font-size="22" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">${ctx.n / 2} ✓</text>
+            <text x="230" y="92" fill="${acc3}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">EVEN — Simpson's OK</text>
+          `);
+        }
+        if (num === 2) {
+          const ax = 22,
+            bx = 278,
+            numH = Math.min(ctx.n, 12);
+          const step = (bx - ax) / numH;
+          let ticks = "";
+          for (let i = 0; i <= numH; i++) {
+            const tx = ax + i * step;
+            const big = i === 0 || i === numH;
+            ticks += `<line x1="${tx.toFixed(1)}" y1="${big ? 40 : 46}" x2="${tx.toFixed(1)}" y2="62" stroke="${big ? acc : st}" stroke-width="${big ? 2 : 1}"/>`;
+          }
+          const hEnd = (ax + step).toFixed(1);
+          return wrap(`
+            <text x="150" y="18" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">Interval [${fmtShort(ctx.a)}, ${fmtShort(ctx.b)}] split into ${ctx.n} equal parts</text>
+            <line x1="${ax}" y1="52" x2="${bx}" y2="52" stroke="${st}" stroke-width="2"/>
+            ${ticks}
+            <text x="${ax}" y="36" fill="${acc}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">a</text>
+            <text x="${bx}" y="36" fill="${acc}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">b</text>
+            <path d="M ${ax} 72 L ${hEnd} 72" stroke="${warn}" stroke-width="1.5"/>
+            <line x1="${ax}" y1="68" x2="${ax}" y2="76" stroke="${warn}" stroke-width="1.5"/>
+            <line x1="${hEnd}" y1="68" x2="${hEnd}" y2="76" stroke="${warn}" stroke-width="1.5"/>
+            <text x="${((ax + parseFloat(hEnd)) / 2).toFixed(1)}" y="88" fill="${warn}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">h = ${fmtShort(ctx.h)}</text>
+            <text x="150" y="105" fill="${dim}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">h = (b−a)/n = (${fmtShort(ctx.b)}−${fmtShort(ctx.a)})/${ctx.n}</text>
+          `);
+        }
+        if (num === 3) {
+          const ax = 22,
+            bx = 278,
+            numPts = Math.min(ctx.xs.length, 15);
+          let dots = "";
+          for (let i = 0; i < numPts; i++) {
+            const tx = ax + (i / (numPts - 1)) * (bx - ax);
+            const col =
+              i === 0 || i === numPts - 1 ? pur : i % 2 === 1 ? warn : acc3;
+            dots += `<circle cx="${tx.toFixed(1)}" cy="58" r="5.5" fill="${col}" opacity="0.9"/>`;
+            if (numPts <= 9)
+              dots += `<text x="${tx.toFixed(1)}" y="44" fill="${col}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">x${i}</text>`;
+          }
+          return wrap(`
+            <text x="150" y="16" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">${ctx.n + 1} evenly spaced nodes on x-axis</text>
+            <line x1="${ax}" y1="58" x2="${bx}" y2="58" stroke="${st}" stroke-width="2"/>
+            ${dots}
+            <text x="50" y="98" fill="${pur}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">● endpoints</text>
+            <text x="150" y="98" fill="${warn}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">● odd idx</text>
+            <text x="250" y="98" fill="${acc3}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">● even idx</text>
+          `);
+        }
+        if (num === 4) {
+          const ax = 28,
+            bx = 272,
+            tl = 15,
+            br = 95;
+          const numPts = Math.min(ctx.xs.length, 11);
+          const vals = ctx.ys.slice(0, numPts);
+          const mn = Math.min(...vals),
+            mx = Math.max(...vals);
+          const rng = mx - mn || 1;
+          const mp = (v) => br - ((v - mn) / rng) * (br - tl);
+          let path = "",
+            dots = "";
+          for (let i = 0; i < numPts; i++) {
+            const px = ax + (i / (numPts - 1)) * (bx - ax);
+            const py = mp(vals[i]);
+            path +=
+              i === 0
+                ? `M ${px.toFixed(1)} ${py.toFixed(1)}`
+                : ` L ${px.toFixed(1)} ${py.toFixed(1)}`;
+            const col =
+              ctx.coeffs[i] === 4 ? warn : ctx.coeffs[i] === 2 ? acc3 : pur;
+            dots += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.5" fill="${col}" opacity="0.9"/>`;
+          }
+          return wrap(`
+            <text x="150" y="13" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">f(x) evaluated at all ${ctx.ys.length} nodes</text>
+            <line x1="${ax}" y1="${tl}" x2="${ax}" y2="${br + 5}" stroke="${st}" stroke-width="1.5"/>
+            <line x1="${ax}" y1="${br}" x2="${bx}" y2="${br}" stroke="${st}" stroke-width="1.5"/>
+            <path d="${path}" fill="none" stroke="${acc}" stroke-width="1.5" opacity="0.5"/>
+            ${dots}
+            <text x="150" y="108" fill="${dim}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">f(x) = ${ctx.fn.length > 22 ? ctx.fn.slice(0, 22) + "…" : ctx.fn}</text>
+          `);
+        }
+        if (num === 5) {
+          const numC = Math.min(ctx.coeffs.length, 15);
+          const cw = 256 / numC;
+          let bars = "";
+          for (let i = 0; i < numC; i++) {
+            const c = ctx.coeffs[i];
+            const col = c === 4 ? warn : c === 2 ? acc3 : pur;
+            bars += `<rect x="${22 + i * cw}" y="28" width="${cw - 2}" height="52" rx="3" fill="${col}" opacity="0.85"/>`;
+            if (cw > 16)
+              bars += `<text x="${22 + i * cw + cw / 2}" y="59" fill="#000" font-size="${cw < 22 ? 8 : 12}" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">${c}</text>`;
+          }
+          return wrap(`
+            <text x="150" y="16" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">Simpson's weight pattern: 1, 4, 2, 4, 2, …, 4, 1</text>
+            ${bars}
+            <text x="55" y="100" fill="${pur}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">■ coeff 1</text>
+            <text x="150" y="100" fill="${warn}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">■ coeff 4</text>
+            <text x="245" y="100" fill="${acc3}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">■ coeff 2</text>
+          `);
+        }
+        if (num === 6) {
+          const numT = Math.min(ctx.coeffs.length, 13);
+          const contribs = ctx.coeffs
+            .slice(0, numT)
+            .map((c, i) => c * ctx.ys[i]);
+          const maxC = Math.max(...contribs.map(Math.abs)) || 1;
+          const bw = 252 / numT;
+          const midY = 62;
+          let bars = "";
+          let runX = 22;
+          for (let i = 0; i < numT; i++) {
+            const c = ctx.coeffs[i];
+            const col = c === 4 ? warn : c === 2 ? acc3 : pur;
+            const h = Math.max((Math.abs(contribs[i]) / maxC) * 48, 2);
+            const y = contribs[i] >= 0 ? midY - h : midY;
+            bars += `<rect x="${runX}" y="${y.toFixed(1)}" width="${bw - 2}" height="${h.toFixed(1)}" rx="2" fill="${col}" opacity="0.78"/>`;
+            runX += bw;
+          }
+          return wrap(`
+            <text x="150" y="14" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">Weighted contributions  coeff × f(xᵢ)</text>
+            <line x1="22" y1="${midY}" x2="278" y2="${midY}" stroke="${st}" stroke-width="1"/>
+            ${bars}
+            <text x="150" y="96" fill="${acc}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">Weighted Sum  S = ${fmtShort(ctx.S)}</text>
+            <text x="150" y="108" fill="${dim}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Each bar = coeff × f(xᵢ) contribution</text>
+          `);
+        }
+        if (num === 7) {
+          const barW = Math.min(240, 10 + Math.abs(ctx.result) * 5);
+          return wrap(`
+            <rect x="10" y="12" width="280" height="86" rx="8" fill="rgba(16,185,129,0.05)" stroke="${acc3}" stroke-width="1"/>
+            <text x="150" y="34" fill="${dim}" font-size="11" text-anchor="middle" font-family="JetBrains Mono">∫ f(x) dx  ≈  (h/3) × S</text>
+            <line x1="30" y1="44" x2="270" y2="44" stroke="${st}" stroke-width="1"/>
+            <text x="150" y="72" fill="${acc3}" font-size="22" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">${fmtShort(ctx.result)}</text>
+            <rect x="30" y="82" width="${barW}" height="10" rx="4" fill="rgba(16,185,129,0.4)"/>
+            <text x="${30 + barW + 6}" y="91" fill="${acc3}" font-size="8" font-family="JetBrains Mono">= result</text>
+          `);
+        }
+        return "";
+      }
+
+      /* ═══════════ DOUBLE STEP SVG ═══════════ */
+      function doubleStepSvg(num, ctx) {
+        const W = 300,
+          H = 110;
+        const bg = "#0a1628",
+          st = "#1a3050";
+        const acc = "#00d4ff",
+          acc3 = "#10b981",
+          warn = "#fbbf24",
+          dim = "#64748b",
+          pur = "#c4b5fd",
+          mag = "#c026d3";
+        const wrap = (c) =>
+          `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="step-viz-svg" style="height:110px"><rect width="${W}" height="${H}" rx="8" fill="${bg}"/>${c}</svg>`;
+
+        if (num === 1) {
+          return wrap(`
+            <rect x="10" y="14" width="130" height="82" rx="8" fill="rgba(0,212,255,0.06)" stroke="${acc}" stroke-width="1"/>
+            <text x="75" y="37" fill="${dim}" font-size="10" text-anchor="middle" font-family="JetBrains Mono">x sub-intervals</text>
+            <text x="75" y="67" fill="${acc}" font-size="24" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">nx=${ctx.nx}</text>
+            <text x="75" y="88" fill="${acc3}" font-size="10" text-anchor="middle" font-family="JetBrains Mono">even ✓</text>
+            <rect x="160" y="14" width="130" height="82" rx="8" fill="rgba(192,38,211,0.06)" stroke="${mag}" stroke-width="1"/>
+            <text x="225" y="37" fill="${dim}" font-size="10" text-anchor="middle" font-family="JetBrains Mono">y sub-intervals</text>
+            <text x="225" y="67" fill="${mag}" font-size="24" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">ny=${ctx.ny}</text>
+            <text x="225" y="88" fill="${acc3}" font-size="10" text-anchor="middle" font-family="JetBrains Mono">even ✓</text>
+          `);
+        }
+        if (num === 2) {
+          const px = 20,
+            py = 12,
+            pw = 230,
+            ph = 70;
+          const cols = Math.min(ctx.nx, 7),
+            rows = Math.min(ctx.ny, 5);
+          const cw = pw / cols,
+            rh = ph / rows;
+          let grid = "";
+          for (let i = 0; i <= cols; i++)
+            grid += `<line x1="${px + i * cw}" y1="${py}" x2="${px + i * cw}" y2="${py + ph}" stroke="${st}" stroke-width="1"/>`;
+          for (let j = 0; j <= rows; j++)
+            grid += `<line x1="${px}" y1="${py + j * rh}" x2="${px + pw}" y2="${py + j * rh}" stroke="${st}" stroke-width="1"/>`;
+          const hxEnd = (px + cw).toFixed(1);
+          grid += `<path d="M ${px} ${py + ph + 8} L ${hxEnd} ${py + ph + 8}" stroke="${warn}" stroke-width="1.5"/>`;
+          grid += `<line x1="${px}" y1="${py + ph + 5}" x2="${px}" y2="${py + ph + 11}" stroke="${warn}" stroke-width="1.5"/>`;
+          grid += `<line x1="${hxEnd}" y1="${py + ph + 5}" x2="${hxEnd}" y2="${py + ph + 11}" stroke="${warn}" stroke-width="1.5"/>`;
+          grid += `<text x="${((px + parseFloat(hxEnd)) / 2).toFixed(1)}" y="${py + ph + 24}" fill="${warn}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">hx=${fmtShort(ctx.hx)}</text>`;
+          grid += `<line x1="${px + pw + 8}" y1="${py}" x2="${px + pw + 8}" y2="${py + rh}" stroke="${mag}" stroke-width="1.5"/>`;
+          grid += `<line x1="${px + pw + 5}" y1="${py}" x2="${px + pw + 11}" y2="${py}" stroke="${mag}" stroke-width="1.5"/>`;
+          grid += `<line x1="${px + pw + 5}" y1="${py + rh}" x2="${px + pw + 11}" y2="${py + rh}" stroke="${mag}" stroke-width="1.5"/>`;
+          grid += `<text x="${px + pw + 22}" y="${(py + rh / 2 + 4).toFixed(1)}" fill="${mag}" font-size="8" text-anchor="start" font-family="JetBrains Mono">hy=${fmtShort(ctx.hy)}</text>`;
+          return wrap(grid);
+        }
+        if (num === 3) {
+          const px = 16,
+            py = 12,
+            pw = 250,
+            ph = 85;
+          const cols = Math.min(ctx.xs.length, 10),
+            rows = Math.min(ctx.ys.length, 7);
+          const cw = pw / (cols - 1 || 1),
+            rh = ph / (rows - 1 || 1);
+          let dots = "";
+          for (let i = 0; i < cols; i++)
+            for (let j = 0; j < rows; j++)
+              dots += `<circle cx="${(px + i * cw).toFixed(1)}" cy="${(py + j * rh).toFixed(1)}" r="3" fill="${acc}" opacity="0.65"/>`;
+          return wrap(`
+            ${dots}
+            <text x="150" y="106" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">${ctx.xs.length} × ${ctx.ys.length} = ${ctx.xs.length * ctx.ys.length} evaluation points</text>
+          `);
+        }
+        if (num === 4) {
+          const px = 16,
+            py = 8,
+            pw = 250,
+            ph = 85;
+          const cols = Math.min(ctx.wx.length, 10),
+            rows = Math.min(ctx.wy.length, 7);
+          const cw = pw / cols,
+            rh = ph / rows;
+          let cells = "";
+          for (let i = 0; i < cols; i++) {
+            const wi =
+              ctx.wx[Math.round((i / (cols - 1 || 1)) * (ctx.wx.length - 1))];
+            for (let j = 0; j < rows; j++) {
+              const wj =
+                ctx.wy[Math.round((j / (rows - 1 || 1)) * (ctx.wy.length - 1))];
+              const w = wi * wj;
+              const col =
+                w >= 16
+                  ? warn
+                  : w >= 8
+                    ? "rgba(251,191,36,0.5)"
+                    : w >= 4
+                      ? acc3
+                      : w >= 2
+                        ? "rgba(16,185,129,0.5)"
+                        : pur;
+              cells += `<rect x="${(px + i * cw + 1).toFixed(1)}" y="${(py + j * rh + 1).toFixed(1)}" width="${(cw - 2).toFixed(1)}" height="${(rh - 2).toFixed(1)}" rx="2" fill="${col}" opacity="0.75"/>`;
+              if (cw > 22 && rh > 12)
+                cells += `<text x="${(px + i * cw + cw / 2).toFixed(1)}" y="${(py + j * rh + rh / 2 + 4).toFixed(1)}" fill="#000" font-size="8" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">${w}</text>`;
+            }
+          }
+          return wrap(`
+            ${cells}
+            <text x="150" y="103" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">2D Weight Grid  Wx[i] × Wy[j] per cell</text>
+          `);
+        }
+        if (num === 5) {
+          const px = 16,
+            py = 8,
+            pw = 250,
+            ph = 85;
+          const cols = Math.min(ctx.xs.length, 10),
+            rows = Math.min(ctx.ys.length, 7);
+          const cw = pw / cols,
+            rh = ph / rows;
+          let gmin = Infinity,
+            gmax = -Infinity;
+          for (let i = 0; i < ctx.grid.length; i++)
+            for (let j = 0; j < (ctx.grid[i] || []).length; j++) {
+              if (ctx.grid[i][j] < gmin) gmin = ctx.grid[i][j];
+              if (ctx.grid[i][j] > gmax) gmax = ctx.grid[i][j];
+            }
+          const grng = gmax - gmin || 1;
+          let cells = "";
+          for (let i = 0; i < cols; i++) {
+            const gi = Math.round(
+              (i / (cols - 1 || 1)) * (ctx.grid.length - 1),
+            );
+            for (let j = 0; j < rows; j++) {
+              const gj = Math.round(
+                (j / (rows - 1 || 1)) * ((ctx.grid[gi] || []).length - 1),
+              );
+              const v = ctx.grid[gi] ? ctx.grid[gi][gj] || 0 : 0;
+              const t = Math.max(0, Math.min(1, (v - gmin) / grng));
+              const r = Math.round(
+                t < 0.5 ? 15 + t * 2 * 177 : 192 + (t - 0.5) * 2 * 59,
+              );
+              const g = Math.round(
+                t < 0.5 ? 28 + t * 2 * 10 : 38 + (t - 0.5) * 2 * 153,
+              );
+              const b = Math.round(
+                t < 0.5 ? 74 + t * 2 * 137 : 211 - (t - 0.5) * 2 * 175,
+              );
+              cells += `<rect x="${(px + i * cw + 1).toFixed(1)}" y="${(py + j * rh + 1).toFixed(1)}" width="${(cw - 2).toFixed(1)}" height="${(rh - 2).toFixed(1)}" rx="2" fill="rgb(${r},${g},${b})" opacity="0.88"/>`;
+            }
+          }
+          return wrap(`
+            ${cells}
+            <text x="150" y="103" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">f(x,y) heatmap — dark = low, bright = high</text>
+          `);
+        }
+        if (num === 6) {
+          const numT = Math.min(ctx.xs.length, 13);
+          const contribs = [];
+          for (let i = 0; i < numT; i++) {
+            let inner = 0;
+            ctx.ys.forEach((_, j) => {
+              inner += ctx.wy[j] * (ctx.grid[i] ? ctx.grid[i][j] || 0 : 0);
+            });
+            contribs.push(ctx.wx[i] * inner);
+          }
+          const maxC = Math.max(...contribs.map(Math.abs)) || 1;
+          const bw = 252 / numT;
+          const midY = 62;
+          let bars = "";
+          for (let i = 0; i < numT; i++) {
+            const c = ctx.wx[i];
+            const col = c === 4 ? warn : c === 2 ? acc3 : pur;
+            const h = Math.max((Math.abs(contribs[i]) / maxC) * 48, 2);
+            const y = contribs[i] >= 0 ? midY - h : midY;
+            bars += `<rect x="${(22 + i * bw).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${col}" opacity="0.75"/>`;
+          }
+          return wrap(`
+            <text x="150" y="14" fill="${dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">Per-row  Wx[i] × Σⱼ(Wy[j]·f(xᵢ,yⱼ))</text>
+            <line x1="22" y1="${midY}" x2="278" y2="${midY}" stroke="${st}" stroke-width="1"/>
+            ${bars}
+            <text x="150" y="98" fill="${acc}" font-size="9" text-anchor="middle" font-family="JetBrains Mono">Total S = ${fmtShort(ctx.S)}</text>
+            <text x="150" y="108" fill="${dim}" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Sum across all rows gives S</text>
+          `);
+        }
+        if (num === 7) {
+          return wrap(`
+            <rect x="10" y="12" width="280" height="86" rx="8" fill="rgba(192,38,211,0.05)" stroke="${mag}" stroke-width="1"/>
+            <text x="150" y="36" fill="${dim}" font-size="11" text-anchor="middle" font-family="JetBrains Mono">∬ f(x,y) dx dy  ≈</text>
+            <text x="150" y="52" fill="${dim}" font-size="10" text-anchor="middle" font-family="JetBrains Mono">(hx/3) × (hy/3) × S</text>
+            <line x1="30" y1="58" x2="270" y2="58" stroke="${st}" stroke-width="1"/>
+            <text x="150" y="84" fill="${mag}" font-size="22" font-weight="bold" text-anchor="middle" font-family="JetBrains Mono">${fmtShort(ctx.result)}</text>
+          `);
+        }
+        return "";
       }
 
       /* ═══════════ SINGLE STEPS ═══════════ */
       function singleSteps(fn, a, b, n, h, xs, ys, coeffs, S, result) {
         const steps = [];
+        const vizCtx = { fn, a, b, n, h, xs, ys, coeffs, S, result };
 
         function stepCard(
           num,
@@ -2036,24 +2577,26 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
           col3Title,
           col3Body,
         ) {
+          const viz = singleStepSvg(num, vizCtx);
           return `<div class="step-card">
-            <div class="step-badge">STEP ${num}</div>
-            <div style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--txt); font-weight: 600">${title}</div>
-            <div class="step-body">
-              <div>
-                <div class="step-col-title">${col1Title}</div>
-                <div class="calc-box">${col1Body}</div>
-              </div>
-              <div>
-                <div class="step-col-title">${col2Title}</div>
-                <div class="calc-box">${col2Body}</div>
-              </div>
-              <div>
-                <div class="step-col-title">${col3Title}</div>
-                <div class="calc-box">${col3Body}</div>
-              </div>
-            </div>
-          </div>`;
+                  <div class="step-badge">STEP ${num}</div>
+                  <div style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--txt); font-weight: 600">${title}</div>
+                  <div class="step-body">
+                    <div>
+                      <div class="step-col-title">${col1Title}</div>
+                      <div class="calc-box">${col1Body}</div>
+                    </div>
+                    <div>
+                      <div class="step-col-title">${col2Title}</div>
+                      <div class="calc-box">${col2Body}</div>
+                    </div>
+                    <div>
+                      <div class="step-col-title">${col3Title}</div>
+                      <div class="calc-box">${col3Body}</div>
+                    </div>
+                  </div>
+                  ${viz ? `<div class="step-viz-wrap"><div class="step-col-title">📊 Visual Representation</div>${viz}</div>` : ""}
+                </div>`;
         }
 
         steps.push(
@@ -2167,8 +2710,13 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
 
       /* ═══════════ SINGLE TABLE ═══════════ */
       function singleTable(xs, ys, coeffs, h) {
-        document.getElementById("tHead").innerHTML =
-          `<tr><th>i</th><th>xᵢ</th><th>f(xᵢ)</th><th>Coeff</th><th>Coeff × f(xᵢ)</th></tr>`;
+        document.getElementById("tHead").innerHTML = `<tr>
+            <th>i<span class="col-explain">Index</span></th>
+            <th>xᵢ value<span class="col-explain">node position</span></th>
+            <th>f(xᵢ)<span class="col-explain">function value</span></th>
+            <th>Coeff<span class="col-explain">Simpson weight</span></th>
+            <th>Coeff × f(xᵢ)<span class="col-explain">weighted contribution</span></th>
+          </tr>`;
         const tb = document.getElementById("tBody");
         tb.innerHTML = "";
         let W = 0;
@@ -2178,18 +2726,24 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
           W += cont;
           const cc = c === 4 ? "cb4" : c === 2 ? "cb2" : "cb1";
           const dc = c === 4 ? "c4" : c === 2 ? "c2" : "c1";
+          const wLabel = c === 1 ? "endpoint" : c === 4 ? "×4 odd" : "×2 even";
           const tr = document.createElement("tr");
           tr.id = "tr" + i;
-          tr.innerHTML = `<td>${i}</td><td style="color:var(--acc3)">${fmt(x, 6)}</td><td>${fmt(ys[i], 8)}</td><td><span class="cb ${cc}">${c}</span></td><td class="${dc}">${fmt(cont, 8)}</td>`;
+          tr.innerHTML = `
+            <td style="color:var(--muted)">${i}</td>
+            <td style="color:var(--acc3)">${fmt(x, 6)}</td>
+            <td>${fmt(ys[i], 8)}</td>
+            <td><span class="cb ${cc}">${c}</span><span class="td-formula">${wLabel}</span></td>
+            <td class="${dc}">${fmt(cont, 8)}<span class="td-formula">${c}×${fmtShort(ys[i])}</span></td>`;
           tb.appendChild(tr);
         });
         const sr = document.createElement("tr");
         sr.className = "sum-row";
-        sr.innerHTML = `<td colspan="4" style="text-align:right">Weighted Sum S =</td><td style="color:var(--acc)">${fmt(W, 10)}</td>`;
+        sr.innerHTML = `<td colspan="4" style="text-align:right">Weighted Sum &nbsp;<em style="color:var(--muted);font-size:10px">S = Σ coeff·f(xᵢ)</em> =</td><td style="color:var(--acc)">${fmt(W, 10)}</td>`;
         tb.appendChild(sr);
         const fr = document.createElement("tr");
         fr.className = "final-row";
-        fr.innerHTML = `<td colspan="4" style="text-align:right">Integral = (h/3)·S =</td><td style="color:var(--acc3)">${fmt((h / 3) * W, 10)}</td>`;
+        fr.innerHTML = `<td colspan="4" style="text-align:right">∫ f(x)dx &nbsp;=&nbsp; (h/3)·S &nbsp;=&nbsp; (${fmtShort(h)}/3)·${fmtShort(W)} =</td><td style="color:var(--acc3)">${fmt((h / 3) * W, 10)}</td>`;
         tb.appendChild(fr);
       }
 
@@ -2213,6 +2767,24 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
         result,
       ) {
         const steps = [];
+        const vizCtx = {
+          fn,
+          a,
+          b,
+          c,
+          d,
+          nx,
+          ny,
+          hx,
+          hy,
+          xs,
+          ys,
+          wx,
+          wy,
+          grid,
+          S,
+          result,
+        };
 
         function stepCard(
           num,
@@ -2224,24 +2796,26 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
           col3Title,
           col3Body,
         ) {
+          const viz = doubleStepSvg(num, vizCtx);
           return `<div class="step-card">
-            <div class="step-badge">STEP ${num}</div>
-            <div style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--txt); font-weight: 600">${title}</div>
-            <div class="step-body">
-              <div>
-                <div class="step-col-title">${col1Title}</div>
-                <div class="calc-box">${col1Body}</div>
-              </div>
-              <div>
-                <div class="step-col-title">${col2Title}</div>
-                <div class="calc-box">${col2Body}</div>
-              </div>
-              <div>
-                <div class="step-col-title">${col3Title}</div>
-                <div class="calc-box">${col3Body}</div>
-              </div>
-            </div>
-          </div>`;
+                  <div class="step-badge">STEP ${num}</div>
+                  <div style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--txt); font-weight: 600">${title}</div>
+                  <div class="step-body">
+                    <div>
+                      <div class="step-col-title">${col1Title}</div>
+                      <div class="calc-box">${col1Body}</div>
+                    </div>
+                    <div>
+                      <div class="step-col-title">${col2Title}</div>
+                      <div class="calc-box">${col2Body}</div>
+                    </div>
+                    <div>
+                      <div class="step-col-title">${col3Title}</div>
+                      <div class="calc-box">${col3Body}</div>
+                    </div>
+                  </div>
+                  ${viz ? `<div class="step-viz-wrap"><div class="step-col-title">📊 Visual Representation</div>${viz}</div>` : ""}
+                </div>`;
         }
 
         steps.push(
@@ -2348,8 +2922,37 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
 
       /* ═══════════ DOUBLE TABLE ═══════════ */
       function doubleTable(xs, ys, wx, wy, grid, hx, hy, result) {
-        document.getElementById("tHead").innerHTML =
-          `<tr><th class="d">i</th><th class="d">xᵢ</th><th class="d">Wx</th><th class="d">Inner Sum &nbsp;Σⱼ Wⱼ·f(xᵢ,yⱼ)</th><th class="d">Wx × Inner</th></tr>`;
+        // Add info panel above table
+        const tblWrap = document.querySelector(
+          "#results .card:last-child .tbl-wrap",
+        );
+        const tblCard = document.querySelector("#results .card:last-child");
+        // Remove old info if any
+        const oldInfo = tblCard.querySelector(".tbl-info");
+        if (oldInfo) oldInfo.remove();
+
+        // Insert info panel
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "tbl-info dbl";
+        infoDiv.innerHTML = `
+          <strong style="color:#c4b5fd">📖 How to read this table:</strong><br>
+          Each row is one <strong style="color:#00d4ff">x-node (xᵢ)</strong>.
+          The <strong style="color:#fbbf24">Wx weight</strong> is the Simpson's coefficient for that x position (1, 4, or 2).
+          The <strong style="color:#10b981">Inner Sum</strong> is the integral over y for that fixed xᵢ — computed using Simpson's rule along y.
+          The <strong style="color:#c4b5fd">Weighted Row</strong> = Wx × Inner Sum, contributing to the total double sum S.
+          <br>Final result = (hx/3) × (hy/3) × S
+        `;
+        const secEl = tblCard.querySelector(".sec");
+        secEl.after(infoDiv);
+
+        document.getElementById("tHead").innerHTML = `
+          <tr>
+            <th class="d">i<span class="col-explain">Row index</span></th>
+            <th class="d">xᵢ value<span class="col-explain">x-node position</span></th>
+            <th class="d">Wx weight<span class="col-explain">Simpson's coeff for x</span></th>
+            <th class="d">Inner Sum  Σⱼ Wⱼ·f(xᵢ,yⱼ)<span class="col-explain">y-integral at this xᵢ</span></th>
+            <th class="d">Wx × Inner<span class="col-explain">Row contribution to S</span></th>
+          </tr>`;
         const tb = document.getElementById("tBody");
         tb.innerHTML = "";
         let totalS = 0;
@@ -2362,25 +2965,61 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
           totalS += cont;
           const cc = wx[i] === 4 ? "cb4" : wx[i] === 2 ? "cb2" : "cb1";
           const dc = wx[i] === 4 ? "c4" : wx[i] === 2 ? "c2" : "c1";
+          const wLabel =
+            wx[i] === 1 ? "endpoint" : wx[i] === 4 ? "×4 (odd)" : "×2 (even)";
           const tr = document.createElement("tr");
           tr.id = "tr" + i;
-          tr.innerHTML = `<td>${i}</td><td style="color:var(--acc3)">${fmt(x, 6)}</td><td><span class="cb ${cc}">${wx[i]}</span></td><td class="c1">${fmt(inner, 8)}</td><td class="${dc}">${fmt(cont, 8)}</td>`;
+          tr.innerHTML = `
+            <td style="color:var(--muted)">${i}</td>
+            <td style="color:var(--acc3)">${fmt(x, 6)}<span class="td-formula">x${i} = ${fmtShort(x)}</span></td>
+            <td><span class="cb ${cc}">${wx[i]}</span><span class="td-formula">${wLabel}</span></td>
+            <td class="c1">${fmt(inner, 8)}<span class="td-formula">Σⱼ Wⱼ·f(xᵢ,yⱼ)</span></td>
+            <td class="${dc}">${fmt(cont, 8)}<span class="td-formula">${wx[i]}×${fmtShort(inner)}</span></td>
+          `;
           tb.appendChild(tr);
         });
         const sr = document.createElement("tr");
         sr.className = "sum-row";
-        sr.innerHTML = `<td colspan="4" style="text-align:right">Double Weighted Sum S =</td><td style="color:var(--acc)">${fmt(totalS, 10)}</td>`;
+        sr.innerHTML = `<td colspan="4" style="text-align:right">Total Weighted Sum &nbsp;<em style="color:var(--muted);font-size:10px">S = ΣᵢΣⱼ Wxi·Wyj·f(xᵢ,yⱼ)</em> =</td><td style="color:var(--acc)">${fmt(totalS, 10)}</td>`;
         tb.appendChild(sr);
+
+        // Breakdown row
+        const br2 = document.createElement("tr");
+        br2.style.cssText = "background:rgba(0,212,255,0.02)";
+        br2.innerHTML = `<td colspan="4" style="text-align:right;color:var(--muted);font-size:10px">
+          (hx/3) = ${fmtShort(hx / 3)} &nbsp;·&nbsp; (hy/3) = ${fmtShort(hy / 3)} &nbsp;·&nbsp; S = ${fmtShort(totalS)} =
+        </td><td style="color:var(--dim);font-size:10px">${fmtShort(hx / 3)}×${fmtShort(hy / 3)}×${fmtShort(totalS)}</td>`;
+        tb.appendChild(br2);
+
         const fr = document.createElement("tr");
         fr.className = "final-row";
-        fr.innerHTML = `<td colspan="4" style="text-align:right">∬ f(x,y) dx dy = (hx/3)·(hy/3)·S =</td><td style="color:#c026d3">${fmt(result, 10)}</td>`;
+        fr.innerHTML = `<td colspan="4" style="text-align:right">∬ f(x,y) dx dy &nbsp;=&nbsp; (hx/3)·(hy/3)·S =</td><td style="color:#c026d3">${fmt(result, 10)}</td>`;
         tb.appendChild(fr);
+
+        // Legend below table
+        const legendDiv = document.createElement("div");
+        legendDiv.className = "tbl-legend";
+        legendDiv.innerHTML = `
+          <div class="tbl-leg-item"><div class="tbl-leg-dot" style="background:#c4b5fd"></div>Wx = 1 (endpoints x₀ or xₙ)</div>
+          <div class="tbl-leg-item"><div class="tbl-leg-dot" style="background:#fbbf24"></div>Wx = 4 (odd index)</div>
+          <div class="tbl-leg-item"><div class="tbl-leg-dot" style="background:#10b981"></div>Wx = 2 (even interior index)</div>
+          <div class="tbl-leg-item" style="margin-left:auto;color:var(--muted);font-size:9px">hx=${fmtShort(hx)} &nbsp;|&nbsp; hy=${fmtShort(hy)}</div>
+        `;
+        tb.parentElement.after(legendDiv);
       }
 
-      /* ═══════════ SINGLE GRAPH ═══════════ */
+      /* ═══════════ GRAPH ═══════════ */
+
       function drawGraph() {
         if (!G) return;
-        const { fn, a, b, n, h, xs, ys, coeffs } = G;
+        const isDouble = G.type === "double";
+        const fn = G.fn,
+          a = G.a,
+          b = G.b;
+        const n = isDouble ? G.nx : G.n;
+        const xs = G.xs || (isDouble ? G.ys : []); // Just using for fallback if needed, but double passed ys as its ys, wait double needs its own xs.
+        const ys = G.ys;
+
         const cv = document.getElementById("graphCanvas");
         const dpr = window.devicePixelRatio || 1;
         const W = cv.offsetWidth,
@@ -2397,23 +3036,44 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
         const pts = 300,
           cxA = [],
           cyA = [],
-          allY = [...ys];
-        for (let k = 0; k <= pts; k++) {
-          const cx = a + ((b - a) * k) / pts,
-            cy = evalF(fn, cx);
-          if (isFinite(cy)) {
-            cxA.push(cx);
-            cyA.push(cy);
-            allY.push(cy);
+          allY = [];
+
+        if (isDouble) {
+          // For Double Integrals, plot slices of f(x, y) along different y values
+          const c = G.c,
+            d = G.d;
+          const slices = 5;
+          for (let i = 0; i <= slices; i++) {
+            const yVal = c + (d - c) * (i / slices);
+            for (let k = 0; k <= pts; k++) {
+              const cx = a + ((b - a) * k) / pts;
+              const scope = { x: cx, y: yVal, e: Math.E, pi: Math.PI };
+              try {
+                const cy = math.evaluate(fn, scope);
+                if (isFinite(cy)) allY.push(cy);
+              } catch (e) {}
+            }
+          }
+        } else {
+          allY.push(...ys);
+          for (let k = 0; k <= pts; k++) {
+            const cx = a + ((b - a) * k) / pts,
+              cy = evalF(fn, cx);
+            if (isFinite(cy)) {
+              cxA.push(cx);
+              cyA.push(cy);
+              allY.push(cy);
+            }
           }
         }
+
         const yMin =
           Math.min(0, ...allY) -
-          Math.abs(Math.max(...allY) - Math.min(...allY)) * 0.08;
+            Math.abs(Math.max(...allY) - Math.min(...allY)) * 0.08 || -1;
         const yMax =
           Math.max(...allY) +
-          Math.abs(Math.max(...allY) - Math.min(...allY)) * 0.12;
-        const xR = b - a,
+            Math.abs(Math.max(...allY) - Math.min(...allY)) * 0.12 || 1;
+        const xR = b - a || 1,
           yR = yMax - yMin || 1;
         function tp(x, y) {
           return [P.l + ((x - a) / xR) * gW, P.t + (1 - (y - yMin) / yR) * gH];
@@ -2438,7 +3098,61 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
           ctx.stroke();
         }
 
-        // Shaded panels
+        if (isDouble) {
+          // Draw multiple lines for y slices
+          const c = G.c,
+            d_val = G.d;
+          const slices = 5;
+          for (let i = 0; i <= slices; i++) {
+            const yVal = c + (d_val - c) * (i / slices);
+            ctx.beginPath();
+            let started = false;
+            for (let k = 0; k <= pts; k++) {
+              const cx = a + ((b - a) * k) / pts;
+              const scope = { x: cx, y: yVal, e: Math.E, pi: Math.PI };
+              try {
+                const cy = math.evaluate(fn, scope);
+                if (isFinite(cy)) {
+                  const [px, py] = tp(cx, cy);
+                  if (!started) {
+                    ctx.moveTo(px, py);
+                    started = true;
+                  } else {
+                    ctx.lineTo(px, py);
+                  }
+                }
+              } catch (e) {}
+            }
+            const hue = 260 + (i / slices) * 60; // range from purple to magenta
+            ctx.strokeStyle = `hsla(${hue}, 80%, 65%, 0.8)`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+
+          // Just draw the axes and return for double
+          ctx.strokeStyle = "rgba(255,255,255,0.4)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          const [zx1, zy1] = tp(a, 0);
+          const [zx2, zy2] = tp(b, 0);
+          ctx.moveTo(P.l, zy1);
+          ctx.lineTo(P.l + gW, zy2);
+          ctx.stroke();
+          ctx.fillStyle = "#fff";
+          ctx.font = "12px JetBrains Mono";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillText(fmt(yMin, 2), P.l - 10, P.t + gH);
+          ctx.fillText(fmt(yMax, 2), P.l - 10, P.t);
+          ctx.fillText("0", P.l - 10, zy1);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillText(fmt(a, 2), P.l, P.t + gH + 10);
+          ctx.fillText(fmt(b, 2), P.l + gW, P.t + gH + 10);
+          return;
+        }
+
+        // Shaded panels for single
         for (let p = 0; p < n; p += 2) {
           const x0 = xs[p],
             x1 = xs[p + 1],
@@ -2653,6 +3367,8 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
           ctx.stroke();
         });
 
+        // Store grid cells for hover detection
+        const heatNodes = [];
         xs.forEach((_, i) =>
           ys.forEach((_, j) => {
             const w = wx[i] * wy[j];
@@ -2666,31 +3382,57 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
                     : "#60a5fa";
             const px = P.l + ((i + 0.5) / xs.length) * gW,
               py = P.t + ((j + 0.5) / ys.length) * gH;
+
+            heatNodes.push({
+              i,
+              j,
+              x: xs[i],
+              y: ys[j],
+              val: grid[i][j],
+              w,
+              px,
+              py,
+              col,
+              cellX: P.l + (i / nx) * gW,
+              cellY: P.t + (j / ny) * gH,
+              cellW: Math.ceil(gW / nx) + 1,
+              cellH: Math.ceil(gH / ny) + 1,
+            });
+
+            // Draw weight indicator
             ctx.beginPath();
-            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.arc(px, py, 4, 0, Math.PI * 2);
             ctx.fillStyle = col;
             ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,.5)";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
           }),
         );
 
-        ctx.fillStyle = "rgba(148,163,184,.65)";
-        ctx.font = "11px JetBrains Mono,monospace";
+        // Improved axis labels - clearer and larger
+        ctx.fillStyle = "rgba(150,180,220,.8)";
+        ctx.font = "bold 12px JetBrains Mono,monospace";
         ctx.textAlign = "center";
-        ctx.fillText("x  →", P.l + gW / 2, H - 6);
+        ctx.fillText("x  →", P.l + gW / 2, H - 3);
         ctx.save();
-        ctx.translate(13, P.t + gH / 2);
+        ctx.translate(10, P.t + gH / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.fillText("y  →", 0, 0);
         ctx.restore();
-        ctx.font = "10px JetBrains Mono,monospace";
-        ctx.fillStyle = "rgba(100,116,139,.65)";
+
+        // X-axis values - all points
+        ctx.font = "bold 10px JetBrains Mono,monospace";
+        ctx.fillStyle = "rgba(130,200,255,.85)";
         ctx.textAlign = "center";
-        [0, Math.floor(nx / 2), nx].forEach((i) => {
-          ctx.fillText(fmt(xs[i], 3), P.l + (i / nx) * gW, P.t + gH + 18);
+        xs.forEach((_, i) => {
+          ctx.fillText(fmt(xs[i], 2), P.l + (i / nx) * gW, P.t + gH + 20);
         });
+
+        // Y-axis values - all points
         ctx.textAlign = "right";
-        [0, Math.floor(ny / 2), ny].forEach((j) => {
-          ctx.fillText(fmt(ys[j], 3), P.l - 5, P.t + (j / ny) * gH + 4);
+        ys.forEach((_, j) => {
+          ctx.fillText(fmt(ys[j], 2), P.l - 8, P.t + (j / ny) * gH + 5);
         });
 
         // Colorbar
@@ -2723,6 +3465,9 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
         ctx.font = "10px JetBrains Mono,monospace";
         ctx.textAlign = "left";
         ctx.fillText("f(x,y)=" + fn + "   " + nx + "×" + ny + " grid", P.l, 22);
+
+        // Store for hover detection
+        hNodes = heatNodes;
       }
 
       /* ═══════════ TOOLTIP ═══════════ */
@@ -2783,6 +3528,65 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
           .forEach((r) => r.classList.remove("hl-row"));
       }
 
+      function getHeatPos(e) {
+        const c = document.getElementById("heatCanvas");
+        const r = c.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const sx = r.width / (c.width / dpr);
+        return { x: (e.clientX - r.left) / sx, y: (e.clientY - r.top) / sx };
+      }
+
+      function nearestHeat(mx, my) {
+        let best = null,
+          bd = 9e9;
+        hNodes.forEach((n) => {
+          const dist = Math.hypot(n.px - mx, n.py - my);
+          if (dist < bd) {
+            bd = dist;
+            best = { ...n, dist };
+          }
+        });
+        return best && best.dist < 40 ? best : null;
+      }
+
+      function showHeatTip(nd, ex, ey) {
+        const tt = document.getElementById("heatTooltip");
+        if (!tt) return;
+
+        const wLabel =
+          nd.w === 16 ? "16 (4×4)" : nd.w === 4 ? "4" : nd.w === 1 ? "1" : "2";
+        const contribution = (nd.val * nd.w).toFixed(6);
+
+        tt.innerHTML = `
+          <div style="font-weight:bold;margin-bottom:8px;color:#00d4ff">f(x,y) Value</div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:13px;color:#fff">x = ${fmt(nd.x, 4)}</div>
+            <div style="font-size:13px;color:#fff">y = ${fmt(nd.y, 4)}</div>
+            <div style="font-size:14px;color:#fbbf24;margin-top:4px">f(x,y) = ${fmt(nd.val, 6)}</div>
+          </div>
+          <div style="border-top:1px solid rgba(0,212,255,.3);padding-top:8px;margin-top:8px">
+            <div style="font-size:12px;color:#10b981">Weight: <span style="color:#fff">${wLabel}</span></div>
+            <div style="font-size:12px;color:#00d4ff;margin-top:4px">Contribution: <span style="color:#fff">${contribution}</span></div>
+          </div>
+        `;
+
+        tt.style.display = "block";
+        const wr = document
+          .getElementById("heatCanvas")
+          .parentElement.getBoundingClientRect();
+        let lx = ex - wr.left + 16,
+          ly = ey - wr.top - 10;
+        if (lx + 200 > wr.width) lx = ex - wr.left - 210;
+        if (ly < 4) ly = ey - wr.top + 18;
+        tt.style.left = lx + "px";
+        tt.style.top = ly + "px";
+      }
+
+      function hideHeatTip() {
+        const tt = document.getElementById("heatTooltip");
+        if (tt) tt.style.display = "none";
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         const cv = document.getElementById("graphCanvas");
         cv.addEventListener("mousemove", (e) => {
@@ -2814,6 +3618,23 @@ Weights W: <span class="c1">endpoint = 1</span> &nbsp; <span class="c4">odd inde
             }
           }
         });
+
+        // Heatmap hover tooltip
+        const hc = document.getElementById("heatCanvas");
+        hc.addEventListener("mousemove", (e) => {
+          if (!hNodes || !hNodes.length) return;
+          const { x, y } = getHeatPos(e);
+          const nd = nearestHeat(x, y);
+          if (nd) {
+            showHeatTip(nd, e.clientX, e.clientY);
+            hc.style.cursor = "pointer";
+          } else {
+            hideHeatTip();
+            hc.style.cursor = "crosshair";
+          }
+        });
+        hc.addEventListener("mouseleave", hideHeatTip);
+
         let rt;
         window.addEventListener("resize", () => {
           clearTimeout(rt);
