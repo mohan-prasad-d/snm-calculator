@@ -1,0 +1,2159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Large Sample Hypothesis Tests</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <style>
+      
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+        position: relative;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+      .func-input-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .func-input-wrap input[type="text"] {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-size: 1rem;
+        padding: 0.3rem 0;
+        width: 100%;
+      }
+      .func-input-wrap input[type="text"]:focus {
+        box-shadow: none;
+        border: none;
+      }
+      .func-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .func-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        margin-top: 0.4rem;
+        line-height: 1.7;
+      }
+      .func-hint span {
+        color: var(--accent3);
+      }
+      .field-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-top: 0.3rem;
+        padding: 0.3rem 0.5rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.2);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .field-desc .eg {
+        color: var(--accent3);
+      }
+      .field-desc .warn {
+        color: var(--accent2);
+      }
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      .full-width {
+        grid-column: 1/-1;
+      }
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.61rem;
+        color: var(--text);
+        line-height: 1.75;
+        z-index: 99;
+        width: 260px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.64rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 260px;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .final-chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+      }
+      .iter-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        width: 100%;
+        min-width: 540px;
+      }
+      .iter-table th {
+        padding: 0.45rem 0.7rem;
+        text-align: right;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .iter-table th:first-child,
+      .iter-table th:nth-child(5) {
+        text-align: center;
+      }
+      .iter-table td {
+        padding: 0.3rem 0.7rem;
+        text-align: right;
+        border-bottom: 1px solid rgba(26, 53, 69, 0.4);
+        white-space: nowrap;
+      }
+      .iter-table td:first-child {
+        text-align: center;
+        color: var(--text-dim);
+      }
+      .iter-table td.x-col {
+        color: var(--accent);
+      }
+      .iter-table td.fx-col {
+        color: var(--text);
+      }
+      .iter-table td.coeff-col {
+        text-align: center;
+        color: var(--accent2);
+        font-weight: 700;
+      }
+      .iter-table td.area-col {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .iter-table tr.endpoint-row td {
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .iter-table tr.endpoint-row td.x-col {
+        color: var(--accent2);
+      }
+      .iter-table tr:last-child td {
+        border-bottom: none;
+      }
+      .iter-table tfoot td {
+        border-top: 2px solid var(--border);
+        padding-top: 0.6rem;
+        font-weight: 700;
+      }
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+      .step-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.2rem;
+      }
+      @media (max-width: 900px) {
+        .step-body {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .step-body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .calc-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .calc-label {
+        color: var(--text-dim);
+        min-width: 76px;
+        flex-shrink: 0;
+      }
+      .calc-result {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .mini-val-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        width: 100%;
+      }
+      .mini-val-table td {
+        padding: 0.28rem 0.5rem;
+        border: 1px solid rgba(26, 53, 69, 0.6);
+      }
+      .mini-val-table td:first-child {
+        color: var(--text-dim);
+      }
+      .mini-val-table td:last-child {
+        color: var(--text);
+        text-align: right;
+        font-weight: 600;
+      }
+      .mini-val-table tr.highlight td:last-child {
+        color: var(--accent3);
+      }
+      .mini-val-table tr.pivRow td:last-child {
+        color: var(--accent);
+      }
+      .step-summary {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .step-nav button {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-nav button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .step-counter {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .all-steps-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .step-graph-wrap {
+        grid-column: 1 / -1;
+        margin-top: 1rem;
+      }
+      .step-graph-wrap .graph-box {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.7rem;
+        overflow: hidden;
+      }
+      .step-graph-wrap canvas {
+        width: 100%;
+        height: 240px;
+        display: block;
+      }
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+      .trap-canvas-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      .trap-canvas-wrap canvas {
+        width: 100%;
+        height: 220px;
+        display: block;
+      }
+      .accuracy-bar-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .acc-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .acc-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        margin-bottom: 0.4rem;
+      }
+      .acc-label {
+        color: var(--text-dim);
+        min-width: 90px;
+      }
+      .acc-track {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .acc-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s;
+      }
+      .acc-val {
+        color: var(--accent3);
+        min-width: 100px;
+        text-align: right;
+      }
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+      .phase-badge {
+        display: inline-block;
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      .phase-rk4 {
+        background: rgba(255, 107, 53, 0.15);
+        border: 1px solid rgba(255, 107, 53, 0.35);
+        color: var(--accent2);
+      }
+      .phase-ab {
+        background: rgba(119, 220, 30, 0.12);
+        border: 1px solid rgba(119, 220, 30, 0.3);
+        color: var(--accent3);
+      }
+      .phase-init {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        color: var(--accent);
+      }
+    
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+      }
+      .theorem-panel,
+      .input-section,
+      .result-section,
+      .visualization {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        color: var(--text);
+      }
+      .theorem-panel::before,
+      .input-section::before,
+      .result-section::before,
+      .visualization::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      }
+      .theorem-panel {
+        margin-top: 1.5rem;
+        line-height: 1.8;
+        color: var(--text-dim);
+      }
+      .theorem-panel h2,
+      .input-section h3,
+      .result-section h3,
+      .visualization h3 {
+        color: var(--accent);
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+      }
+      .formula {
+        color: var(--accent3);
+        font-family: "Space Mono", monospace;
+        text-align: center;
+        padding: 0.45rem;
+      }
+      .calc-mode {
+        margin-bottom: 1rem;
+      }
+      .input-group {
+        margin-bottom: 1rem;
+      }
+      .input-group input,
+      .input-group select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.65rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        width: 100%;
+      }
+      .input-group input:focus,
+      .input-group select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+      .vector-inputs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+      .vector-inputs.cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .sample-title {
+        color: var(--accent);
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin: 1rem 0 0.75rem;
+      }
+      .sample-title.s2 {
+        color: var(--accent2);
+      }
+      .info-text,
+      .chart-note {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        line-height: 1.7;
+        margin-top: 0.5rem;
+      }
+      .btn {
+        padding: 0.7rem 1.2rem;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .btn-row .btn {
+        flex: 1;
+      }
+      .error-summary,
+      .warning-box {
+        border-radius: 8px;
+        padding: 0.8rem;
+        margin-bottom: 0.8rem;
+        font-size: 0.8rem;
+      }
+      .error-summary {
+        display: none;
+        color: #ff8a9b;
+        border: 1px solid #ff3355;
+        background: rgba(255, 51, 85, 0.08);
+      }
+      .error-summary.show {
+        display: block;
+      }
+      .warning-box {
+        color: #ffd18a;
+        border: 1px solid var(--accent2);
+        background: rgba(255, 107, 53, 0.08);
+      }
+      .field-error {
+        color: #ff8a9b;
+        font-size: 0.7rem;
+        margin-top: 0.25rem;
+      }
+      .input-group input.invalid,
+      .input-group select.invalid {
+        border-color: #ff3355;
+      }
+      .result-box,
+      .steps {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.85rem;
+        margin-bottom: 0.7rem;
+        color: var(--text);
+      }
+      .result-box h4,
+      .steps h4 {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+      }
+      .result-value,
+      .step {
+        font-family: "Space Mono", monospace;
+        font-size: 0.78rem;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+      }
+      .result-box .big {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      .result-box.reject {
+        border-color: #ff3355;
+      }
+      .result-box.accept {
+        border-color: var(--accent3);
+      }
+      .result-box p.plain {
+        color: var(--text-dim);
+        line-height: 1.7;
+        font-size: 0.78rem;
+      }
+      .working-hidden {
+        display: none;
+      }
+      .btn.btn-green {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        margin-bottom: 0.8rem;
+      }
+      .visualization {
+        grid-column: 1 / -1;
+      }
+      .viz-heading {
+        color: var(--accent);
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin: 1rem 0 0.5rem;
+      }
+      .plot {
+        width: 100%;
+        height: 430px;
+        background: var(--surface2);
+        border-radius: 10px;
+        margin-top: 0.75rem;
+      }
+      .plot.small {
+        height: 400px;
+      }
+      .step {
+        color: var(--text-dim);
+        border-bottom: 1px solid var(--border);
+        padding: 0.55rem 0;
+      }
+      .step:last-child {
+        border-bottom: 0;
+      }
+      .step-title {
+        color: var(--accent);
+      }
+      .calc {
+        display: block;
+        color: var(--text);
+        margin: 0.2rem 0;
+      }
+      .chart-error {
+        color: #ff8a9b;
+        padding: 1rem;
+        font-family: "Space Mono", monospace;
+      }
+      .site-footer {
+        margin-top: 2rem;
+      }
+      @media (max-width: 900px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+        .visualization {
+          grid-column: auto;
+        }
+      }
+      @media (max-width: 600px) {
+        .container {
+          padding: 1rem;
+        }
+        .content {
+          gap: 1rem;
+        }
+        .input-section,
+        .result-section,
+        .visualization,
+        .theorem-panel {
+          padding: 1rem;
+        }
+        .vector-inputs {
+          grid-template-columns: 1fr;
+        }
+        .vector-inputs.cols-2 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .plot,
+        .plot.small {
+          height: 350px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-motion" aria-hidden="true">
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+    <div class="container">
+      <header>
+        <div class="header-tag">Statistics Unit I &mdash; Testing of Hypothesis</div>
+        <h1>Large Sample Tests</h1>
+        <p>Four Z-test calculators in one workspace</p>
+      </header>
+      <section class="theorem-panel" id="theoremPanel" aria-live="polite"></section>
+      <main class="content main-grid">
+        <section class="input-section panel" id="inputPanel">
+          <div class="panel-title">Test Inputs</div>
+          <div class="input-group calc-mode">
+            <label for="calcMode">Choose a calculator</label>
+            <select id="calcMode">
+              <option value="singleMean">A. Single Mean</option>
+              <option value="diffMeans">B. Difference of Means</option>
+              <option value="singleProp">C. Single Proportion</option>
+              <option value="diffProp">D. Difference of Proportions</option>
+            </select>
+          </div>
+          <div id="activeForm"></div>
+        </section>
+      </main>
+      <footer class="site-footer">
+        <div class="foot-left"><span class="inf">∑</span>Large Sample Hypothesis Tests</div>
+        <div class="foot-links">
+        <a href="euler.html">Euler's Method</a>
+        <a href="gauss_elimination.html">Gauss Elimination</a>
+        <a href="gauss_seidel.html">Gauss-Seidel</a>
+        <a href="gauss_jordan.html">Gauss-Jordan</a>
+        <a href="lagrange.html">Lagrange Interpolation</a>
+        <a href="milins.html">milins</a>
+        <a href="power1.html">Power Method</a>
+        <a href="adam.html">Adam's Method</a>
+        <a href="Newton_divide.html">Newton's divide</a>
+        <a href="newton_raphson.html">Newton-Raphson</a>
+        <a href="rk%20method.html">RK4 Method</a>
+        <a href="simpson.html">Simpson's Rule</a>
+        <a href="taylor.html">Taylor's Method</a>
+        <a href="trapezoidel.html">Trapezoidal Rule</a>
+        <a href="large%20sample.html">Large Sample Test</a>
+        <a href="small%20sample.html">Small Sample Test</a>
+        <a href="chi-square-test.html">Chi-Square Test</a>
+        <a href="ftest.html">F Test</a>
+        <a href="index.html">Home</a>
+      </div>
+      </footer>
+    </div>
+    <script>
+      
+(() => {
+  const symbols = ['?', '?', '?', '?', '?', '?', '?', 'H?', 'Z'];
+  const colors = ['', ' violet', ' mint'];
+  const layer = document.getElementById('bgSymbols');
+  if (!layer) return;
+  for (let i = 0; i < 18; i += 1) {
+    const symbol = document.createElement('div');
+    symbol.className = 'bg-symbol' + colors[i % colors.length];
+    symbol.textContent = symbols[i % symbols.length];
+    symbol.style.left = (Math.random() * 100) + '%';
+    symbol.style.top = (Math.random() * 100) + '%';
+    symbol.style.fontSize = (0.7 + Math.random() * 1.1) + 'rem';
+    symbol.style.animationDuration = (16 + Math.random() * 18) + 's';
+    symbol.style.animationDelay = (-Math.random() * 25) + 's';
+    layer.appendChild(symbol);
+  }
+})();
+    </script>
+    <script>
+      /*
+ * stats-core.js  —  Statistical engine for the Large Sample (Z) tests.
+ * Pure computation, NO DOM access.  Works in the browser (window.StatsCore)
+ * and in Node.js (module.exports) so the same code can be unit-tested.
+ *
+ * Numerical methods
+ *   Φ(x)      : erfc-based. Non-alternating series for |x|/√2 < 2,
+ *               continued fraction (backward evaluation) for the tails,
+ *               so tail probabilities keep full relative accuracy.
+ *   Φ⁻¹(p)    : bracketing bisection on the accurate Φ followed by Newton polishing.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.StatsCore = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const SQRT2 = Math.SQRT2;
+  const SQRT_PI = Math.sqrt(Math.PI);
+  const INV_SQRT_2PI = 1 / Math.sqrt(2 * Math.PI);
+
+  /* ───────────── Normal distribution ───────────── */
+
+  /** erfc(x) for x >= 0 */
+  function erfcPos(x) {
+    if (x === 0) return 1;
+    if (x < 2) {
+      // erf(x) = 2/√π · e^{-x²} · Σ 2^n x^{2n+1} / (2n+1)!!   (all terms positive)
+      let term = x, sum = x;
+      for (let n = 0; n < 200; n++) {
+        term *= (2 * x * x) / (2 * n + 3);
+        sum += term;
+        if (term < sum * 1e-17) break;
+      }
+      const erf = (2 / SQRT_PI) * Math.exp(-x * x) * sum;
+      return 1 - erf;
+    }
+    // Continued fraction: erfc(x) = e^{-x²}/√π · 1/(x + (1/2)/(x + (2/2)/(x + (3/2)/(x + …))))
+    let f = x;
+    for (let k = 400; k >= 1; k--) f = x + (k / 2) / f;
+    return Math.exp(-x * x) / (SQRT_PI * f);
+  }
+
+  function erfc(x) { return x >= 0 ? erfcPos(x) : 2 - erfcPos(-x); }
+
+  /** Standard normal CDF  P(Z ≤ x) */
+  function normCdf(x) {
+    if (!isFinite(x)) return x > 0 ? 1 : 0;
+    return 0.5 * erfc(-x / SQRT2);
+  }
+  /** Upper tail  P(Z > x)  (accurate for large x) */
+  function normSf(x) { return normCdf(-x); }
+  function normPdf(x) { return INV_SQRT_2PI * Math.exp(-0.5 * x * x); }
+
+  /** Inverse CDF for p in (0,1). */
+  function normInv(p) {
+    if (!(p > 0 && p < 1)) throw new RangeError('normInv: p must be in (0,1)');
+    if (p === 0.5) return 0;
+    let lo = -40, hi = 40;
+    for (let i = 0; i < 200; i++) {
+      const mid = 0.5 * (lo + hi);
+      if (normCdf(mid) < p) lo = mid; else hi = mid;
+      if (hi - lo < 1e-15) break;
+    }
+    let x = 0.5 * (lo + hi);
+    // Newton polish (relative to the better-conditioned tail)
+    for (let i = 0; i < 3; i++) {
+      const pdf = normPdf(x);
+      if (pdf < 1e-300) break;
+      const err = p < 0.5 ? normCdf(x) - p : -(normSf(x) - (1 - p));
+      const step = err / pdf;
+      if (!isFinite(step)) break;
+      x -= step;
+    }
+    return x;
+  }
+
+  /* ───────────── Critical values, p-values, decision ───────────── */
+
+  const ALPHAS = [0.10, 0.05, 0.01];
+  const TAILS = ['two', 'right', 'left'];
+
+  /** Returns {lower, upper}; the unused side is null. */
+  function criticalValues(alpha, tail) {
+    if (tail === 'two') { const z = -normInv(alpha / 2); return { lower: -z, upper: z }; }
+    if (tail === 'right') return { lower: null, upper: -normInv(alpha) };
+    if (tail === 'left') return { lower: normInv(alpha), upper: null };
+    throw new Error('Unknown tail: ' + tail);
+  }
+
+  function pValue(z, tail) {
+    if (tail === 'two') return Math.min(1, 2 * normSf(Math.abs(z)));
+    if (tail === 'right') return normSf(z);
+    if (tail === 'left') return normCdf(z);
+    throw new Error('Unknown tail: ' + tail);
+  }
+
+  function rejectByCritical(z, crit, tail) {
+    if (tail === 'two') return Math.abs(z) > crit.upper;
+    if (tail === 'right') return z > crit.upper;
+    return z < crit.lower;
+  }
+
+  /* ───────────── Input parsing / validation helpers ───────────── */
+
+  const NUM_RE = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+
+  /** Strict number parsing; returns {value} or {error}. Never turns bad input into 0. */
+  function parseNumber(raw) {
+    if (typeof raw === 'number') return isFinite(raw) ? { value: raw } : { error: 'Enter a finite number.' };
+    const s = String(raw === undefined || raw === null ? '' : raw).trim().replace(/−/g, '-');
+    if (s === '') return { error: 'This field is required.' };
+    if (!NUM_RE.test(s)) return { error: 'Enter a valid number (digits only, e.g. 12.5).' };
+    const v = Number(s);
+    if (!isFinite(v)) return { error: 'Enter a finite number.' };
+    return { value: v };
+  }
+
+  class Collector {
+    constructor(raw) { this.raw = raw; this.errors = {}; this.vals = {}; }
+    num(field) {
+      const r = parseNumber(this.raw[field]);
+      if (r.error) { this.errors[field] = r.error; return null; }
+      this.vals[field] = r.value; return r.value;
+    }
+    posInt(field, label, min) {
+      const v = this.num(field); if (v === null) return null;
+      if (!Number.isInteger(v)) { this.errors[field] = label + ' must be a whole number.'; return null; }
+      if (v < (min || 1)) { this.errors[field] = label + ' must be at least ' + (min || 1) + '.'; return null; }
+      return v;
+    }
+    sd(field, label, allowZero) {
+      const v = this.num(field); if (v === null) return null;
+      if (v < 0) { this.errors[field] = label + ' cannot be negative.'; return null; }
+      if (v === 0 && !allowZero) { this.errors[field] = label + ' must be greater than 0.'; return null; }
+      return v;
+    }
+    count(field, label, nField, n) {
+      const v = this.num(field); if (v === null) return null;
+      if (!Number.isInteger(v)) { this.errors[field] = label + ' must be a whole number.'; return null; }
+      if (v < 0) { this.errors[field] = label + ' cannot be negative.'; return null; }
+      if (n !== null && v > n) { this.errors[field] = label + ' cannot be greater than the sample size (' + n + ').'; return null; }
+      return v;
+    }
+    alphaTail() {
+      const a = parseNumber(this.raw.alpha);
+      if (a.error || !ALPHAS.some(x => Math.abs(x - a.value) < 1e-12)) this.errors.alpha = 'Choose α = 0.10, 0.05 or 0.01.';
+      else this.vals.alpha = ALPHAS.find(x => Math.abs(x - a.value) < 1e-12);
+      const t = String(this.raw.tail);
+      if (TAILS.indexOf(t) < 0) this.errors.tail = 'Choose two-tailed, right-tailed or left-tailed.';
+      else this.vals.tail = t;
+    }
+    sdKnown() {
+      const k = String(this.raw.sdKnown);
+      if (k !== 'known' && k !== 'unknown') this.errors.sdKnown = 'Select whether σ is known.';
+      else this.vals.sdKnown = (k === 'known');
+    }
+    hasErrors() { return Object.keys(this.errors).length > 0; }
+  }
+
+  /** Assemble the common decision part of every result. */
+  function finish(res, z, se, alpha, tail) {
+    if (!(se > 0) || !isFinite(se)) return { ok: false, errors: { _form: 'The standard error is zero or not finite, so the Z statistic is undefined. Check the standard deviation / proportion inputs.' } };
+    if (!isFinite(z)) return { ok: false, errors: { _form: 'The Z statistic is not finite. Check the inputs.' } };
+    const crit = criticalValues(alpha, tail);
+    const p = pValue(z, tail);
+    res.z = z; res.se = se; res.alpha = alpha; res.tail = tail;
+    res.crit = crit; res.p = p;
+    res.rejectByCritical = rejectByCritical(z, crit, tail);
+    res.rejectByP = p <= alpha;
+    res.reject = res.rejectByP;               // p-value rule (equivalent to the critical-value rule)
+    res.rulesAgree = res.rejectByCritical === res.rejectByP;
+    return { ok: true, result: res };
+  }
+
+  /* ───────────── A. Single mean ───────────── */
+  function singleMean(raw) {
+    const c = new Collector(raw);
+    const n = c.posInt('n', 'Sample size n', 1);
+    const xbar = c.num('xbar');
+    const mu0 = c.num('mu0');
+    c.sdKnown();
+    const sd = c.sd('sd', c.vals.sdKnown === false ? 'Sample standard deviation s' : 'Population standard deviation σ', c.vals.sdKnown === false);
+    c.alphaTail();
+    if (c.hasErrors()) return { ok: false, errors: c.errors };
+    const sdKnown = c.vals.sdKnown;
+    const se = sd / Math.sqrt(n);
+    const z = (xbar - mu0) / se;
+    const warnings = [];
+    if (n < 30) warnings.push('n = ' + n + ' is below 30. A large-sample Z test may be unreliable' + (sdKnown ? ' unless the population is normal.' : '; with σ unknown and a small sample a Student t-test is normally used instead.'));
+    return finish({ kind: 'singleMean', n, xbar, mu0, sd, sdKnown, diff: xbar - mu0, warnings }, z, se, c.vals.alpha, c.vals.tail);
+  }
+
+  /* ───────────── B. Difference of means ───────────── */
+  function diffMeans(raw) {
+    const c = new Collector(raw);
+    const n1 = c.posInt('n1', 'Sample size n₁', 1);
+    const m1 = c.num('m1');
+    const n2 = c.posInt('n2', 'Sample size n₂', 1);
+    const m2 = c.num('m2');
+    c.sdKnown();
+    const known = c.vals.sdKnown;
+    const sd1 = c.sd('sd1', known === false ? 'Sample standard deviation s₁' : 'Population standard deviation σ₁', known === false);
+    const sd2 = c.sd('sd2', known === false ? 'Sample standard deviation s₂' : 'Population standard deviation σ₂', known === false);
+    const d0 = c.num('d0');
+    c.alphaTail();
+    if (c.hasErrors()) return { ok: false, errors: c.errors };
+    const v1 = sd1 * sd1 / n1, v2 = sd2 * sd2 / n2;
+    const se = Math.sqrt(v1 + v2);
+    const diff = m1 - m2;
+    const z = (diff - d0) / se;
+    const warnings = [];
+    if (n1 < 30 || n2 < 30) warnings.push('At least one sample size is below 30 (n₁ = ' + n1 + ', n₂ = ' + n2 + '). The large-sample normal approximation may be unreliable.');
+    return finish({ kind: 'diffMeans', n1, m1, sd1, n2, m2, sd2, sdKnown: known, d0, diff, v1, v2, warnings }, z, se, c.vals.alpha, c.vals.tail);
+  }
+
+  /* ───────────── C. Single proportion ───────────── */
+  function singleProp(raw) {
+    const c = new Collector(raw);
+    const n = c.posInt('n', 'Sample size n', 1);
+    const x = c.count('x', 'Number of successes x', 'n', n);
+    const p0 = c.num('p0');
+    if (p0 !== null && !(p0 > 0 && p0 < 1)) c.errors.p0 = 'p₀ must be strictly between 0 and 1 (0 < p₀ < 1), otherwise the standard error under H₀ is zero.';
+    c.alphaTail();
+    if (c.hasErrors()) return { ok: false, errors: c.errors };
+    const phat = x / n;
+    const se = Math.sqrt(p0 * (1 - p0) / n);
+    const z = (phat - p0) / se;
+    const warnings = [];
+    const e1 = n * p0, e2 = n * (1 - p0);
+    if (e1 < 10 || e2 < 10) warnings.push('Normal-approximation condition not met: np₀ = ' + e1.toFixed(2) + ' and n(1 − p₀) = ' + e2.toFixed(2) + ' should both be at least 10. The Z test may be unreliable.');
+    return finish({ kind: 'singleProp', n, x, failures: n - x, p0, phat, diff: phat - p0, expSucc: e1, expFail: e2, warnings }, z, se, c.vals.alpha, c.vals.tail);
+  }
+
+  /* ───────────── D. Difference of proportions ─────────────
+   * Δ0 = 0 : classical pooled test.
+   * Δ0 ≠ 0 : score (Farrington–Manning) test.  The variance uses the maximum-likelihood
+   *          proportions p̃1, p̃2 restricted to satisfy H0 (p̃1 − p̃2 = Δ0).  For Δ0 = 0 this
+   *          restricted MLE is exactly the pooled proportion, so one method covers both.
+   */
+  function restrictedMLE(x1, n1, x2, n2, d0) {
+    // maximise  x1 ln(q+d) + (n1-x1) ln(1-q-d) + x2 ln q + (n2-x2) ln(1-q)  over q = p2  (concave in q)
+    const lo = Math.max(0, -d0), hi = Math.min(1, 1 - d0);
+    const dl = q => {
+      let s = 0; const p1 = q + d0;
+      if (x1 > 0) s += x1 / p1;
+      if (n1 - x1 > 0) s -= (n1 - x1) / (1 - p1);
+      if (x2 > 0) s += x2 / q;
+      if (n2 - x2 > 0) s -= (n2 - x2) / (1 - q);
+      return s;
+    };
+    const eps = 1e-15;
+    let a = lo + eps, b = hi - eps;
+    if (dl(a) <= 0) return lo;
+    if (dl(b) >= 0) return hi;
+    for (let i = 0; i < 300; i++) {
+      const m = 0.5 * (a + b);
+      if (dl(m) > 0) a = m; else b = m;
+      if (b - a < 1e-16) break;
+    }
+    return 0.5 * (a + b);
+  }
+
+  function diffProp(raw) {
+    const c = new Collector(raw);
+    const n1 = c.posInt('n1', 'Sample size n₁', 1);
+    const x1 = c.count('x1', 'Successes x₁', 'n1', n1);
+    const n2 = c.posInt('n2', 'Sample size n₂', 1);
+    const x2 = c.count('x2', 'Successes x₂', 'n2', n2);
+    const d0 = c.num('d0');
+    if (d0 !== null && !(Math.abs(d0) < 1)) c.errors.d0 = 'Δ₀ must be strictly between −1 and 1.';
+    c.alphaTail();
+    if (c.hasErrors()) return { ok: false, errors: c.errors };
+    const p1 = x1 / n1, p2 = x2 / n2, diff = p1 - p2;
+    const pooled = (x1 + x2) / (n1 + n2);
+    const pooledUsed = d0 === 0;
+    let q1, q2, se;
+    if (pooledUsed) { q1 = q2 = pooled; se = Math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2)); }
+    else {
+      q2 = restrictedMLE(x1, n1, x2, n2, d0); q1 = q2 + d0;
+      se = Math.sqrt(q1 * (1 - q1) / n1 + q2 * (1 - q2) / n2);
+    }
+    const z = (diff - d0) / se;
+    const warnings = [];
+    const exp = [n1 * q1, n1 * (1 - q1), n2 * q2, n2 * (1 - q2)];
+    if (exp.some(v => v < 10)) warnings.push('Normal-approximation condition not met: expected counts under H₀ (' + exp.map(v => v.toFixed(2)).join(', ') + ') should all be at least 10. The Z test may be unreliable.');
+    return finish({ kind: 'diffProp', n1, x1, f1: n1 - x1, p1, n2, x2, f2: n2 - x2, p2, d0, diff, pooled, pooledUsed, q1, q2, warnings }, z, se, c.vals.alpha, c.vals.tail);
+  }
+
+  const ENGINES = { singleMean, diffMeans, singleProp, diffProp };
+  function runTest(kind, raw) {
+    if (!ENGINES[kind]) throw new Error('Unknown test: ' + kind);
+    return ENGINES[kind](raw);
+  }
+
+  return { normCdf, normSf, normPdf, normInv, erfc, criticalValues, pValue, rejectByCritical, parseNumber, restrictedMLE, singleMean, diffMeans, singleProp, diffProp, runTest, ALPHAS, TAILS };
+});
+
+    </script>
+    <script>
+      /*
+ * stats-ui.js — UI layer shared by the four Large-Sample Z-test calculators.
+ * All numbers shown come from StatsCore (stats-core.js); nothing is hard-coded.
+ * Usage in a page:   StatsUI.init('singleMean' | 'diffMeans' | 'singleProp' | 'diffProp')
+ */
+(function () {
+  'use strict';
+  const C = StatsCore;
+  const $ = id => document.getElementById(id);
+  const MINUS = '−';
+
+  /* ───────────── number formatting (display only) ───────────── */
+  const neg = s => s.replace(/-/g, MINUS);
+  const g = x => neg(String(+Number(x).toPrecision(12)));                 // given value, as typed
+  const sig = (x, d) => { d = d || 6; if (x === 0) return '0'; return neg(String(+Number(x).toPrecision(d))); };
+  const f = (x, d) => { d = d === undefined ? 4 : d; if (x === 0) return (0).toFixed(d); if (Math.abs(x) < Math.pow(10, -d)) return neg(x.toExponential(3)); return neg(x.toFixed(d)); };
+  const sub = x => (x < 0 ? '(' + g(x) + ')' : g(x));                      // value inside a substitution
+  const fp = p => (p === 0 ? '0 (below 10<sup>−300</sup>)' : p < 1e-4 ? p.toExponential(3).replace('e-', '×10<sup>−') + '</sup>' : p.toFixed(6));
+  const zsub = pr => String(Number(pr.toFixed(4)));
+  const pct = x => (x * 100).toFixed(2) + '%';
+  const TAIL_NAME = { two: 'two-tailed', right: 'right-tailed', left: 'left-tailed' };
+
+  /* ───────────── per-calculator descriptions ───────────── */
+  const KINDS = {
+    singleMean: {
+      fields: ['n', 'xbar', 'mu0', 'sdKnown', 'sd', 'alpha', 'tail'],
+      defaults: { n: '50', xbar: '52.1', mu0: '50', sdKnown: 'known', sd: '6', alpha: '0.05', tail: 'two' },
+      blank: { n: '', xbar: '', mu0: '', sdKnown: 'known', sd: '', alpha: '0.05', tail: 'two' },
+      sym: 'μ', hypVal: r => g(r.mu0), compare: false
+    },
+    diffMeans: {
+      fields: ['n1', 'm1', 'sd1', 'n2', 'm2', 'sd2', 'sdKnown', 'd0', 'alpha', 'tail'],
+      defaults: { n1: '100', m1: '52', sd1: '5', n2: '120', m2: '50', sd2: '6', sdKnown: 'known', d0: '0', alpha: '0.05', tail: 'two' },
+      blank: { n1: '', m1: '', sd1: '', n2: '', m2: '', sd2: '', sdKnown: 'known', d0: '0', alpha: '0.05', tail: 'two' },
+      sym: 'μ₁ − μ₂', hypVal: r => g(r.d0), compare: true
+    },
+    singleProp: {
+      fields: ['n', 'x', 'p0', 'alpha', 'tail'],
+      defaults: { n: '200', x: '120', p0: '0.5', alpha: '0.05', tail: 'two' },
+      blank: { n: '', x: '', p0: '', alpha: '0.05', tail: 'two' },
+      sym: 'p', hypVal: r => g(r.p0), compare: true
+    },
+    diffProp: {
+      fields: ['n1', 'x1', 'n2', 'x2', 'd0', 'alpha', 'tail'],
+      defaults: { n1: '200', x1: '120', n2: '250', x2: '130', d0: '0', alpha: '0.05', tail: 'two' },
+      blank: { n1: '', x1: '', n2: '', x2: '', d0: '0', alpha: '0.05', tail: 'two' },
+      sym: 'p₁ − p₂', hypVal: r => g(r.d0), compare: true
+    }
+  };
+
+  /* ───────────── hypotheses / interpretation text ───────────── */
+  const REL = { two: '≠', right: '>', left: '<' };
+
+  function h0Text(kind, r) { return 'H₀: ' + KINDS[kind].sym + ' = ' + KINDS[kind].hypVal(r); }
+  function h1Text(kind, r) { return 'H₁: ' + KINDS[kind].sym + ' ' + REL[r.tail] + ' ' + KINDS[kind].hypVal(r); }
+
+  function claim(kind, r) {
+    const rel = { two: 'is different from', right: 'is greater than', left: 'is less than' }[r.tail];
+    if (kind === 'singleMean') return 'the population mean ' + rel + ' ' + g(r.mu0);
+    if (kind === 'singleProp') return 'the population proportion ' + rel + ' ' + g(r.p0);
+    const two = kind === 'diffMeans' ? ['means', 'mean', 'μ₁ − μ₂'] : ['proportions', 'proportion', 'p₁ − p₂'];
+    if (r.d0 === 0) {
+      return { two: 'the two population ' + two[0] + ' are different', right: 'the population ' + two[1] + ' of group 1 is greater than that of group 2', left: 'the population ' + two[1] + ' of group 1 is less than that of group 2' }[r.tail];
+    }
+    return 'the difference (' + two[2] + ') ' + rel + ' ' + g(r.d0);
+  }
+
+  function interpretation(kind, r) {
+    const lvl = Number((r.alpha * 100).toFixed(2)) + '%';
+    if (r.reject) return 'At the ' + lvl + ' level of significance we <strong>reject the null hypothesis</strong>. There is sufficient statistical evidence to conclude that ' + claim(kind, r) + '.';
+    return 'At the ' + lvl + ' level of significance we <strong>fail to reject the null hypothesis</strong>. There is not enough statistical evidence to conclude that ' + claim(kind, r) + '. (This does not prove that H₀ is true — the sample simply did not give strong enough evidence against it.)';
+  }
+
+  /* ───────────── step-by-step working ───────────── */
+  const stepHtml = (n, title, body, cls) => '<div class="step' + (cls ? ' ' + cls : '') + '"><strong class="step-title">Step ' + n + ': ' + title + '</strong>' + body + '</div>';
+  const line = t => '<span class="calc">' + t + '</span>';
+
+  /** Kind-specific pieces: given values (step 1), formula (4), standard error (5), substitution (6). */
+  function pieces(kind, r) {
+    if (kind === 'singleMean') {
+      const s = r.sdKnown ? 'σ' : 's';
+      return {
+        given: line('n = ' + g(r.n)) + line('x̄ = ' + g(r.xbar)) + line('μ₀ = ' + g(r.mu0)) + line(s + ' = ' + g(r.sd) + (r.sdKnown ? '  (population standard deviation, known)' : '  (sample standard deviation)')),
+        formula: line('Z = (x̄ − μ₀) / (' + s + '/√n)') + (r.sdKnown ? '' : '<br>Because σ is unknown, the sample standard deviation s replaces σ. This is the <strong>large-sample normal approximation</strong> (justified for large n, usually n ≥ 30); it is <strong>not</strong> an exact Student\'s t-test.'),
+        se: line('SE = ' + s + '/√n = ' + g(r.sd) + '/√' + g(r.n) + ' = ' + g(r.sd) + '/' + sig(Math.sqrt(r.n)) + ' = ' + sig(r.se)),
+        subst: line('Z = (' + g(r.xbar) + ' − ' + sub(r.mu0) + ') / ' + sig(r.se) + ' = ' + sig(r.diff) + ' / ' + sig(r.se))
+      };
+    }
+    if (kind === 'diffMeans') {
+      const a = r.sdKnown ? 'σ' : 's';
+      return {
+        given: '<br><strong>Sample 1:</strong>' + line('n₁ = ' + g(r.n1) + ',  x̄₁ = ' + g(r.m1) + ',  ' + a + '₁ = ' + g(r.sd1)) + '<strong>Sample 2:</strong>' + line('n₂ = ' + g(r.n2) + ',  x̄₂ = ' + g(r.m2) + ',  ' + a + '₂ = ' + g(r.sd2)) + line('Hypothesized difference Δ₀ = ' + g(r.d0)) + line('Observed difference x̄₁ − x̄₂ = ' + g(r.m1) + ' − ' + sub(r.m2) + ' = ' + sig(r.diff)),
+        formula: line('SE = √(' + a + '₁²/n₁ + ' + a + '₂²/n₂)') + line('Z = [(x̄₁ − x̄₂) − Δ₀] / SE') + 'The two samples are assumed independent, so the variances are added (no pooling).' + (r.sdKnown ? '' : ' Because σ₁, σ₂ are unknown, s₁ and s₂ replace them — a <strong>large-sample normal approximation</strong>, not an exact Student\'s t-test.'),
+        se: line('SE = √(' + g(r.sd1) + '²/' + g(r.n1) + ' + ' + g(r.sd2) + '²/' + g(r.n2) + ')') + line('   = √(' + sig(r.v1) + ' + ' + sig(r.v2) + ') = √' + sig(r.v1 + r.v2) + ' = ' + sig(r.se)),
+        subst: line('Z = [(' + g(r.m1) + ' − ' + sub(r.m2) + ') − ' + sub(r.d0) + '] / ' + sig(r.se) + ' = (' + sig(r.diff) + ' − ' + sub(r.d0) + ') / ' + sig(r.se))
+      };
+    }
+    if (kind === 'singleProp') {
+      return {
+        given: line('n = ' + g(r.n) + ',  successes x = ' + g(r.x) + ',  failures n − x = ' + g(r.failures)) + line('p̂ = x/n = ' + g(r.x) + '/' + g(r.n) + ' = ' + sig(r.phat) + '  (' + pct(r.phat) + ')') + line('p₀ = ' + g(r.p0) + '  (' + pct(r.p0) + ')'),
+        formula: line('SE₀ = √[p₀(1 − p₀)/n]') + line('Z = (p̂ − p₀) / SE₀') + 'The standard error uses the hypothesized p₀ (not p̂) because it is computed assuming H₀ is true.' + line('Check: np₀ = ' + sig(r.expSucc, 8) + (r.expSucc >= 10 ? ' ≥ 10 ✓' : ' < 10 ✗') + ',  n(1 − p₀) = ' + sig(r.expFail, 8) + (r.expFail >= 10 ? ' ≥ 10 ✓' : ' < 10 ✗')),
+        se: line('SE₀ = √[' + g(r.p0) + ' × ' + sig(1 - r.p0, 10) + ' / ' + g(r.n) + '] = √' + sig(r.p0 * (1 - r.p0) / r.n) + ' = ' + sig(r.se)),
+        subst: line('Z = (' + sig(r.phat) + ' − ' + g(r.p0) + ') / ' + sig(r.se) + ' = ' + sig(r.diff) + ' / ' + sig(r.se))
+      };
+    }
+    // diffProp
+    const given = '<br><strong>Sample 1:</strong>' + line('n₁ = ' + g(r.n1) + ',  successes x₁ = ' + g(r.x1) + ',  failures = ' + g(r.f1) + ',  p̂₁ = ' + sig(r.p1)) + '<strong>Sample 2:</strong>' + line('n₂ = ' + g(r.n2) + ',  successes x₂ = ' + g(r.x2) + ',  failures = ' + g(r.f2) + ',  p̂₂ = ' + sig(r.p2)) + line('Hypothesized difference Δ₀ = ' + g(r.d0)) + line('Observed difference p̂₁ − p̂₂ = ' + sig(r.diff));
+    if (r.pooledUsed) {
+      return {
+        given,
+        formula: line('Pooled proportion  p̂ = (x₁ + x₂)/(n₁ + n₂)') + line('SE₀ = √[p̂(1 − p̂)(1/n₁ + 1/n₂)]') + line('Z = (p̂₁ − p̂₂) / SE₀') + 'Pooling is valid here because H₀: p₁ − p₂ = 0 says both populations share one proportion.',
+        se: line('p̂ = (' + g(r.x1) + ' + ' + g(r.x2) + ')/(' + g(r.n1) + ' + ' + g(r.n2) + ') = ' + sig(r.pooled)) + line('SE₀ = √[' + sig(r.pooled) + ' × ' + sig(1 - r.pooled) + ' × (1/' + g(r.n1) + ' + 1/' + g(r.n2) + ')] = ' + sig(r.se)),
+        subst: line('Z = (' + sig(r.p1) + ' − ' + sig(r.p2) + ') / ' + sig(r.se) + ' = ' + sig(r.diff) + ' / ' + sig(r.se))
+      };
+    }
+    return {
+      given,
+      formula: 'Because Δ₀ ≠ 0, the pooled-proportion formula (which assumes p₁ = p₂) is <strong>not</strong> used. Instead the score (Farrington–Manning) test is applied:' + line('SE₀ = √[p̃₁(1 − p̃₁)/n₁ + p̃₂(1 − p̃₂)/n₂]') + line('Z = [(p̂₁ − p̂₂) − Δ₀] / SE₀') + 'where p̃₁, p̃₂ are the maximum-likelihood proportions <em>restricted to satisfy H₀</em> (p̃₁ − p̃₂ = Δ₀).',
+      se: line('Restricted estimates: p̃₂ = ' + sig(r.q2) + ',  p̃₁ = p̃₂ + Δ₀ = ' + sig(r.q1)) + line('SE₀ = √[' + sig(r.q1) + '×' + sig(1 - r.q1) + '/' + g(r.n1) + ' + ' + sig(r.q2) + '×' + sig(1 - r.q2) + '/' + g(r.n2) + '] = ' + sig(r.se)),
+      subst: line('Z = [(' + sig(r.p1) + ' − ' + sig(r.p2) + ') − ' + sub(r.d0) + '] / ' + sig(r.se) + ' = (' + sig(r.diff) + ' − ' + sub(r.d0) + ') / ' + sig(r.se))
+    };
+  }
+
+  function buildSteps(kind, r) {
+    const pc = pieces(kind, r), c = r.crit, a = r.alpha;
+    const S = [];
+    S.push(stepHtml(1, 'Identify the given values.', pc.given));
+    S.push(stepHtml(2, 'State H₀ and H₁.', line(h0Text(kind, r)) + line(h1Text(kind, r)) + (r.tail === 'two' ? 'Two-tailed test.' : r.tail === 'right' ? 'Right-tailed test.' : 'Left-tailed test.') + ' The alternative was chosen by you, not from the result.'));
+    S.push(stepHtml(3, 'Select the significance level.', line('α = ' + g(a) + '  (' + Number((a * 100).toFixed(2)) + '%)')));
+    S.push(stepHtml(4, 'Write the appropriate formula.', pc.formula));
+    S.push(stepHtml(5, 'Calculate the standard error.', pc.se));
+    S.push(stepHtml(6, 'Substitute the values into the test-statistic formula.', pc.subst));
+    S.push(stepHtml(7, 'Calculate the test statistic.', line('Z = ' + f(r.z, 6))));
+    let crit, pv;
+    if (r.tail === 'two') {
+      crit = line('z<sub>1−α/2</sub> = z<sub>' + zsub(1 - a / 2) + '</sub> = ±' + f(c.upper, 4)) + 'Rejection rule: reject H₀ if |Z| > ' + f(c.upper, 4);
+      pv = line('p-value = 2 × P(Z ≥ |z|) = 2 × P(Z ≥ ' + f(Math.abs(r.z), 4) + ') = ' + fp(r.p));
+    } else if (r.tail === 'right') {
+      crit = line('z<sub>1−α</sub> = z<sub>' + zsub(1 - a) + '</sub> = ' + f(c.upper, 4)) + 'Rejection rule: reject H₀ if Z > ' + f(c.upper, 4);
+      pv = line('p-value = P(Z ≥ z) = P(Z ≥ ' + f(r.z, 4) + ') = ' + fp(r.p));
+    } else {
+      crit = line('z<sub>α</sub> = z<sub>' + zsub(a) + '</sub> = ' + f(c.lower, 4)) + 'Rejection rule: reject H₀ if Z < ' + f(c.lower, 4);
+      pv = line('p-value = P(Z ≤ z) = P(Z ≤ ' + f(r.z, 4) + ') = ' + fp(r.p));
+    }
+    S.push(stepHtml(8, 'Determine the critical value and the p-value.', crit + pv));
+    let cmp;
+    if (r.tail === 'two') cmp = line('|Z| = ' + f(Math.abs(r.z), 4) + (r.rejectByCritical ? ' > ' : ' ≤ ') + f(c.upper, 4) + '  →  ' + (r.rejectByCritical ? 'inside the rejection region' : 'inside the non-rejection region'));
+    else if (r.tail === 'right') cmp = line('Z = ' + f(r.z, 4) + (r.rejectByCritical ? ' > ' : ' ≤ ') + f(c.upper, 4) + '  →  ' + (r.rejectByCritical ? 'inside the rejection region' : 'inside the non-rejection region'));
+    else cmp = line('Z = ' + f(r.z, 4) + (r.rejectByCritical ? ' < ' : ' ≥ ') + f(c.lower, 4) + '  →  ' + (r.rejectByCritical ? 'inside the rejection region' : 'inside the non-rejection region'));
+    cmp += line('p-value = ' + fp(r.p) + (r.rejectByP ? ' ≤ ' : ' > ') + 'α = ' + g(a) + '  →  ' + (r.rejectByP ? 'reject H₀' : 'fail to reject H₀'));
+    if (!r.rulesAgree) cmp += 'Note: the critical-value rule and the p-value rule differ only because Z lies within floating-point rounding of the boundary.';
+    S.push(stepHtml(9, 'Compare the test statistic (or p-value) with the decision threshold.', cmp));
+    S.push(stepHtml(10, 'State the final statistical conclusion.', '<span class="calc">' + (r.reject ? 'Reject H₀.' : 'Fail to reject H₀.') + '</span><br>' + interpretation(kind, r), 'final' + (r.reject ? ' reject' : '')));
+    return S.join('');
+  }
+
+  /* ───────────── charts (Plotly) ───────────── */
+  function linspace(a, b, n) { const o = []; for (let i = 0; i < n; i++) o.push(a + (b - a) * i / (n - 1)); return o; }
+  function seg(a, b) { const x = linspace(a, b, 160); return { x, y: x.map(C.normPdf) }; }
+  const CFG = { responsive: true, displaylogo: false };
+
+  /** Insert <br> so that no line is longer than `max` characters (breaks at spaces). */
+  function wrap(text, max) {
+    const words = String(text).split(' '); const lines = []; let cur = '';
+    words.forEach(w => { if (cur && (cur + ' ' + w).length > max) { lines.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; });
+    if (cur) lines.push(cur);
+    return lines.join('<br>');
+  }
+  const isNarrow = id => ($(id).clientWidth || window.innerWidth) < 700;
+
+  /**
+   * Draws a chart. Text is wrapped and the legend is laid out according to the real container width, so
+   * nothing is clipped on phones. plotAreaH = height (px) of the plotting area itself.
+   */
+  function draw(id, traces, layout, plotAreaH) {
+    const div = $(id);
+    if (typeof Plotly === 'undefined') throw new Error('The Plotly charting library could not be loaded (check your internet connection).');
+    const W = div.clientWidth || 360, narrow = W < 700;
+    const maxCh = narrow ? Math.max(18, Math.floor((W - 85) / 6.2)) : 150;
+    let legendLines = 0, totalPx = 0;
+    traces.forEach(t => {
+      if (t.showlegend === false || t.name === undefined) return;
+      t.name = wrap(t.name, maxCh);
+      legendLines += t.name.split('<br>').length;
+      totalPx += t.name.replace(/<br>/g, '').length * 6.4 + 45;
+    });
+    const legendH = narrow ? legendLines * 16 + 12 : Math.ceil(totalPx / Math.max(200, W - 90)) * 20 + 12;
+    const title = layout.title || {};
+    const tText = wrap(title.text || '', narrow ? Math.max(20, Math.floor((W - 30) / 7)) : 200);
+    const tLines = tText.split('<br>').length;
+    const top = 28 + tLines * 20, bottom = 62 + legendH, totalH = top + plotAreaH + bottom;
+    layout.title = Object.assign({}, title, { text: tText, x: 0.5, xanchor: 'center', y: 1 - 10 / totalH, yanchor: 'top', font: { size: narrow ? 13 : 15 } });
+    layout.margin = { l: narrow ? 58 : 70, r: 15, t: top, b: bottom };
+    layout.legend = { orientation: narrow ? 'v' : 'h', x: 0, xanchor: 'left', y: -(62 / plotAreaH), yanchor: 'top', font: { size: narrow ? 11 : 12 } };
+    layout.height = totalH;
+    layout.autosize = true;
+    div.style.height = totalH + 'px';
+    Plotly.purge(div); div.innerHTML = '';
+    Plotly.newPlot(div, traces, layout, CFG);
+  }
+  function clearChart(id, msg) {
+    const div = $(id); if (!div) return;
+    try { if (typeof Plotly !== 'undefined') Plotly.purge(div); } catch (e) { /* ignore */ }
+    div.innerHTML = '<div class="chart-placeholder">' + (msg || 'The chart appears here after a valid calculation.') + '</div>';
+  }
+  function chartError(id, e) {
+    const div = $(id);
+    try { if (typeof Plotly !== 'undefined') Plotly.purge(div); } catch (x) { /* ignore */ }
+    div.innerHTML = '<div class="chart-error"><strong>The chart could not be drawn.</strong> ' + String(e.message || e) + ' The numerical results above are still valid.</div>';
+  }
+
+  function drawNormal(r) {
+    const z = r.z, c = r.crit;
+    const lim = Math.max(4.5, Math.min(Math.ceil(Math.abs(z) + 0.75), 10));
+    const zp = Math.max(-lim, Math.min(lim, z)), clipped = zp !== z;
+    let nonrej, rej;
+    if (r.tail === 'two') { nonrej = seg(c.lower, c.upper); rej = [seg(-lim, c.lower), seg(c.upper, lim)]; }
+    else if (r.tail === 'right') { nonrej = seg(-lim, c.upper); rej = [seg(c.upper, lim)]; }
+    else { nonrej = seg(c.lower, lim); rej = [seg(-lim, c.lower)]; }
+    const top = C.normPdf(0);
+    const REJ = 'rgba(220,53,69,0.55)', NON = 'rgba(102,126,234,0.28)';
+    const traces = [];
+    traces.push({ x: nonrej.x, y: nonrej.y, mode: 'lines', fill: 'tozeroy', fillcolor: NON, line: { width: 0 }, name: 'Non-rejection region (fail to reject H₀)', hoverinfo: 'skip' });
+    rej.forEach((s, i) => traces.push({ x: s.x, y: s.y, mode: 'lines', fill: 'tozeroy', fillcolor: REJ, line: { width: 0 }, legendgroup: 'rej', showlegend: i === 0, hoverinfo: 'skip',
+      name: r.tail === 'two' ? 'Rejection regions (α = ' + g(r.alpha) + ', α/2 = ' + g(r.alpha / 2) + ' in each tail)' : 'Rejection region (α = ' + g(r.alpha) + ')' }));
+    const xs = linspace(-lim, lim, 400);
+    traces.push({ x: xs, y: xs.map(C.normPdf), mode: 'lines', line: { color: '#1e3c72', width: 2.5 }, name: 'Standard normal curve — distribution of Z if H₀ is true', hovertemplate: 'z = %{x:.3f}<br>φ(z) = %{y:.4f}<extra></extra>' });
+    const cvals = r.tail === 'two' ? [c.lower, c.upper] : [r.tail === 'right' ? c.upper : c.lower];
+    cvals.forEach((v, i) => traces.push({ x: [v, v], y: [0, top * 1.08], mode: 'lines', line: { color: '#b02a37', width: 2, dash: 'dash' }, legendgroup: 'crit', showlegend: i === 0, hovertemplate: 'critical z = ' + f(v, 4) + '<extra></extra>',
+      name: r.tail === 'two' ? 'Critical values z = ±' + f(c.upper, 4) : 'Critical value z = ' + f(cvals[0], 4) }));
+    traces.push({ x: [zp, zp], y: [0, top * 1.2], mode: 'lines', line: { color: '#198754', width: 4 }, hovertemplate: 'Calculated Z = ' + f(z, 4) + '<extra></extra>',
+      name: 'Calculated Z = ' + f(z, 4) + (clipped ? ' (beyond the plotted range)' : '') + ' → ' + (r.rejectByCritical ? 'in rejection region' : 'in non-rejection region') });
+    draw('plotNormal', traces, {
+      title: { text: 'Distribution of the test statistic under H₀ (' + TAIL_NAME[r.tail] + ', α = ' + g(r.alpha) + ')', font: { size: 15 } },
+      xaxis: { title: 'z  (standardised test statistic)', range: [-lim, lim], zeroline: false },
+      yaxis: { title: 'Density φ(z)', range: [0, top * 1.3], zeroline: false },
+      paper_bgcolor: 'white', plot_bgcolor: 'white', font: { family: 'Segoe UI, Tahoma, sans-serif' }
+    }, isNarrow('plotNormal') ? 300 : 340);
+  }
+
+  /** Right-hand panel shared by B and D: the observed difference on its ORIGINAL scale with the non-rejection range. */
+  function diffPanel(r, obsLabel, hypLabel, bandLabel, xax, yax) {
+    const se = r.se, c = r.crit, d0 = r.d0, d = r.diff;
+    const finite = [d, d0, d - se, d + se];
+    if (c.lower !== null) finite.push(d0 + c.lower * se);
+    if (c.upper !== null) finite.push(d0 + c.upper * se);
+    const mn = Math.min.apply(null, finite), mx = Math.max.apply(null, finite), span = (mx - mn) || Math.abs(mx) || 1;
+    const eLo = mn - 0.3 * span, eHi = mx + 0.3 * span;
+    const lo = c.lower !== null ? d0 + c.lower * se : eLo, hi = c.upper !== null ? d0 + c.upper * se : eHi;
+    return {
+      range: [eLo, eHi],
+      traces: [
+        { x: [-0.5, 0.5, 0.5, -0.5, -0.5], y: [lo, lo, hi, hi, lo], mode: 'lines', fill: 'toself', fillcolor: 'rgba(102,126,234,0.28)', line: { width: 0 }, name: bandLabel, xaxis: xax, yaxis: yax, hoverinfo: 'skip' },
+        { x: [-0.5, 0.5], y: [d0, d0], mode: 'lines', line: { color: '#b02a37', width: 2, dash: 'dash' }, name: hypLabel, xaxis: xax, yaxis: yax },
+        { x: [0], y: [d], mode: 'markers', marker: { symbol: 'diamond', size: 14, color: '#198754' }, error_y: { type: 'constant', value: se, visible: true, thickness: 2, width: 8, color: '#198754' }, name: obsLabel, xaxis: xax, yaxis: yax }
+      ]
+    };
+  }
+
+  function drawCompare(kind, r) {
+    const BLUE = '#667eea', PURPLE = '#764ba2';
+    const base = { paper_bgcolor: 'white', plot_bgcolor: 'white', font: { family: 'Segoe UI, Tahoma, sans-serif' } };
+    const narrow = isNarrow('plotCompare');
+    // two panels: side by side on wide screens, stacked on narrow ones
+    const ax = narrow
+      ? { x: { domain: [0, 1] }, y: { domain: [0.6, 1] }, x2: { domain: [0, 1] }, y2: { domain: [0, 0.4] }, H: 640 }
+      : { x: { domain: [0, 0.5] }, y: { domain: [0, 1] }, x2: { domain: [0.62, 1] }, y2: { domain: [0, 1] }, H: 360 };
+    const bandName = 'Non-rejection range for the observed difference (Δ₀ ± z·SE)';
+    if (kind === 'diffMeans') {
+      const se1 = r.sd1 / Math.sqrt(r.n1), se2 = r.sd2 / Math.sqrt(r.n2);
+      const P = diffPanel(r, 'Observed difference x̄₁ − x̄₂ = ' + sig(r.diff, 5) + ' (bar = ±1 SE of the difference)', 'Hypothesized difference Δ₀ = ' + g(r.d0), bandName, 'x2', 'y2');
+      const traces = [
+        { x: [0], y: [r.m1], mode: 'markers', marker: { size: 14, color: BLUE }, error_y: { type: 'constant', value: se1, visible: true, thickness: 2, width: 8, color: BLUE }, name: 'Sample 1: x̄₁ = ' + g(r.m1) + ' (n₁ = ' + g(r.n1) + '; bar = ±SE₁ = ' + sig(se1, 4) + ')', xaxis: 'x', yaxis: 'y' },
+        { x: [1], y: [r.m2], mode: 'markers', marker: { size: 14, color: PURPLE }, error_y: { type: 'constant', value: se2, visible: true, thickness: 2, width: 8, color: PURPLE }, name: 'Sample 2: x̄₂ = ' + g(r.m2) + ' (n₂ = ' + g(r.n2) + '; bar = ±SE₂ = ' + sig(se2, 4) + ')', xaxis: 'x', yaxis: 'y' }
+      ].concat(P.traces);
+      draw('plotCompare', traces, Object.assign({}, base, {
+        title: { text: 'Raw sample means (original units) and the observed difference — not Z-scores', font: { size: 14 } },
+        xaxis: { domain: ax.x.domain, range: [-0.7, 1.7], tickvals: [0, 1], ticktext: ['Sample 1', 'Sample 2'], zeroline: false },
+        yaxis: { title: 'Sample mean (original units)', anchor: 'x', domain: ax.y.domain, automargin: true },
+        xaxis2: { domain: ax.x2.domain, anchor: 'y2', range: [-0.6, 0.6], tickvals: [0], ticktext: ['x̄₁ − x̄₂'], zeroline: false },
+        yaxis2: { title: 'Difference (original units)', anchor: 'x2', range: P.range, domain: ax.y2.domain, automargin: true }
+      }), ax.H);
+      return;
+    }
+    if (kind === 'singleProp') {
+      const c = r.crit, se = r.se;
+      const lo = c.lower !== null ? Math.max(0, r.p0 + c.lower * se) : 0;
+      const hi = c.upper !== null ? Math.min(1, r.p0 + c.upper * se) : 1;
+      const ymax = Math.min(1, Math.max(r.p0, r.phat, hi < 1 ? hi : 0, lo) * 1.35 + 0.03);
+      const traces = [
+        { x: [-0.6, 1.6, 1.6, -0.6, -0.6], y: [lo, lo, hi, hi, lo], mode: 'lines', fill: 'toself', fillcolor: 'rgba(102,126,234,0.22)', line: { width: 0 }, name: 'Non-rejection range for p̂ under H₀ (p₀ ± z·SE₀): ' + f(lo, 4) + ' to ' + (hi >= 1 ? '1' : f(hi, 4)), hoverinfo: 'skip' },
+        { type: 'bar', x: [0], y: [r.p0], width: 0.45, marker: { color: BLUE }, text: ['p₀ = ' + f(r.p0, 4) + ' (' + pct(r.p0) + ')'], textposition: 'outside', textfont: { size: 12 }, constraintext: 'none', cliponaxis: false, name: 'Hypothesized proportion p₀ = ' + f(r.p0, 4) },
+        { type: 'bar', x: [1], y: [r.phat], width: 0.45, marker: { color: PURPLE }, text: ['p̂ = ' + f(r.phat, 4) + ' (' + pct(r.phat) + ')'], textposition: 'outside', textfont: { size: 12 }, constraintext: 'none', cliponaxis: false, name: 'Observed proportion p̂ = ' + f(r.phat, 4) + ' (x/n = ' + g(r.x) + '/' + g(r.n) + ')' }
+      ];
+      draw('plotCompare', traces, Object.assign({}, base, {
+        title: { text: 'Proportions (not Z-scores): p̂ − p₀ = ' + (r.diff >= 0 ? '+' : '') + f(r.diff, 4) + '  (' + (r.diff >= 0 ? '+' : '') + (r.diff * 100).toFixed(2) + ' percentage points)', font: { size: 14 } },
+        xaxis: { range: [-0.6, 1.6], tickvals: [0, 1], ticktext: ['Hypothesized p₀', 'Observed p̂'], zeroline: false },
+        yaxis: { title: 'Proportion', range: [0, ymax], tickformat: '.2f' }, barmode: 'overlay'
+      }), narrow ? 300 : 340);
+      return;
+    }
+    // diffProp
+    const P = diffPanel(r, 'Observed difference p̂₁ − p̂₂ = ' + f(r.diff, 4) + ' (bar = ±1 SE₀)', 'Hypothesized difference Δ₀ = ' + g(r.d0), 'Non-rejection range for the observed difference (Δ₀ ± z·SE₀)', 'x2', 'y2');
+    const ymax = Math.min(1, Math.max(r.p1, r.p2, r.pooledUsed ? r.pooled : r.q1, r.q2) * 1.35 + 0.03);
+    const traces = [
+      { type: 'bar', x: [0], y: [r.p1], width: 0.45, marker: { color: BLUE }, text: ['p̂₁ = ' + f(r.p1, 4)], textposition: 'outside', textfont: { size: 12 }, constraintext: 'none', cliponaxis: false, name: 'Sample 1: p̂₁ = ' + f(r.p1, 4) + ' (' + g(r.x1) + '/' + g(r.n1) + ')', xaxis: 'x', yaxis: 'y' },
+      { type: 'bar', x: [1], y: [r.p2], width: 0.45, marker: { color: PURPLE }, text: ['p̂₂ = ' + f(r.p2, 4)], textposition: 'outside', textfont: { size: 12 }, constraintext: 'none', cliponaxis: false, name: 'Sample 2: p̂₂ = ' + f(r.p2, 4) + ' (' + g(r.x2) + '/' + g(r.n2) + ')', xaxis: 'x', yaxis: 'y' }
+    ];
+    if (r.pooledUsed) traces.push({ x: [-0.6, 1.6], y: [r.pooled, r.pooled], mode: 'lines', line: { color: '#fd7e14', width: 2.5, dash: 'dot' }, name: 'Pooled proportion p̂ = ' + f(r.pooled, 4) + ' (the common value assumed under H₀: p₁ = p₂)', xaxis: 'x', yaxis: 'y' });
+    else traces.push({ x: [0, 1], y: [r.q1, r.q2], mode: 'markers', marker: { symbol: 'diamond', size: 12, color: '#fd7e14' }, name: 'Null-restricted estimates p̃₁ = ' + f(r.q1, 4) + ', p̃₂ = ' + f(r.q2, 4) + ' (pooling is not used when Δ₀ ≠ 0)', xaxis: 'x', yaxis: 'y' });
+    traces.push.apply(traces, P.traces);
+    draw('plotCompare', traces, Object.assign({}, base, {
+      title: { text: 'Proportions (not Z-scores): p̂₁ − p̂₂ = ' + (r.diff >= 0 ? '+' : '') + f(r.diff, 4) + ',  Δ₀ = ' + g(r.d0), font: { size: 14 } },
+      xaxis: { domain: ax.x.domain, range: [-0.7, 1.7], tickvals: [0, 1], ticktext: ['Sample 1', 'Sample 2'], zeroline: false },
+      yaxis: { title: 'Proportion', range: [0, ymax], tickformat: '.2f', anchor: 'x', domain: ax.y.domain, automargin: true },
+      xaxis2: { domain: ax.x2.domain, anchor: 'y2', range: [-0.6, 0.6], tickvals: [0], ticktext: ['p̂₁ − p̂₂'], zeroline: false },
+      yaxis2: { title: 'Difference in proportions', anchor: 'x2', range: P.range, tickformat: '.3f', domain: ax.y2.domain, automargin: true }, barmode: 'overlay'
+    }), ax.H);
+  }
+
+  function normalNote(r) {
+    const where = r.rejectByCritical ? 'falls <strong>inside the red rejection region</strong>' : 'falls <strong>inside the blue non-rejection region</strong>';
+    return 'The curve is the standard normal distribution that the test statistic Z follows when H₀ is true. The red area is the rejection region (total area α = ' + g(r.alpha) + '); the dashed lines are the critical values; the green line is your calculated Z = ' + f(r.z, 4) + ', which ' + where + ', so the decision is to <strong>' + (r.reject ? 'reject' : 'fail to reject') + ' H₀</strong>. The horizontal axis here is the <em>standardised</em> value z — not a raw mean or proportion.';
+  }
+  function compareNote(kind, r) {
+    if (kind === 'diffMeans') return 'Left: the two raw sample means in their original units, each with ±1 standard error. Right: the observed difference x̄₁ − x̄₂ = ' + sig(r.diff, 5) + ' (green diamond, ±1 SE of the difference) compared with the hypothesized difference Δ₀ = ' + g(r.d0) + ' (red dashed line). The blue band is the range of differences that would <em>not</em> lead to rejection (Δ₀ ± z·SE); the Z-statistic is the observed difference minus Δ₀, divided by SE = ' + sig(r.se, 5) + '.';
+    if (kind === 'singleProp') return 'The bars are proportions (0 to 1), not Z-scores. The blue band is the range of sample proportions p̂ that would <em>not</em> lead to rejection of H₀ (p₀ ± z·SE₀, where SE₀ = ' + sig(r.se, 5) + '). The observed p̂ = ' + f(r.phat, 4) + ' ' + (r.rejectByCritical ? 'lies outside the band, consistent with rejecting H₀' : 'lies inside the band, consistent with failing to reject H₀') + '. The standardised distance is shown in the Z chart below.';
+    return 'Left: the two sample proportions as bars, with ' + (r.pooledUsed ? 'the pooled proportion p̂ = ' + f(r.pooled, 4) + ' (the single common proportion assumed under H₀: p₁ = p₂) as the dotted line' : 'the null-restricted estimates p̃₁, p̃₂ used for the standard error (pooling is only valid for Δ₀ = 0)') + '. Right: the observed difference p̂₁ − p̂₂ = ' + f(r.diff, 4) + ' against Δ₀ = ' + g(r.d0) + ' and the non-rejection band Δ₀ ± z·SE₀ (SE₀ = ' + sig(r.se, 5) + '). All values here are proportions; the standardised Z is shown in the chart below.';
+  }
+
+  /* ───────────── page shell ───────────── */
+  function mountShell(kind) {
+    const content = document.querySelector('.content');
+    content.insertAdjacentHTML('beforeend',
+      '<div class="result-section" aria-live="polite">' +
+      '<h3>📊 Results</h3>' +
+      '<div class="error-summary" id="errSummary" role="alert"></div>' +
+      '<div id="warnings"></div>' +
+      '<div class="result-box"><h4>Hypotheses</h4><div id="resHyp" class="result-value">-</div></div>' +
+      '<div class="result-box"><h4>Standard Error</h4><div id="resSE" class="result-value">-</div><div class="info-text" id="resSEnote"></div></div>' +
+      '<div class="result-box"><h4>Test Statistic: Z</h4><div id="resZ" class="result-value">-</div></div>' +
+      '<div class="result-box"><h4>Critical Value(s)</h4><div id="resCrit" class="result-value">-</div></div>' +
+      '<div class="result-box"><h4>p-value</h4><div id="resP" class="result-value">-</div></div>' +
+      '<div class="result-box" id="decisionBox"><h4>Decision</h4><div id="resDecision" class="result-value big">-</div></div>' +
+      '<div class="result-box"><h4>Interpretation (plain English)</h4><p id="resInterp" class="plain">-</p></div>' +
+      '<button type="button" class="btn btn-green" id="btnToggle" aria-expanded="true" aria-controls="workingBox">🙈 Hide Detailed Working</button>' +
+      '<div class="steps" id="workingBox"><h4>📝 Step-by-Step Working</h4><div id="workingSteps"><div class="step">Press “Calculate” to see the full working.</div></div></div>' +
+      '</div>' +
+      '<div class="visualization"><h3>🎨 Visual Explanation</h3>' +
+      (KINDS[kind].compare ? '<h4 class="viz-heading">1. Raw values (original units / proportions)</h4><div id="plotCompare" class="plot small"></div><div class="chart-note" id="noteCompare"></div>' : '') +
+      '<h4 class="viz-heading">' + (KINDS[kind].compare ? '2. ' : '') + 'Standardised test statistic Z, critical values and rejection region</h4><div id="plotNormal" class="plot"></div><div class="chart-note" id="noteNormal"></div>' +
+      '</div>');
+  }
+
+  function setText(id, html) { $(id).innerHTML = html; }
+
+  function clearResults(keepErrors) {
+    ['resHyp', 'resSE', 'resZ', 'resCrit', 'resP', 'resDecision'].forEach(i => setText(i, '-'));
+    setText('resInterp', '-'); setText('resSEnote', ''); setText('warnings', '');
+    setText('workingSteps', '<div class="step">Press “Calculate” to see the full working.</div>');
+    $('decisionBox').className = 'result-box';
+    clearChart('plotNormal'); if ($('plotCompare')) clearChart('plotCompare');
+    setText('noteNormal', ''); if ($('noteCompare')) setText('noteCompare', '');
+    if (!keepErrors) { $('errSummary').className = 'error-summary'; setText('errSummary', ''); }
+  }
+
+  function clearFieldErrors(kind) {
+    KINDS[kind].fields.forEach(id => { const el = $(id); if (!el) return; el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); const e = $('err-' + id); if (e) e.textContent = ''; });
+  }
+
+  function showErrors(kind, errors) {
+    clearResults(true);
+    let first = null; const msgs = [];
+    Object.keys(errors).forEach(k => {
+      if (k === '_form') { msgs.push(errors[k]); return; }
+      const el = $(k), e = $('err-' + k);
+      if (el) { el.classList.add('invalid'); el.setAttribute('aria-invalid', 'true'); if (!first) first = el; }
+      if (e) e.textContent = errors[k]; else msgs.push(errors[k]);
+    });
+    const sum = $('errSummary');
+    sum.className = 'error-summary show';
+    sum.innerHTML = '<strong>⚠️ Please correct the input.</strong> No result is shown because the calculation could not be performed.' + (msgs.length ? '<br>' + msgs.join('<br>') : '');
+    if (first) first.focus();
+  }
+
+  let lastRender = null;
+  function render(kind, r) {
+    lastRender = { kind, r };
+    setText('errSummary', ''); $('errSummary').className = 'error-summary';
+    setText('warnings', r.warnings.map(w => '<div class="warning-box">⚠️ <strong>Warning:</strong> ' + w + '</div>').join(''));
+    setText('resHyp', '<div class="hyp-line">' + h0Text(kind, r) + '</div><div class="hyp-line">' + h1Text(kind, r) + '</div><div class="info-text">' + TAIL_NAME[r.tail] + ' test, α = ' + g(r.alpha) + '</div>');
+    setText('resSE', sig(r.se, 8));
+    const approx = (kind === 'singleMean' || kind === 'diffMeans') && !r.sdKnown;
+    setText('resSEnote', approx ? 'σ unknown: sample standard deviation(s) used — a large-sample normal approximation, not an exact Student\'s t-test.' : (kind === 'singleProp' ? 'Computed under H₀ (using p₀).' : kind === 'diffProp' ? (r.pooledUsed ? 'Computed under H₀ with the pooled proportion.' : 'Computed under H₀ with null-restricted proportions (score test).') : ''));
+    setText('resZ', f(r.z, 6));
+    const c = r.crit;
+    setText('resCrit', r.tail === 'two' ? '±' + f(c.upper, 6) + '<div class="info-text">Reject H₀ if |Z| > ' + f(c.upper, 4) + '</div>' : r.tail === 'right' ? f(c.upper, 6) + '<div class="info-text">Reject H₀ if Z > ' + f(c.upper, 4) + '</div>' : f(c.lower, 6) + '<div class="info-text">Reject H₀ if Z < ' + f(c.lower, 4) + '</div>');
+    setText('resP', fp(r.p) + '<div class="info-text">' + (r.tail === 'two' ? '2 × P(Z ≥ |z|)' : r.tail === 'right' ? 'P(Z ≥ z)' : 'P(Z ≤ z)') + '; compared with α = ' + g(r.alpha) + '</div>');
+    setText('resDecision', r.reject ? '❌ Reject H₀' : '✅ Fail to reject H₀');
+    $('decisionBox').className = 'result-box ' + (r.reject ? 'reject' : 'accept');
+    setText('resInterp', interpretation(kind, r));
+    setText('workingSteps', buildSteps(kind, r));
+    try { drawNormal(r); setText('noteNormal', normalNote(r)); } catch (e) { chartError('plotNormal', e); }
+    if (KINDS[kind].compare) { try { drawCompare(kind, r); setText('noteCompare', compareNote(kind, r)); } catch (e) { chartError('plotCompare', e); } }
+  }
+
+  /* redraw the charts when the container width changes (rotation / window resize) */
+  let lastW = 0, rt = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => {
+      const el = $('plotNormal'); if (!el || !lastRender) return;
+      const w = el.clientWidth;
+      if (Math.abs(w - lastW) < 40) return;
+      lastW = w;
+      try { drawNormal(lastRender.r); } catch (e) { chartError('plotNormal', e); }
+      if (KINDS[lastRender.kind].compare) { try { drawCompare(lastRender.kind, lastRender.r); } catch (e) { chartError('plotCompare', e); } }
+    }, 200);
+  });
+
+  /* ───────────── init ───────────── */
+  function init(kind) {
+    const K = KINDS[kind];
+    mountShell(kind);
+    // error placeholder under every input
+    K.fields.forEach(id => { const el = $(id); if (el && !$('err-' + id)) { const d = document.createElement('div'); d.className = 'field-error'; d.id = 'err-' + id; d.setAttribute('role', 'alert'); el.parentNode.appendChild(d); } });
+
+    function rawInputs() { const o = {}; K.fields.forEach(id => { o[id] = $(id).value; }); return o; }
+    function setInputs(vals) { K.fields.forEach(id => { $(id).value = vals[id]; }); refreshLabels(); }
+    function refreshLabels() {
+      if ($('sdKnown')) {
+        const known = $('sdKnown').value === 'known';
+        [['lblSd', ''], ['lblSd1', '₁'], ['lblSd2', '₂']].forEach(p => { const el = $(p[0]); if (el) el.textContent = (known ? 'Population standard deviation σ' : 'Sample standard deviation s') + p[1]; });
+      }
+    }
+    function calculate() {
+      clearFieldErrors(kind);
+      let out;
+      try { out = C.runTest(kind, rawInputs()); } catch (e) { out = { ok: false, errors: { _form: 'Unexpected error: ' + e.message } }; }
+      if (!out.ok) { showErrors(kind, out.errors); return; }
+      render(kind, out.result);
+    }
+    function reset() { clearFieldErrors(kind); setInputs(K.blank); clearResults(false); const first = $(K.fields[0]); if (first) first.focus(); }
+
+    $('calcForm').addEventListener('submit', e => { e.preventDefault(); calculate(); });
+    $('btnReset').addEventListener('click', reset);
+    $('btnToggle').addEventListener('click', () => {
+      const box = $('workingBox'), hidden = box.classList.toggle('working-hidden');
+      $('btnToggle').setAttribute('aria-expanded', String(!hidden));
+      $('btnToggle').textContent = hidden ? '👁️ Show Detailed Working' : '🙈 Hide Detailed Working';
+    });
+    if ($('sdKnown')) $('sdKnown').addEventListener('change', refreshLabels);
+    setInputs(K.defaults);
+    clearResults(false);
+    calculate();   // like the reference page: show a live worked example on load
+  }
+
+  window.StatsUI = { init, KINDS };
+})();
+
+    </script>
+    <script>
+      
+(() => {
+  'use strict';
+
+  const calculators = {
+    singleMean: {
+      title: 'A. Single Mean',
+      lead: 'Test whether a population mean equals a hypothesized value using a large sample.',
+      formulas: ['H<sub>0</sub>: &mu; = &mu;<sub>0</sub>', 'Z = (x&#772; − &mu;<sub>0</sub>) / (&sigma; / &radic;n)', 'When &sigma; is unknown, use s for the large-sample normal approximation.'],
+      form: () => field('n', 'Sample size n', 'e.g. 50') + field('xbar', 'Sample mean x&#772;', 'e.g. 52.1') + field('mu0', 'Hypothesized population mean &mu;<sub>0</sub>', 'e.g. 50') + sdKnown() + field('sd', 'Population standard deviation &sigma;', 'e.g. 6', 'lblSd') + commonFields('&mu;', '&mu;<sub>0</sub>')
+    },
+    diffMeans: {
+      title: 'B. Difference of Means',
+      lead: 'Test the difference between two independent population means using two large samples.',
+      formulas: ['H<sub>0</sub>: &mu;<sub>1</sub> − &mu;<sub>2</sub> = &Delta;<sub>0</sub>', 'SE = &radic;(&sigma;<sub>1</sub><sup>2</sup>/n<sub>1</sub> + &sigma;<sub>2</sub><sup>2</sup>/n<sub>2</sub>)', 'Z = [(x&#772;<sub>1</sub> − x&#772;<sub>2</sub>) − &Delta;<sub>0</sub>] / SE'],
+      form: () => sdKnown() + '<div class="sample-title">Sample 1</div><div class="vector-inputs">' + field('n1', 'Size n<sub>1</sub>', 'n₁') + field('m1', 'Mean x&#772;<sub>1</sub>', 'x̄₁') + field('sd1', 'Population standard deviation &sigma;<sub>1</sub>', 'σ₁', 'lblSd1') + '</div><div class="sample-title s2">Sample 2</div><div class="vector-inputs">' + field('n2', 'Size n<sub>2</sub>', 'n₂') + field('m2', 'Mean x&#772;<sub>2</sub>', 'x̄₂') + field('sd2', 'Population standard deviation &sigma;<sub>2</sub>', 'σ₂', 'lblSd2') + '</div>' + field('d0', 'Hypothesized difference &Delta;<sub>0</sub> = &mu;<sub>1</sub> − &mu;<sub>2</sub> (default 0)', '0') + commonFields('&mu;<sub>1</sub> − &mu;<sub>2</sub>', '&Delta;<sub>0</sub>')
+    },
+    singleProp: {
+      title: 'C. Single Proportion',
+      lead: 'Test a population proportion with the standard error computed under the null hypothesis.',
+      formulas: ['H<sub>0</sub>: p = p<sub>0</sub>', 'SE<sub>0</sub> = &radic;[p<sub>0</sub>(1 − p<sub>0</sub>) / n]', 'Z = (p&#770; − p<sub>0</sub>) / SE<sub>0</sub>'],
+      form: () => field('n', 'Sample size n', 'e.g. 200') + field('x', 'Number of successes x', 'e.g. 120') + field('p0', 'Hypothesized population proportion p<sub>0</sub> (0 &lt; p<sub>0</sub> &lt; 1)', 'e.g. 0.5') + commonFields('p', 'p<sub>0</sub>')
+    },
+    diffProp: {
+      title: 'D. Difference of Proportions',
+      lead: 'Test the difference between two independent population proportions.',
+      formulas: ['H<sub>0</sub>: p<sub>1</sub> − p<sub>2</sub> = &Delta;<sub>0</sub>', 'For &Delta;<sub>0</sub> = 0, use the pooled proportion under H<sub>0</sub>.', 'For &Delta;<sub>0</sub> &ne; 0, use the score test with null-restricted proportions.'],
+      form: () => '<div class="sample-title">Sample 1</div><div class="vector-inputs cols-2">' + field('n1', 'Sample size n<sub>1</sub>', 'n₁') + field('x1', 'Successes x<sub>1</sub>', 'x₁') + '</div><div class="sample-title s2">Sample 2</div><div class="vector-inputs cols-2">' + field('n2', 'Sample size n<sub>2</sub>', 'n₂') + field('x2', 'Successes x<sub>2</sub>', 'x₂') + '</div>' + field('d0', 'Hypothesized difference &Delta;<sub>0</sub> = p<sub>1</sub> − p<sub>2</sub> (default 0)', '0') + commonFields('p<sub>1</sub> − p<sub>2</sub>', '&Delta;<sub>0</sub>')
+    }
+  };
+
+  function field(id, label, placeholder, labelId) {
+    return '<div class="input-group"><label' + (labelId ? ' id="' + labelId + '"' : '') + ' for="' + id + '">' + label + '</label><input type="text" inputmode="decimal" autocomplete="off" id="' + id + '" placeholder="' + placeholder + '"></div>';
+  }
+  function sdKnown() {
+    return '<div class="input-group"><label for="sdKnown">Is the population standard deviation known?</label><select id="sdKnown"><option value="known" selected>Yes — &sigma; is known</option><option value="unknown">No — use sample s (large-sample approximation)</option></select><p class="info-text">If unknown, s replaces &sigma;; this is not an exact Student&rsquo;s t-test.</p></div>';
+  }
+  function commonFields(parameter, nullValue) {
+    return '<div class="input-group"><label for="alpha">Significance level &alpha;</label><select id="alpha"><option value="0.10">0.10 (10%)</option><option value="0.05" selected>0.05 (5%)</option><option value="0.01">0.01 (1%)</option></select></div><div class="input-group"><label for="tail">Alternative hypothesis H<sub>1</sub></label><select id="tail"><option value="two" selected>Two-tailed — H<sub>1</sub>: ' + parameter + ' &ne; ' + nullValue + '</option><option value="right">Right-tailed — H<sub>1</sub>: ' + parameter + ' &gt; ' + nullValue + '</option><option value="left">Left-tailed — H<sub>1</sub>: ' + parameter + ' &lt; ' + nullValue + '</option></select><p class="info-text">Choose H<sub>1</sub> before looking at the data; it is never picked from the result.</p></div>';
+  }
+  function currentMode() {
+    const requested = new URLSearchParams(window.location.search).get('mode');
+    return Object.prototype.hasOwnProperty.call(calculators, requested) ? requested : 'singleMean';
+  }
+
+  const mode = currentMode();
+  const config = calculators[mode];
+  document.title = 'Large Sample Tests — ' + config.title;
+  document.getElementById('calcMode').value = mode;
+  document.getElementById('calcMode').addEventListener('change', event => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', event.target.value);
+    window.location.assign(url.href);
+  });
+  document.getElementById('theoremPanel').innerHTML = '<h2>' + config.title + ' — Test Statement</h2><p>' + config.lead + '</p>' + config.formulas.map(formula => '<div class="formula">' + formula + '</div>').join('');
+  document.getElementById('activeForm').innerHTML = '<form id="calcForm" novalidate>' + config.form() + '<div class="btn-row"><button class="btn btn-primary" type="submit">Calculate</button><button class="btn btn-danger" type="button" id="btnReset">Clear / Reset</button></div></form>';
+  StatsUI.init(mode);
+})();
+    </script>
+  </body>
+</html>

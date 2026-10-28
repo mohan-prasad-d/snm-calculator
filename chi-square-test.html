@@ -1,0 +1,3074 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Testing of Hypothesis Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      @media (max-width: 600px) {
+        .container {
+          padding: 1rem;
+          padding-bottom: 5rem;
+        }
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      @media (max-width: 600px) {
+        header {
+          padding: 2rem 0 1rem;
+        }
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.2rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1.05;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 900px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+        min-width: 0;
+      }
+      @media (max-width: 600px) {
+        .panel {
+          padding: 1rem;
+        }
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 130px;
+        position: relative;
+      }
+      .control-group.wide {
+        flex-basis: 100%;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+        position: relative;
+      }
+      label .sym {
+        color: var(--accent);
+        font-size: 0.75rem;
+      }
+      input[type="number"],
+      input[type="text"],
+      select,
+      textarea {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      textarea {
+        resize: vertical;
+        line-height: 1.6;
+      }
+      select option,
+      select optgroup {
+        background: #0d1a22;
+        color: var(--text);
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+      .func-input-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .func-input-wrap select {
+        background: transparent;
+        color: var(--accent3);
+        border-color: var(--border);
+      }
+      .func-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        position: relative;
+        flex-wrap: wrap;
+      }
+      .field-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-top: 0.1rem;
+        padding: 0.3rem 0.5rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.2);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .field-desc .eg {
+        color: var(--accent3);
+      }
+      .field-desc .warn {
+        color: var(--accent2);
+      }
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.3rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      .full-width {
+        grid-column: 1/-1;
+      }
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.61rem;
+        color: var(--text);
+        line-height: 1.75;
+        z-index: 200;
+        width: 280px;
+        max-width: 78vw;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.64rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      /* overview boxes */
+      .ov-box {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .ov-box.orange {
+        background: rgba(255, 107, 53, 0.06);
+        border-color: rgba(255, 107, 53, 0.2);
+      }
+      .ov-box.green {
+        background: rgba(119, 220, 30, 0.05);
+        border-color: rgba(119, 220, 30, 0.18);
+      }
+      .ov-h {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.7rem;
+      }
+      .ov-box.orange .ov-h {
+        color: var(--accent2);
+      }
+      .ov-box.green .ov-h {
+        color: var(--accent3);
+      }
+      .ov-body {
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        line-height: 2;
+        overflow-x: auto;
+      }
+      .ov-body .k {
+        color: var(--accent2);
+      }
+      .ov-body .g {
+        color: var(--accent3);
+      }
+      .ov-list {
+        font-family: "Space Mono", monospace;
+        font-size: 0.64rem;
+        color: var(--text-dim);
+        line-height: 1.9;
+        list-style: none;
+      }
+      .ov-list li::before {
+        content: "\2713\00a0";
+        color: var(--accent3);
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem 0.6rem;
+        text-align: center;
+        min-width: 0;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+        overflow-wrap: anywhere;
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+      .decision {
+        border-radius: 10px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.2rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 1.8;
+      }
+      .decision b {
+        font-size: 1rem;
+        letter-spacing: 0.05em;
+      }
+      .decision.reject {
+        background: rgba(255, 107, 53, 0.08);
+        border: 1px solid rgba(255, 107, 53, 0.4);
+        color: var(--accent2);
+      }
+      .decision.accept {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.35);
+        color: var(--accent3);
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .dist-canvas-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 0.6rem;
+      }
+      .dist-canvas-wrap canvas {
+        display: block;
+        width: 100%;
+      }
+      .legend {
+        display: flex;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-bottom: 1.4rem;
+      }
+      .legend i {
+        display: inline-block;
+        width: 14px;
+        height: 8px;
+        margin-right: 0.4rem;
+        vertical-align: middle;
+        border-radius: 2px;
+      }
+      .steps-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+      }
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.2rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 0.9rem;
+        max-width: 100%;
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        line-height: 2;
+        color: var(--text);
+        overflow-x: auto;
+      }
+      .calc-box .dim {
+        color: var(--text-dim);
+      }
+      .calc-box .res {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .calc-box .hl {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .calc-box .org {
+        color: var(--accent2);
+        font-weight: 700;
+      }
+      .calc-box .ln {
+        white-space: nowrap;
+      }
+      .calc-box .ln.wrap {
+        white-space: normal;
+      }
+      .calc-box hr {
+        border: none;
+        height: 1px;
+        background: var(--border);
+        margin: 0.4rem 0;
+      }
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+        line-height: 1.6;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+      .alert-warn {
+        display: block;
+        background: rgba(255, 170, 0, 0.08);
+        border: 1px solid rgba(255, 170, 0, 0.35);
+        color: #ffb347;
+        margin-top: 0;
+        margin-bottom: 0.6rem;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+      .type-badge {
+        display: inline-block;
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin-top: 0.6rem;
+      }
+      .tb-z {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        color: var(--accent);
+      }
+      .tb-t {
+        background: rgba(255, 107, 53, 0.15);
+        border: 1px solid rgba(255, 107, 53, 0.35);
+        color: var(--accent2);
+      }
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.5rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 600px) {
+        .site-footer {
+          padding: 0.7rem 1rem;
+          position: static;
+        }
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+      .tb-c {
+        background: rgba(124, 58, 237, 0.15);
+        border: 1px solid rgba(167, 139, 250, 0.4);
+        color: #a78bfa;
+      }
+      .stat-value.small {
+        font-size: 0.92rem;
+      }
+      #distCanvas {
+        touch-action: pan-y;
+        cursor: crosshair;
+      }
+      .data-wrap {
+        overflow-x: auto;
+        margin-bottom: 0.4rem;
+      }
+      table.data-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-family: "Space Mono", monospace;
+      }
+      table.data-table th {
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        text-align: left;
+        padding: 0.3rem 0.3rem;
+        font-weight: 400;
+        white-space: nowrap;
+      }
+      table.data-table td {
+        padding: 0.2rem 0.25rem;
+        font-size: 0.8rem;
+      }
+      table.data-table input {
+        min-width: 78px;
+        padding: 0.45rem 0.55rem;
+        font-size: 0.78rem;
+      }
+      table.data-table input:disabled {
+        opacity: 0.45;
+      }
+      table.data-table td.tt {
+        color: var(--accent);
+        font-weight: 700;
+        text-align: center;
+        padding: 0.2rem 0.5rem;
+      }
+      table.data-table tr.tot td {
+        border-top: 1px solid var(--border);
+      }
+      .btn-mini {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--accent);
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-mini:hover {
+        border-color: var(--accent);
+        background: rgba(0, 212, 255, 0.1);
+      }
+      .ctab-wrap {
+        overflow-x: auto;
+        margin: 0.4rem 0;
+      }
+      table.ctab {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        min-width: 100%;
+      }
+      table.ctab th,
+      table.ctab td {
+        border: 1px solid var(--border);
+        padding: 0.3rem 0.6rem;
+        text-align: right;
+        white-space: nowrap;
+      }
+      table.ctab th {
+        color: var(--text-dim);
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(0, 0, 0, 0.22);
+        font-weight: 400;
+      }
+      table.ctab td:first-child,
+      table.ctab th:first-child {
+        text-align: left;
+      }
+      table.ctab tr.tot td {
+        color: var(--accent);
+        font-weight: 700;
+        background: rgba(0, 212, 255, 0.05);
+      }
+      table.ctab td.hot {
+        color: var(--accent2);
+        font-weight: 700;
+      }
+      table.ctab td.cellx {
+        line-height: 1.5;
+        text-align: center;
+      }
+      table.ctab td.cellx .o {
+        color: var(--text);
+      }
+      table.ctab td.cellx .e {
+        color: var(--text-dim);
+        font-size: 0.6rem;
+      }
+      table.ctab td.cellx .c {
+        color: var(--accent2);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">Statistics &mdash; Unit I &middot; Sampling &amp; Inference</div>
+        <h1>Testing of Hypothesis</h1>
+        <p>
+          Chi-square tests &mdash; single variance, goodness of fit &amp; independence of attributes
+        </p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── INPUT PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Test Type &amp; Inputs</div>
+
+          <!-- STEP 1 -->
+          <div class="func-label">
+            <span style="color: var(--accent2)">STEP 1</span> &mdash; Choose the
+            test type
+            <span class="info-btn" onclick="togglePop('pop-test')">?</span>
+            <div class="info-popup" id="pop-test">
+              <div class="pop-title">Which test?</div>
+              <strong>Single variance:</strong> tests a claimed variance of a
+              normal population.<br /><br />
+              <strong>Goodness of fit:</strong> compares observed counts with a
+              distribution.<br /><br />
+              <strong>Independence:</strong> tests whether two attributes in a
+              contingency table are related.
+            </div>
+          </div>
+          <div class="func-input-wrap">
+            <select id="testType">
+              <optgroup label="Chi-square Tests (χ²)">
+                <option value="cv" selected>1 · Chi-square — Single Variance  [1.4(a)]</option>
+                <option value="gof">2 · Chi-square — Goodness of Fit  [1.4(b)]</option>
+                <option value="ind">3 · Chi-square — Independence of Attributes  [1.4(c)]</option>
+              </optgroup>
+            </select>
+            <div><span class="type-badge tb-c" id="testBadge">CHI-SQUARE · χ² DISTRIBUTION</span></div>
+
+            <!-- extra options for chi-square single variance -->
+            <div id="cvopts" style="display: none; margin-top: 1rem">
+              <div class="controls-row" style="margin-bottom: 0.4rem">
+                <div class="control-group">
+                  <label>Enter values as</label>
+                  <select id="cvmode">
+                    <option value="var" selected>Variances (s², σ₀²)</option>
+                    <option value="sd">Standard deviations (s, σ₀)</option>
+                  </select>
+                  <div class="field-desc">
+                    The calculator squares standard deviations for you.
+                    <span class="warn">Assumes a normal population.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="func-label">
+            <span style="color: var(--accent2)">STEP 2</span> &mdash; Enter the
+            sample data
+          </div>
+          <div id="fieldGroups"></div>
+
+          <!-- Goodness-of-fit inputs -->
+          <div id="gofBox" style="display: none">
+            <div class="controls-row" style="margin-bottom: 0.4rem">
+              <div class="control-group wide">
+                <label>Expected frequencies from</label>
+                <select id="gofMode">
+                  <option value="direct" selected>Expected counts entered directly</option>
+                  <option value="uniform">Equal probabilities (uniform)</option>
+                  <option value="prob">Specified probabilities (sum = 1)</option>
+                  <option value="ratio">Specified ratio (e.g. 9 : 3 : 3 : 1)</option>
+                  <option value="binom">Binomial distribution</option>
+                  <option value="poisson">Poisson distribution</option>
+                </select>
+                <div class="field-desc" id="gofModeDesc"></div>
+              </div>
+            </div>
+            <div class="controls-row" id="gofDistRow" style="margin-bottom: 0.4rem; display: none">
+              <div class="control-group" id="gofNWrap">
+                <label>Trials &nbsp;<span class="sym">n</span></label>
+                <input type="number" id="gofp_n" value="4" step="1" min="1" />
+              </div>
+              <div class="control-group" id="gofPWrap">
+                <label>Probability &nbsp;<span class="sym">p</span></label>
+                <input type="number" id="gofp_p" value="0.5" step="any" />
+              </div>
+              <div class="control-group" id="gofLWrap">
+                <label>Mean &nbsp;<span class="sym">&lambda;</span></label>
+                <input type="number" id="gofp_lam" value="1" step="any" />
+              </div>
+              <div class="control-group" id="gofEstWrap">
+                <label>Parameter</label>
+                <select id="gofEst">
+                  <option value="given" selected>Given (known)</option>
+                  <option value="est">Estimate from the data (m = 1)</option>
+                </select>
+              </div>
+              <div class="control-group" id="gofTailWrap">
+                <label>Last category</label>
+                <select id="gofTail">
+                  <option value="exact" selected>exactly k</option>
+                  <option value="tail">k or more</option>
+                </select>
+              </div>
+            </div>
+            <div class="controls-row" id="gofMRow" style="margin-bottom: 0.4rem">
+              <div class="control-group">
+                <label>Parameters estimated from data &nbsp;<span class="sym">m</span></label>
+                <input type="number" id="gofp_m" value="0" step="1" min="0" />
+                <div class="field-desc">
+                  Use <span class="eg">0</span> when the expected distribution
+                  is fully specified in advance. df = k &minus; 1 &minus; m.
+                </div>
+              </div>
+            </div>
+            <div class="data-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th id="gofCatHead">Category</th>
+                    <th>Observed O</th>
+                    <th id="gofExpHead">Expected E</th>
+                  </tr>
+                </thead>
+                <tbody id="gofRows"></tbody>
+              </table>
+            </div>
+            <div class="field-desc" id="gofSum"></div>
+            <div class="btn-row" style="margin-top: 0.6rem; margin-bottom: 0.8rem">
+              <button type="button" class="btn-mini" onclick="gofAdd()">+ Add category</button>
+              <button type="button" class="btn-mini" onclick="gofRemove()">&minus; Remove last</button>
+            </div>
+          </div>
+
+          <!-- Independence inputs -->
+          <div id="indBox" style="display: none">
+            <div class="controls-row" style="margin-bottom: 0.4rem">
+              <div class="control-group">
+                <label>Row attribute &nbsp;<span class="sym">A</span></label>
+                <input type="text" id="indAttA" value="Group" />
+              </div>
+              <div class="control-group">
+                <label>Column attribute &nbsp;<span class="sym">B</span></label>
+                <input type="text" id="indAttB" value="Preference" />
+              </div>
+            </div>
+            <div class="field-desc" style="margin-bottom: 0.6rem">
+              Enter observed <span class="eg">frequency counts</span> (whole
+              numbers, <span class="warn">not percentages</span>). Names are
+              editable; totals update as you type.
+            </div>
+            <div class="data-wrap">
+              <table class="data-table" id="indTable"></table>
+            </div>
+            <div class="btn-row" style="margin-top: 0.6rem; margin-bottom: 0.8rem">
+              <button type="button" class="btn-mini" onclick="indResize('addRow')">+ Row</button>
+              <button type="button" class="btn-mini" onclick="indResize('delRow')">&minus; Row</button>
+              <button type="button" class="btn-mini" onclick="indResize('addCol')">+ Column</button>
+              <button type="button" class="btn-mini" onclick="indResize('delCol')">&minus; Column</button>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="func-label" style="margin-top: 0.4rem">
+            <span style="color: var(--accent2)">STEP 3</span> &mdash; Significance
+            level &amp; alternative hypothesis
+          </div>
+          <div class="controls-row">
+            <div class="control-group">
+              <label>
+                Significance &nbsp;<span class="sym">&alpha;</span>
+                <span class="info-btn" onclick="togglePop('pop-alpha')">?</span>
+                <div class="info-popup" id="pop-alpha">
+                  <div class="pop-title">Significance level</div>
+                  Probability of rejecting H&#8320; when it is actually true
+                  (Type I error).<br /><br />
+                  0.10 &rarr; 90% confidence<br />
+                  0.05 &rarr; 95% confidence<br />
+                  0.01 &rarr; 99% confidence
+                </div>
+              </label>
+              <select id="alpha">
+                <option value="0.10">&alpha; = 0.10</option>
+                <option value="0.05" selected>&alpha; = 0.05</option>
+                <option value="0.01">&alpha; = 0.01</option>
+              </select>
+            </div>
+            <div class="control-group" id="altWrap">
+              <label>
+                Alternative &nbsp;<span class="sym">H&#8321;</span>
+                <span class="info-btn" onclick="togglePop('pop-alt')">?</span>
+                <div class="info-popup" id="pop-alt">
+                  <div class="pop-title">Alternative hypothesis</div>
+                  <strong>Two-tailed (&ne;):</strong> any difference.<br />
+                  <strong>Left-tailed (&lt;):</strong> parameter is smaller.<br />
+                  <strong>Right-tailed (&gt;):</strong> parameter is larger.
+                </div>
+              </label>
+              <select id="altSel">
+                <option value="two" selected>Two-tailed (&ne;)</option>
+                <option value="left">Left-tailed (&lt;)</option>
+                <option value="right">Right-tailed (&gt;)</option>
+              </select>
+            </div>
+            <div class="control-group" id="altFixed" style="display: none">
+              <label>Alternative &nbsp;<span class="sym">H&#8321;</span></label>
+              <input type="text" value="Right-tailed (upper tail)" disabled />
+              <div class="field-desc">
+                A large &chi;&sup2; means a big gap between observed and
+                expected, so only the <span class="eg">right tail</span> is used.
+              </div>
+            </div>
+            <div class="control-group">
+              <label>Decimal Places</label>
+              <input type="number" id="decimals" value="4" min="2" max="10" />
+            </div>
+          </div>
+
+          <div class="func-label" style="margin-top: 0.4rem">
+            <span style="color: var(--accent2)">OR</span> &mdash; pick a ready
+            example
+          </div>
+          <div class="examples-strip" id="exStrip"></div>
+          <div
+            style="
+              font-family: 'Space Mono', monospace;
+              font-size: 0.56rem;
+              color: var(--text-dim);
+            "
+          >
+            Click any chip to auto-fill the test and its data
+          </div>
+        </div>
+
+        <!-- ── OVERVIEW PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Method Overview</div>
+          <div id="overview"></div>
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runTest()">
+              &#9654; Test Hypothesis
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+              &#10005; Reset
+            </button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+        </div>
+
+        <!-- ── RESULTS PANEL ── -->
+        <div class="panel full-width" style="animation-delay: 0.2s">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">H&#8320;</span>
+            Select a test type, enter the sample statistics and the
+            significance level,<br />
+            then click <strong>Test Hypothesis</strong> to get the decision.
+          </div>
+
+          <div id="resultsContent" style="display: none">
+            <div id="warnBox"></div>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="statStat">&mdash;</div>
+                <div class="stat-label" id="statStatLbl">Test Statistic</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statDf">&mdash;</div>
+                <div class="stat-label">Degrees of Freedom</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statCrit">&mdash;</div>
+                <div class="stat-label">Critical Value</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statP">&mdash;</div>
+                <div class="stat-label">p-value</div>
+              </div>
+            </div>
+
+            <div class="decision" id="decisionBox"></div>
+
+            <div class="solution-display">
+              <div class="sol-title">Test summary</div>
+              <div class="sol-values" id="solutionDisplay"></div>
+            </div>
+
+            <div class="chart-title" id="graphTitle">Sampling Distribution</div>
+            <div class="dist-canvas-wrap">
+              <canvas id="distCanvas" role="img" aria-label="Distribution graph"></canvas>
+            </div>
+            <div class="legend">
+              <span><i style="background: rgba(255, 107, 53, 0.45)"></i>Rejection region (<span id="legAlpha"></span>)</span>
+              <span><i style="background: #ff6b35; height: 2px"></i>Critical value(s)</span>
+              <span><i style="background: #77dc1e; height: 3px"></i>Calculated statistic</span>
+              <span style="opacity: 0.8">Hover or tap the curve to read values</span>
+            </div>
+
+            <div id="visGof" style="display: none">
+              <div class="chart-title">Observed vs expected frequencies</div>
+              <div class="dist-canvas-wrap">
+                <canvas id="barCanvas" role="img" aria-label="Observed versus expected frequencies"></canvas>
+              </div>
+              <div class="legend">
+                <span><i style="background: #00d4ff"></i>Observed (O)</span>
+                <span><i style="background: #ff6b35"></i>Expected (E)</span>
+              </div>
+            </div>
+            <div id="visInd" style="display: none"></div>
+
+            <div class="sep"></div>
+            <div class="steps-header-title">Step-by-Step Solution</div>
+            <div class="steps-list" id="stepsList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">H&#8320;</span>Testing of Hypothesis Calculator
+        &mdash; chi-square tests
+      </div>
+      <div class="foot-links">
+        <a href="adam.html">Adams&ndash;Bashforth</a>
+        <a href="euler.html">Euler's Method</a>
+        <a href="gauss_elimination.html">Gauss Elimination</a>
+        <a href="gauss_seidel.html">Gauss-Seidel</a>
+        <a href="gauss_jordan.html">Gauss-Jordan</a>
+        <a href="lagrange.html">Lagrange Interpolation</a>
+        <a href="power1.html">Power Method</a>
+        <a href="milins.html">Milne's Method</a>
+        <a href="Newton_divide.html">Newton's divide</a>
+        <a href="newton_raphson.html">Newton-Raphson</a>
+        <a href="rk%20method.html">RK4 Method</a>
+        <a href="simpson.html">Simpson's Rule</a>
+        <a href="taylor.html">Taylor's Method</a>
+        <a href="trapezoidel.html">Trapezoidal Rule</a>
+        <a href="large%20sample.html">Large Sample Test</a>
+        <a href="small%20sample.html">Small Sample Test</a>
+        <a href="chi-square-test.html">Chi-Square Test</a>
+        <a href="ftest.html">F Test</a>
+        <a href="index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        "use strict";
+        const $ = (id) => document.getElementById(id);
+
+        // ==MATH-START==
+        // ── Special functions ────────────────────────────────────────
+        const LG = 7,
+          LC = [
+            0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+            771.32342877765313, -176.61502916214059, 12.507343278686905,
+            -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+          ];
+        function lgamma(z) {
+          if (z < 0.5)
+            return (
+              Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lgamma(1 - z)
+            );
+          z -= 1;
+          let x = LC[0];
+          const t = z + LG + 0.5;
+          for (let i = 1; i < LG + 2; i++) x += LC[i] / (z + i);
+          return (
+            0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x)
+          );
+        }
+        function betacf(a, b, x) {
+          const FP = 1e-300,
+            EPS = 3e-16;
+          const qab = a + b,
+            qap = a + 1,
+            qam = a - 1;
+          let c = 1,
+            d = 1 - (qab * x) / qap;
+          if (Math.abs(d) < FP) d = FP;
+          d = 1 / d;
+          let h = d;
+          for (let m = 1; m <= 1000; m++) {
+            const m2 = 2 * m;
+            let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+            d = 1 + aa * d;
+            if (Math.abs(d) < FP) d = FP;
+            c = 1 + aa / c;
+            if (Math.abs(c) < FP) c = FP;
+            d = 1 / d;
+            h *= d * c;
+            aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+            d = 1 + aa * d;
+            if (Math.abs(d) < FP) d = FP;
+            c = 1 + aa / c;
+            if (Math.abs(c) < FP) c = FP;
+            d = 1 / d;
+            const del = d * c;
+            h *= del;
+            if (Math.abs(del - 1) < EPS) break;
+          }
+          return h;
+        }
+        // regularized incomplete beta I_x(a,b)
+        function betai(a, b, x) {
+          if (x <= 0) return 0;
+          if (x >= 1) return 1;
+          const bt = Math.exp(
+            lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x),
+          );
+          if (x < (a + 1) / (a + b + 2)) return (bt * betacf(a, b, x)) / a;
+          return 1 - (bt * betacf(b, a, 1 - x)) / b;
+        }
+        function gser(a, x) {
+          let ap = a,
+            sum = 1 / a,
+            del = sum;
+          for (let n = 0; n < 20000; n++) {
+            ap++;
+            del *= x / ap;
+            sum += del;
+            if (Math.abs(del) < Math.abs(sum) * 1e-16) break;
+          }
+          return sum * Math.exp(-x + a * Math.log(x) - lgamma(a));
+        }
+        function gcf(a, x) {
+          const FP = 1e-300;
+          let b = x + 1 - a,
+            c = 1 / FP,
+            d = 1 / b,
+            h = d;
+          for (let i = 1; i <= 20000; i++) {
+            const an = -i * (i - a);
+            b += 2;
+            d = an * d + b;
+            if (Math.abs(d) < FP) d = FP;
+            c = b + an / c;
+            if (Math.abs(c) < FP) c = FP;
+            d = 1 / d;
+            const del = d * c;
+            h *= del;
+            if (Math.abs(del - 1) < 1e-16) break;
+          }
+          return Math.exp(-x + a * Math.log(x) - lgamma(a)) * h;
+        }
+        function erfc(x) {
+          if (x < 0) return 2 - erfc(-x);
+          if (x === 0) return 1;
+          const x2 = x * x;
+          return x2 < 1.5 ? 1 - gser(0.5, x2) : gcf(0.5, x2);
+        }
+        // Upper-tail probabilities  P(Z > z)  and  P(T > t)
+        function zUpper(z) {
+          return 0.5 * erfc(z / Math.SQRT2);
+        }
+        function tUpper(t, df) {
+          if (t === 0) return 0.5;
+          if (t < 0) return 1 - tUpper(-t, df);
+          return 0.5 * betai(df / 2, 0.5, df / (df + t * t));
+        }
+        // Positive x with upper(x) = p   (0 < p <= 0.5)
+        function upperQuantile(upper, p) {
+          let lo = 0,
+            hi = 1;
+          while (upper(hi) > p && hi < 1e12) hi *= 2;
+          for (let i = 0; i < 300; i++) {
+            const mid = (lo + hi) / 2;
+            if (upper(mid) > p) lo = mid;
+            else hi = mid;
+          }
+          return (lo + hi) / 2;
+        }
+        function zPdf(x) {
+          return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+        }
+        function tPdf(x, v) {
+          return Math.exp(
+            lgamma((v + 1) / 2) - lgamma(v / 2) - 0.5 * Math.log(v * Math.PI) -
+              ((v + 1) / 2) * Math.log(1 + (x * x) / v),
+          );
+        }
+        // Chi-square distribution (regularised incomplete gamma)
+        function gammaP(a, x) {
+          if (x <= 0) return 0;
+          return x < a + 1 ? gser(a, x) : 1 - gcf(a, x);
+        }
+        function gammaQ(a, x) {
+          if (x <= 0) return 1;
+          return x < a + 1 ? 1 - gser(a, x) : gcf(a, x);
+        }
+        function chiUpper(x, k) {
+          return gammaQ(k / 2, x / 2);
+        } // P(X >= x)
+        function chiLower(x, k) {
+          return gammaP(k / 2, x / 2);
+        } // P(X <= x)
+        function chiPdf(x, k) {
+          if (x <= 0) return k === 2 ? 0.5 : k < 2 ? Infinity : 0;
+          return Math.exp((k / 2 - 1) * Math.log(x) - x / 2 - (k / 2) * Math.LN2 - lgamma(k / 2));
+        }
+        function poisPmf(k, l) {
+          if (l === 0) return k === 0 ? 1 : 0;
+          return Math.exp(-l + k * Math.log(l) - lgamma(k + 1));
+        }
+        function binomPmf(k, n, p) {
+          if (k < 0 || k > n) return 0;
+          if (p === 0) return k === 0 ? 1 : 0;
+          if (p === 1) return k === n ? 1 : 0;
+          return Math.exp(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1) + k * Math.log(p) + (n - k) * Math.log(1 - p));
+        }
+        // ==MATH-END==
+
+        // ── Formatting ───────────────────────────────────────────────
+        function fx(v, d) {
+          if (typeof v !== "number" || !isFinite(v)) return "N/A";
+          if (Math.abs(v) < 0.5 * Math.pow(10, -d)) return (0).toFixed(d);
+          return v.toFixed(d);
+        }
+        function fp(p, d) {
+          if (p < 0.5 * Math.pow(10, -d)) return "< " + Math.pow(10, -d).toFixed(d);
+          return p.toFixed(d);
+        }
+        const SUB = { 0: "₀", 1: "₁", 2: "₂" };
+
+        // ── Field definitions ────────────────────────────────────────
+        const GROUPS = [
+          {
+            p: "cvn",
+            test: "cv",
+            fields: [
+              { id: "n", label: "Sample Size", sym: "n", def: 16, desc: 'Whole number ≥ 2. <span class="eg">df = n − 1.</span>' },
+            ],
+          },
+          {
+            p: "cvv",
+            test: "cv",
+            cond: (s) => s.vmode === "var",
+            fields: [
+              { id: "s2", label: "Sample Variance", sym: "s²", def: 7.5, desc: 'Uses n − 1 divisor. <span class="warn">Cannot be negative.</span>' },
+              { id: "sig0sq", label: "Hypothesized Variance", sym: "σ₀²", def: 5, desc: 'Value claimed in H₀. <span class="warn">Must be &gt; 0.</span>' },
+            ],
+          },
+          {
+            p: "cvs",
+            test: "cv",
+            cond: (s) => s.vmode === "sd",
+            fields: [
+              { id: "s", label: "Sample Std. Deviation", sym: "s", def: 2, desc: 'Uses n − 1 divisor. <span class="warn">Cannot be negative.</span>' },
+              { id: "sig0", label: "Hypothesized Std. Dev.", sym: "σ₀", def: 3, desc: 'Value claimed in H₀. <span class="warn">Must be &gt; 0.</span>' },
+            ],
+          },
+        ];
+
+        function buildFields() {
+          const host = $("fieldGroups");
+          host.innerHTML = "";
+          GROUPS.forEach((g) => {
+            const wrap = document.createElement("div");
+            wrap.className = "controls-row";
+            wrap.dataset.group = g.p;
+            wrap.innerHTML = g.fields
+              .map((f) => {
+                const inp =
+                  f.type === "area"
+                    ? `<textarea id="${g.p}_${f.id}" rows="3" spellcheck="false">${f.def}</textarea>`
+                    : `<input type="number" id="${g.p}_${f.id}" value="${f.def}" step="any" />`;
+                return `<div class="control-group ${f.type === "area" ? "wide" : ""}">
+                  <label>${f.label} &nbsp;<span class="sym">${f.sym}</span></label>${inp}
+                  <div class="field-desc">${f.desc}</div></div>`;
+              })
+              .join("");
+            host.appendChild(wrap);
+          });
+        }
+
+        function state() {
+          return {
+            test: $("testType").value,
+            vmode: $("cvmode").value,
+            alpha: parseFloat($("alpha").value),
+            alt: $("altSel").value,
+            dec: Math.min(10, Math.max(2, parseInt($("decimals").value) || 4)),
+          };
+        }
+
+        function updateVisibility() {
+          const s = state();
+          GROUPS.forEach((g) => {
+            const el = document.querySelector(`[data-group="${g.p}"]`);
+            const show = g.test === s.test && (!g.cond || g.cond(s));
+            el.style.display = show ? "flex" : "none";
+          });
+          const fixedRight = s.test === "gof" || s.test === "ind";
+          $("cvopts").style.display = s.test === "cv" ? "block" : "none";
+          $("gofBox").style.display = s.test === "gof" ? "block" : "none";
+          $("indBox").style.display = s.test === "ind" ? "block" : "none";
+          $("altWrap").style.display = fixedRight ? "none" : "flex";
+          $("altFixed").style.display = fixedRight ? "flex" : "none";
+          const badge = $("testBadge");
+          badge.className = "type-badge tb-c";
+          badge.innerHTML = "CHI-SQUARE &middot; &chi;&sup2; DISTRIBUTION";
+          if (s.test === "gof") gofModeUI();
+          $("overview").innerHTML = overviewHTML(s);
+        }
+
+        // ── Info per test (used in overview and in the solution) ────
+        function info(s) {
+          switch (s.test) {
+            case "cv":
+              return {
+                title: "Chi-square Test for a Single Variance — 1.4(a)",
+                dist: "chi",
+                rule: "cv",
+                formula: ["χ² = (n − 1)s² / σ₀²", "df = n − 1", "(if s is given: s² = s × s)"],
+                assumptions: [
+                  "Random sample of independent observations",
+                  "Population is NORMAL — this test is very sensitive to non-normality",
+                  "σ₀² is a fixed value stated in H₀",
+                ],
+                insight:
+                  "The χ² distribution is right-skewed, not symmetric, and starts at 0 (mean = df). A two-tailed test therefore has two different critical values, a lower one and an upper one.",
+              };
+            case "gof":
+              return {
+                title: "Chi-square Goodness of Fit — 1.4(b)",
+                dist: "chi",
+                rule: "right",
+                formula: [
+                  "χ² = Σ (Oᵢ − Eᵢ)² / Eᵢ",
+                  "Eᵢ = N × pᵢ   (when probabilities are given)",
+                  "df = k − 1 − m   (k categories, m parameters estimated)",
+                ],
+                assumptions: [
+                  "Random sample; each observation falls in exactly one category",
+                  "Observations are independent; data are frequency counts",
+                  "Expected counts large enough: all Eᵢ ≥ 5 (or ≥ 80% of cells ≥ 5 and none < 1)",
+                  "Σ observed = Σ expected",
+                ],
+                insight:
+                  "Each category adds (O − E)²/E to χ². A large total means the data are far from the model, so only the right tail is used. Estimating parameters from the data costs one degree of freedom each.",
+              };
+            default:
+              return {
+                title: "Chi-square Test for Independence of Attributes — 1.4(c)",
+                dist: "chi",
+                rule: "right",
+                formula: [
+                  "Eᵢⱼ = (row total × column total) / N",
+                  "χ² = ΣΣ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ",
+                  "df = (r − 1)(c − 1)",
+                ],
+                assumptions: [
+                  "Random sample; each observation is counted once, in one cell",
+                  "Observations are independent of each other",
+                  "Data are frequency counts (not percentages or proportions)",
+                  "Expected counts large enough: all Eᵢⱼ ≥ 5 (or ≥ 80% of cells ≥ 5 and none < 1)",
+                ],
+                insight:
+                  "If the attributes were independent, each cell would be close to (row total × column total)/N. The cells with the biggest (O − E)²/E show where the association comes from.",
+              };
+          }
+        }
+
+        function overviewHTML(s) {
+          const I = info(s);
+          const isC = I.dist === "chi";
+          const dn = isC ? "χ²" : "t";
+          let rule;
+          if (!isC) {
+            rule = `<span style="color:var(--accent2)">Two-tailed:</span> reject H₀ if |t| &gt; t<sub>α/2</sub><br/>
+            <span style="color:var(--accent2)">Right-tailed:</span> reject H₀ if t &gt; t<sub>α</sub><br/>
+            <span style="color:var(--accent2)">Left-tailed:</span> reject H₀ if t &lt; −t<sub>α</sub>`;
+          } else if (I.rule === "cv") {
+            rule = `<span style="color:var(--accent2)">Two-tailed:</span> reject H₀ if χ² &lt; χ²<sub>1−α/2</sub> or χ² &gt; χ²<sub>α/2</sub><br/>
+            <span style="color:var(--accent2)">Right-tailed:</span> reject H₀ if χ² &gt; χ²<sub>α</sub><br/>
+            <span style="color:var(--accent2)">Left-tailed:</span> reject H₀ if χ² &lt; χ²<sub>1−α</sub><br/>
+            <span style="opacity:.8">χ²<sub>p</sub> = value with area p to its right</span>`;
+          } else {
+            rule = `<span style="color:var(--accent2)">Right-tailed only:</span> reject H₀ if χ² &gt; χ²<sub>α</sub>(df)`;
+          }
+          const insight = isC
+            ? I.insight
+            : "The t-distribution has heavier tails than Z, so small samples need a larger critical value. It approaches Z as df grows.";
+          return `
+          <div class="ov-box orange">
+            <div class="ov-h">Selected test</div>
+            <div class="ov-body" style="line-height:1.7;font-size:0.78rem;">${I.title}</div>
+          </div>
+          <div class="ov-box">
+            <div class="ov-h">Formula</div>
+            <div class="ov-body">${I.formula.map((l) => "<div style='white-space:nowrap'>" + l + "</div>").join("")}</div>
+          </div>
+          <div class="ov-box">
+            <div class="ov-h">Assumptions</div>
+            <ul class="ov-list">${I.assumptions.map((a) => "<li>" + a + "</li>").join("")}</ul>
+          </div>
+          <div class="ov-box" style="font-family:'Space Mono',monospace;font-size:0.63rem;color:var(--text-dim);line-height:2;">
+            <strong style="color:var(--accent)">Decision rule (${dn}-distribution):</strong><br/>
+            ${rule}
+          </div>
+          <div class="ov-box green">
+            <div class="ov-h">Key insight</div>
+            <div class="ov-body" style="font-size:0.7rem;line-height:1.9;">${insight}</div>
+          </div>`;
+        }
+
+        // ── Input readers & validators ───────────────────────────────
+        function num(p, id, label) {
+          const el = $(p + "_" + id);
+          const raw = el.value.trim();
+          const v = Number(raw);
+          if (raw === "" || !isFinite(v))
+            throw new Error(label + " is missing or not a valid number.");
+          return v;
+        }
+        function int(p, id, label, min) {
+          const v = num(p, id, label);
+          if (!Number.isInteger(v) || v < min)
+            throw new Error(label + " must be a whole number ≥ " + min + ".");
+          return v;
+        }
+        function nonNeg(p, id, label) {
+          const v = num(p, id, label);
+          if (v < 0) throw new Error(label + " cannot be negative.");
+          return v;
+        }
+        function parseList(txt, name) {
+          const toks = txt.split(/[\s,;]+/).filter((t) => t.length);
+          return toks.map((t) => {
+            const v = Number(t);
+            if (!isFinite(v))
+              throw new Error(name + ': "' + t + '" is not a valid number.');
+            return v;
+          });
+        }
+
+        // ── Test calculations ────────────────────────────────────────
+        // each returns: par, nullTxt, noun, dist, df, stat, se, warn[], pre[],
+        // subst, seSubst, statSubst, dfLine
+        function calc(s, d) {
+          switch (s.test) {
+            case "cv": return calcCV(s, d);
+            case "gof": return calcGOF(s, d);
+            default: return calcIND(s, d);
+          }
+        }
+
+        // ── Chi-square helpers ───────────────────────────────────────
+        const sumArr = (a) => a.reduce((x, y) => x + y, 0);
+        const HR = { raw: "<hr/>" };
+        function esc(x) {
+          return String(x).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+        }
+        function htmlTable(head, rows, totLast) {
+          const cell = (c, tag) =>
+            c && typeof c === "object"
+              ? `<${tag}${c.c ? ` class="${c.c}"` : ""}${c.s ? ` style="${c.s}"` : ""}>${c.t}</${tag}>`
+              : `<${tag}>${c}</${tag}>`;
+          return `<div class="ctab-wrap"><table class="ctab"><thead><tr>${head.map((h) => cell(h, "th")).join("")}</tr></thead><tbody>${rows
+            .map((r, i) => `<tr${totLast && i === rows.length - 1 ? ' class="tot"' : ""}>${r.map((c) => cell(c, "td")).join("")}</tr>`)
+            .join("")}</tbody></table></div>`;
+        }
+        function smallExpectedWarn(Eflat, label) {
+          const w = [];
+          const n = Eflat.length;
+          const lt5 = Eflat.filter((e) => e < 5).length;
+          const lt1 = Eflat.filter((e) => e < 1).length;
+          if (lt1 > 0 || lt5 / n > 0.2) {
+            w.push(
+              `${lt5} of ${n} expected counts (${Math.round((100 * lt5) / n)}%) are below 5${lt1 ? `, and ${lt1} below 1` : ""}. The χ² approximation is unreliable here. Combine neighbouring ${label} with small expected counts (this reduces the degrees of freedom), collect more data, or use an exact method (e.g. Fisher's exact test for a 2×2 table, or an exact/Monte-Carlo multinomial test).`,
+            );
+          }
+          return w;
+        }
+
+        // ── 1.4(a) Single variance ──────────────────────────────────
+        function calcCV(s, d) {
+          const n = int("cvn", "n", "Sample size n", 2);
+          let s2, sig0sq, pre = [];
+          if (s.vmode === "sd") {
+            const sd = num("cvs", "s", "Sample standard deviation s");
+            const sg = num("cvs", "sig0", "Hypothesized standard deviation σ₀");
+            if (sd < 0) throw new Error("Sample standard deviation cannot be negative.");
+            if (sg <= 0) throw new Error("Hypothesized standard deviation σ₀ must be greater than 0.");
+            s2 = sd * sd;
+            sig0sq = sg * sg;
+            pre = [`s² = s × s = ${d(sd)}² = ${d(s2)}`, `σ₀² = σ₀ × σ₀ = ${d(sg)}² = ${d(sig0sq)}`];
+          } else {
+            s2 = num("cvv", "s2", "Sample variance s²");
+            sig0sq = num("cvv", "sig0sq", "Hypothesized variance σ₀²");
+            if (s2 < 0) throw new Error("Sample variance s² cannot be negative.");
+            if (sig0sq <= 0) throw new Error("Hypothesized variance σ₀² must be greater than 0.");
+          }
+          const warn = [
+            "Normality assumption: this χ² test is valid only if the sample comes from a NORMAL population. It is very sensitive to non-normality (skew or heavy tails), and — unlike the t-test for means — a large sample does not rescue it. Check a histogram or normal probability plot first.",
+          ];
+          if (n < 5) warn.push(`n = ${n} is very small: the test has almost no power and normality cannot be checked.`);
+          if (s2 === 0) warn.push("s² = 0 means every observation is identical, which is not plausible for a continuous normal population. Check your data.");
+          const df = n - 1, chi = (df * s2) / sig0sq;
+          const word = { two: "differs from the claimed value", right: "is LARGER than claimed (the population is more variable)", left: "is SMALLER than claimed (the population is less variable)" }[s.alt];
+          return {
+            dist: "chi", df, stat: chi, par: "σ²", nullTxt: d(sig0sq), noun: "the population variance σ²",
+            warn,
+            plainR: `the variability of the population ${word}.`,
+            plainK: "the sample's variability is consistent with the claimed variance; the claim cannot be rejected.",
+            calcSteps: [
+              ["Formula & substitution", [
+                `<span class="dim">χ² = (n − 1)s² / σ₀²</span>`,
+                HR,
+                ...pre,
+                `χ² = (${n} − 1) × ${d(s2)} / ${d(sig0sq)}`,
+              ]],
+              ["χ² statistic & degrees of freedom", [
+                `χ² = ${df} × ${d(s2)} / ${d(sig0sq)} = ${d(df * s2)} / ${d(sig0sq)}`,
+                `χ² = <span class="res">${d(chi)}</span>`,
+                HR,
+                { h: `df = n − 1 = ${n} − 1 = ${df}`, cls: "wrap" },
+              ]],
+            ],
+          };
+        }
+
+        // ── 1.4(b) Goodness of fit ──────────────────────────────────
+        function readGofRows() {
+          const rows = [];
+          document.querySelectorAll("#gofRows tr").forEach((tr) => {
+            rows.push({ name: tr.querySelector(".g-name").value.trim(), obs: tr.querySelector(".g-obs").value.trim(), exp: tr.querySelector(".g-exp").value.trim() });
+          });
+          return rows;
+        }
+        function calcGOF(s, d) {
+          const mode = $("gofMode").value;
+          const rows = readGofRows();
+          const k = rows.length;
+          if (k < 2) throw new Error("Enter at least 2 categories.");
+          const names = rows.map((r, i) => r.name || `Category ${i + 1}`);
+          const O = rows.map((r, i) => {
+            const v = Number(r.obs);
+            if (r.obs === "" || !isFinite(v)) throw new Error(`Observed frequency for "${names[i]}" is missing or not a number.`);
+            if (v < 0 || !Number.isInteger(v)) throw new Error(`Observed frequency for "${names[i]}" must be a non-negative whole number.`);
+            return v;
+          });
+          const N = sumArr(O);
+          if (N <= 0) throw new Error("The total observed frequency is 0.");
+          const dist = mode === "binom" || mode === "poisson";
+          const warn = [];
+          let E, P = null, m = 0;
+          const srcLines = [];
+          if (mode === "direct") {
+            E = rows.map((r, i) => {
+              const v = Number(r.exp);
+              if (r.exp === "" || !isFinite(v)) throw new Error(`Expected frequency for "${names[i]}" is missing or not a number.`);
+              if (v <= 0) throw new Error(`Expected frequency for "${names[i]}" must be positive (greater than 0).`);
+              return v;
+            });
+            const sE = sumArr(E);
+            if (Math.abs(sE - N) > 1e-6 * Math.max(1, N))
+              throw new Error(`Observed total (${N}) and expected total (${+sE.toFixed(6)}) must be equal when expected counts are entered directly. Adjust the expected counts so that they add up to ${N}.`);
+            m = int("gofp", "m", "Number of estimated parameters m", 0);
+            srcLines.push(`Expected counts were entered directly: ΣE = ${d(sE)} = ΣO = ${N} ✓`);
+          } else {
+            if (mode === "uniform") {
+              P = Array(k).fill(1 / k);
+              srcLines.push(`Equal probabilities: pᵢ = 1/k = 1/${k} = ${d(1 / k)}`);
+              m = int("gofp", "m", "Number of estimated parameters m", 0);
+            } else if (mode === "prob" || mode === "ratio") {
+              const raw = rows.map((r, i) => {
+                const v = Number(r.exp);
+                if (r.exp === "" || !isFinite(v)) throw new Error(`${mode === "prob" ? "Probability" : "Ratio value"} for "${names[i]}" is missing or not a number.`);
+                if (v <= 0) throw new Error(`${mode === "prob" ? "Probability" : "Ratio value"} for "${names[i]}" must be positive.`);
+                return v;
+              });
+              const sr = sumArr(raw);
+              if (mode === "prob") {
+                if (Math.abs(sr - 1) > 1e-6)
+                  throw new Error(`The probabilities add up to ${+sr.toFixed(6)}, not 1. Adjust them, or choose “Specified ratio” to enter relative weights instead.`);
+                P = raw;
+                srcLines.push(`Specified probabilities (Σp = 1):  Eᵢ = N × pᵢ`);
+              } else {
+                P = raw.map((v) => v / sr);
+                srcLines.push(`Ratio ${raw.join(" : ")}  →  pᵢ = partᵢ / ${+sr.toFixed(6)}:  Eᵢ = N × pᵢ`);
+              }
+              m = int("gofp", "m", "Number of estimated parameters m", 0);
+            } else {
+              const kv = rows.map((r, i) => {
+                const v = Number(r.name);
+                if (r.name === "" || !isFinite(v) || !Number.isInteger(v) || v < 0)
+                  throw new Error(`Category name "${names[i]}" must be a non-negative whole number k for the ${mode === "binom" ? "binomial" : "Poisson"} distribution.`);
+                return v;
+              });
+              if (new Set(kv).size !== k) throw new Error("The category values k must all be different.");
+              const tail = $("gofTail").value === "tail";
+              if (tail)
+                for (let i = 1; i < k; i++)
+                  if (kv[i] !== kv[i - 1] + 1) throw new Error("With “k or more” selected, the categories must be consecutive whole numbers in increasing order (e.g. 0, 1, 2, 3).");
+              const est = $("gofEst").value === "est";
+              const kO = sumArr(kv.map((v, i) => v * O[i]));
+              let nB = null, p, lam;
+              if (mode === "binom") {
+                nB = int("gofp", "n", "Number of trials n", 1);
+                kv.forEach((v) => { if (v > nB) throw new Error(`k = ${v} exceeds the number of trials n = ${nB}.`); });
+                if (est) {
+                  p = kO / (nB * N);
+                  if (!(p > 0 && p < 1)) throw new Error("The estimated p̂ is 0 or 1, so the binomial model is degenerate. Enter p directly or check the data.");
+                  srcLines.push(`p̂ = Σ k·O / (n·N) = ${kO} / (${nB} × ${N}) = ${d(p)}   (estimated from the data → m = 1)`);
+                } else {
+                  p = num("gofp", "p", "Probability p");
+                  if (!(p > 0 && p < 1)) throw new Error("Probability p must be strictly between 0 and 1.");
+                }
+                srcLines.push(`Binomial(n = ${nB}, p = ${d(p)}):  pₖ = C(n,k) pᵏ (1−p)ⁿ⁻ᵏ,  Eᵢ = N × pₖ`);
+              } else {
+                if (est) {
+                  lam = kO / N;
+                  if (!(lam > 0)) throw new Error("The estimated mean λ̂ is 0, so the Poisson model is degenerate. Enter λ directly or check the data.");
+                  srcLines.push(`λ̂ = Σ k·O / N = ${kO} / ${N} = ${d(lam)}   (estimated from the data → m = 1)`);
+                  if (tail) warn.push("λ̂ treats the open-ended last category as exactly k, so it is slightly underestimated; the result is an approximation.");
+                } else {
+                  lam = num("gofp", "lam", "Mean λ");
+                  if (!(lam > 0)) throw new Error("Mean λ must be greater than 0.");
+                }
+                srcLines.push(`Poisson(λ = ${d(lam)}):  pₖ = e^(−λ) λᵏ / k!,  Eᵢ = N × pₖ`);
+              }
+              P = kv.map((v) => (mode === "binom" ? binomPmf(v, nB, p) : poisPmf(v, lam)));
+              if (tail) {
+                P[k - 1] = Math.max(0, 1 - sumArr(P.slice(0, k - 1)));
+                srcLines.push(`Last category “${kv[k - 1]} or more”: p = 1 − (sum of the other probabilities) = ${d(P[k - 1])}`);
+              }
+              const sp = sumArr(P);
+              if (sp < 1 - 1e-6)
+                throw new Error(`The listed categories cover only ${(sp * 100).toFixed(2)}% of the ${mode === "binom" ? "binomial" : "Poisson"} distribution, so observed and expected totals cannot match. Set the last category to “k or more” or add the missing categories.`);
+              if (P.some((x) => !(x > 0))) throw new Error("A category has expected probability 0. Remove it or change the parameters.");
+              m = est ? 1 : 0;
+            }
+            E = P.map((p) => N * p);
+          }
+          const df = k - 1 - m;
+          if (df < 1)
+            throw new Error(`Degrees of freedom = k − 1 − m = ${k} − 1 − ${m} = ${df} must be at least 1. Use more categories or estimate fewer parameters.`);
+          const c = O.map((o, i) => ((o - E[i]) * (o - E[i])) / E[i]);
+          const chi = sumArr(c);
+          warn.push(...smallExpectedWarn(E, "categories"));
+          const nm = names.map(esc);
+          const head = ["Category", "O"].concat(P ? ["p"] : [], ["E", "(O − E)²/E"]);
+          const tRows = nm.map((x, i) => [x, String(O[i])].concat(P ? [d(P[i])] : [], [d(E[i]), { t: d(c[i]), c: "hot" }]));
+          tRows.push(["Total", String(N)].concat(P ? [d(sumArr(P))] : [], [d(sumArr(E)), d(chi)]));
+          const terms = c.length <= 8 ? c.map((x) => d(x)).join(" + ") : c.slice(0, 6).map((x) => d(x)).join(" + ") + " + … + " + d(c[c.length - 1]);
+          return {
+            dist: "chi", df, stat: chi, forceRight: true,
+            par: "", nullTxt: "", noun: "", warn,
+            H0: "H₀: the observed frequencies fit the specified distribution (the model is correct)",
+            H1: "H₁: the observed frequencies do not fit the specified distribution",
+            conclReject: "to conclude that the data do not follow the specified distribution",
+            plainR: "the observed counts differ from the expected counts by more than chance variation alone would usually produce, so the proposed distribution is not a good fit.",
+            plainK: "the observed counts are close enough to the expected counts that ordinary chance variation could explain the differences; the proposed distribution is a reasonable fit.",
+            visual: "gof", bars: { names, O, E },
+            calcSteps: [
+              ["Expected frequencies", [
+                `<span class="dim">χ² = Σ (Oᵢ − Eᵢ)² / Eᵢ</span>`,
+                HR,
+                `N = ΣO = ${N},  k = ${k} categories`,
+                ...srcLines.map((x) => ({ h: x, cls: "wrap" })),
+                { raw: htmlTable(head, tRows, true) },
+              ]],
+              ["Contribution of each category", [
+                `<span class="dim">(O − E)² / E for each category</span>`,
+                ...c.map((x, i) => ({ h: `${nm[i]}: (${O[i]} − ${d(E[i])})² / ${d(E[i])} = <span class="res">${d(x)}</span>`, cls: "wrap" })),
+              ]],
+              ["χ² statistic & degrees of freedom", [
+                { h: `χ² = Σ (O − E)²/E = ${terms}`, cls: "wrap" },
+                `χ² = <span class="res">${d(chi)}</span>`,
+                HR,
+                { h: `df = k − 1 − m = ${k} − 1 − ${m} = ${df}${m ? `   (m = ${m} parameter${m > 1 ? "s" : ""} estimated from the data)` : ""}`, cls: "wrap" },
+              ]],
+            ],
+          };
+        }
+
+        // ── 1.4(c) Independence of attributes ──────────────────────
+        function readInd() {
+          const t = $("indTable");
+          const rowNames = [...t.querySelectorAll(".i-rname")].map((x) => x.value.trim());
+          const colNames = [...t.querySelectorAll(".i-cname")].map((x) => x.value.trim());
+          const raw = rowNames.map(() => colNames.map(() => ""));
+          t.querySelectorAll(".i-cell").forEach((x) => { raw[+x.dataset.r][+x.dataset.c] = x.value.trim(); });
+          return { rowNames, colNames, raw };
+        }
+        function calcIND(s, d) {
+          const { rowNames, colNames, raw } = readInd();
+          const r = rowNames.length, c = colNames.length;
+          if (r < 2 || c < 2) throw new Error("The table needs at least 2 rows and 2 columns.");
+          const rn = rowNames.map((x, i) => x || `Row ${i + 1}`);
+          const cn = colNames.map((x, j) => x || `Column ${j + 1}`);
+          const O = raw.map((row, i) =>
+            row.map((t, j) => {
+              const v = Number(t);
+              if (t === "" || !isFinite(v)) throw new Error(`The cell [${rn[i]}, ${cn[j]}] is empty or not a number.`);
+              if (v < 0 || !Number.isInteger(v))
+                throw new Error(`The cell [${rn[i]}, ${cn[j]}] must be a non-negative whole number — enter frequency counts, not percentages or proportions.`);
+              return v;
+            }),
+          );
+          const R = O.map(sumArr);
+          const C = cn.map((_, j) => sumArr(O.map((row) => row[j])));
+          const N = sumArr(R);
+          if (N <= 0) throw new Error("The grand total is 0.");
+          R.forEach((v, i) => { if (v === 0) throw new Error(`Row "${rn[i]}" has total 0, so its expected counts are 0 and χ² is undefined. Remove that row or enter its data.`); });
+          C.forEach((v, j) => { if (v === 0) throw new Error(`Column "${cn[j]}" has total 0, so its expected counts are 0 and χ² is undefined. Remove that column or enter its data.`); });
+          const E = R.map((ri) => C.map((cj) => (ri * cj) / N));
+          const X = O.map((row, i) => row.map((o, j) => ((o - E[i][j]) * (o - E[i][j])) / E[i][j]));
+          const chi = sumArr(X.map(sumArr));
+          const df = (r - 1) * (c - 1);
+          const warn = smallExpectedWarn(E.flat(), "rows/columns");
+          if (r === 2 && c === 2)
+            warn.push(`2 × 2 table (df = 1): the standard (uncorrected) Pearson χ² is used — no Yates continuity correction. With a small N, prefer Fisher's exact test.`);
+          const A = esc($("indAttA").value.trim() || "A"), B = esc($("indAttB").value.trim() || "B");
+          const rnE = rn.map(esc), cnE = cn.map(esc);
+          const maxX = Math.max(...X.flat(), 1e-12);
+          const flatE = E.flat();
+          const subs = [];
+          for (let i = 0; i < r; i++)
+            for (let j = 0; j < c; j++)
+              subs.push({ h: `E(${i + 1},${j + 1}) = R${i + 1} × C${j + 1} / N = ${R[i]} × ${C[j]} / ${N} = <span class="res">${d(E[i][j])}</span>`, cls: "wrap" });
+          const subShown = subs.length <= 12 ? subs : [...subs.slice(0, 6), "… (all expected counts are in the table below)"];
+          const tObs = rnE.map((x, i) => [x, ...O[i].map(String), String(R[i])]);
+          tObs.push(["Column total", ...C.map(String), String(N)]);
+          const tExp = rnE.map((x, i) => [x, ...E[i].map((v) => d(v)), d(R[i])]);
+          tExp.push(["Column total", ...C.map((v) => d(v)), d(N)]);
+          const heat = (i, j) => `background:rgba(255,107,53,${(0.07 + 0.55 * (X[i][j] / maxX)).toFixed(2)})`;
+          const tContr = rnE.map((x, i) => [x, ...X[i].map((v, j) => ({ t: d(v), s: heat(i, j) })), d(sumArr(X[i]))]);
+          tContr.push(["Column total", ...cn.map((_, j) => d(sumArr(X.map((row) => row[j])))), d(chi)]);
+          const tVis = rnE.map((x, i) => [
+            x,
+            ...O[i].map((o, j) => ({ c: "cellx", s: heat(i, j), t: `<div class="o">O = ${o}</div><div class="e">E = ${d(E[i][j])}</div><div class="c">${d(X[i][j])}</div>` })),
+          ]);
+          const terms = r * c <= 8 ? X.flat().map((x) => d(x)).join(" + ") : X.flat().slice(0, 6).map((x) => d(x)).join(" + ") + " + … + " + d(X[r - 1][c - 1]);
+          return {
+            dist: "chi", df, stat: chi, forceRight: true, par: "", nullTxt: "", noun: "", warn,
+            H0: `H₀: the attributes “${A}” and “${B}” are independent (no association)`,
+            H1: `H₁: the attributes “${A}” and “${B}” are not independent (they are associated)`,
+            conclReject: "that the two attributes are associated (not independent)",
+            plainR: "knowing one attribute tells you something about the other; the pattern in the table is unlikely to be just chance.",
+            plainK: "the table is consistent with the two attributes being unrelated; any pattern could easily be due to chance.",
+            visual: "ind",
+            visualHTML: `<div class="chart-title">Which cells drive the result? — each cell shows O, E and its contribution (O − E)²/E (darker = larger)</div>${htmlTable([`${A} ↓ / ${B} →`, ...cnE], tVis, false)}`,
+            calcSteps: [
+              ["Row, column & grand totals", [
+                `<span class="dim">Rᵢ = row totals,  Cⱼ = column totals,  N = grand total</span>`,
+                `N = ΣRᵢ = ΣCⱼ = <span class="res">${N}</span>   (${r} rows × ${c} columns)`,
+                { raw: htmlTable([`${A} ↓ / ${B} →`, ...cnE, "Row total"], tObs, true) },
+              ]],
+              ["Expected counts", [
+                `<span class="dim">Eᵢⱼ = (row total × column total) / N</span>`,
+                HR,
+                ...subShown,
+                { raw: htmlTable([`${A} ↓ / ${B} →`, ...cnE, "Row total"], tExp, true) },
+              ]],
+              ["Contribution of each cell", [
+                `<span class="dim">(Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ  — darker = bigger contribution</span>`,
+                { raw: htmlTable([`${A} ↓ / ${B} →`, ...cnE, "Row total"], tContr, true) },
+              ]],
+              ["χ² statistic & degrees of freedom", [
+                { h: `χ² = ΣΣ (O − E)²/E = ${terms}`, cls: "wrap" },
+                `χ² = <span class="res">${d(chi)}</span>`,
+                HR,
+                { h: `df = (r − 1)(c − 1) = (${r} − 1)(${c} − 1) = ${df}`, cls: "wrap" },
+              ]],
+            ],
+          };
+        }
+
+        // ── Critical value, p-value, decision ───────────────────────
+        function decide(r, s) {
+          if (r.dist === "chi") {
+            const k = r.df, a = s.alpha, x = r.stat;
+            const alt = r.forceRight ? "right" : s.alt;
+            const U = (v) => chiUpper(v, k);
+            let crit, p, reject;
+            if (alt === "two") {
+              const lo = upperQuantile(U, 1 - a / 2), hi = upperQuantile(U, a / 2);
+              crit = [lo, hi];
+              p = Math.min(1, 2 * Math.min(chiLower(x, k), chiUpper(x, k)));
+              reject = x < lo || x > hi;
+            } else if (alt === "right") {
+              const c = upperQuantile(U, a);
+              crit = [c];
+              p = chiUpper(x, k);
+              reject = x > c;
+            } else {
+              const c = upperQuantile(U, 1 - a);
+              crit = [c];
+              p = chiLower(x, k);
+              reject = x < c;
+            }
+            return { ...r, crit, p, reject, alpha: a, alt };
+          }
+          const U = r.dist === "z" ? zUpper : (t) => tUpper(t, r.df);
+          const a = s.alpha;
+          let crit, p, reject;
+          if (s.alt === "two") {
+            const c = upperQuantile(U, a / 2);
+            crit = [-c, c];
+            p = Math.min(1, 2 * U(Math.abs(r.stat)));
+            reject = Math.abs(r.stat) > c;
+          } else if (s.alt === "right") {
+            const c = upperQuantile(U, a);
+            crit = [c];
+            p = U(r.stat);
+            reject = r.stat > c;
+          } else {
+            const c = upperQuantile(U, a);
+            crit = [-c];
+            p = U(-r.stat);
+            reject = r.stat < -c;
+          }
+          return { ...r, crit, p, reject, alpha: a, alt: s.alt };
+        }
+
+        // ── Run ──────────────────────────────────────────────────────
+        let lastGraph = null;
+        window.runTest = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          const s = state();
+          if (![0.1, 0.05, 0.01].includes(s.alpha)) {
+            showError("Significance level must be 0.10, 0.05 or 0.01.");
+            return;
+          }
+          const d = (v) => fx(v, s.dec);
+          let r;
+          try {
+            r = decide(calc(s, d), s);
+          } catch (e) {
+            showError(e.message);
+            return;
+          }
+          if (!isFinite(r.stat)) {
+            showError("The test statistic could not be computed. Check your inputs.");
+            return;
+          }
+          render(r, s, d);
+          showSuccess(
+            "✓ " + info(s).title + " | " + (r.dist === "chi" ? "χ²" : "t") + " = " + d(r.stat) +
+              " | p " + (r.p < 0.5 * Math.pow(10, -s.dec) ? "" : "= ") + fp(r.p, s.dec) +
+              " | " + (r.reject ? "Reject H₀" : "Fail to reject H₀"),
+          );
+        };
+
+        const ALT_SYM = { two: "≠", left: "<", right: ">" };
+        const ALT_WORD = { two: "differs from", left: "is less than", right: "is greater than" };
+        const ALT_NAME = { two: "Two-tailed", left: "Left-tailed", right: "Right-tailed" };
+
+        function render(r, s, d) {
+          const I = info(s);
+          const isC = r.dist === "chi";
+          const isT = !isC;
+          const sym = isC ? "χ²" : "t";
+          const dfTxt = Number.isInteger(r.df) ? String(r.df) : d(r.df);
+          $("emptyState").style.display = "none";
+          $("resultsContent").style.display = "block";
+
+          // warnings
+          $("warnBox").innerHTML = r.warn.map((w) => `<div class="alert alert-warn">⚠ ${w}</div>`).join("");
+
+          // stat cards
+          const setStat = (id, txt) => {
+            const el = $(id);
+            el.textContent = txt;
+            el.classList.toggle("small", txt.length > 11);
+          };
+          $("statStatLbl").textContent = isC ? "χ²-statistic" : "t-statistic";
+          setStat("statStat", d(r.stat));
+          setStat("statDf", dfTxt);
+          setStat("statCrit", r.alt === "two" ? (isC ? d(r.crit[0]) + " – " + d(r.crit[1]) : "±" + d(r.crit[1])) : d(r.crit[0]));
+          setStat("statP", fp(r.p, s.dec));
+
+          // decision
+          const H0 = r.H0 || `H₀: ${r.par} = ${r.nullTxt}`;
+          const H1 = r.H1 || `H₁: ${r.par} ${ALT_SYM[r.alt]} ${r.nullTxt}`;
+          const dec = $("decisionBox");
+          dec.className = "decision " + (r.reject ? "reject" : "accept");
+          dec.innerHTML = `<b>${r.reject ? "REJECT H₀" : "FAIL TO REJECT H₀"}</b> &nbsp;at α = ${r.alpha}<br/>${conclusion(r)}`;
+
+          // chips
+          const chips = [
+            { v: `${sym} = ${d(r.stat)}`, c: "#00d4ff" },
+            { v: `α = ${r.alpha}`, c: "#77dc1e" },
+            { v: ALT_NAME[r.alt], c: "#ff6b35" },
+            { v: `df = ${dfTxt}`, c: "#a78bfa" },
+          ];
+          const sol = $("solutionDisplay");
+          sol.innerHTML = "";
+          chips.forEach((ch) => {
+            const el = document.createElement("div");
+            el.className = "sol-chip";
+            el.style.cssText = `color:${ch.c};border-color:${ch.c}44;background:${ch.c}11;`;
+            el.textContent = ch.v;
+            sol.appendChild(el);
+          });
+
+          $("graphTitle").textContent = isC
+            ? `Chi-square distribution (df = ${dfTxt}) — rejection region & test statistic`
+            : `Student's t-distribution (df = ${dfTxt}) — critical region & test statistic`;
+          $("legAlpha").textContent = `α = ${r.alpha}`;
+
+          // steps
+          const ln = (h, cls) => `<div class="ln ${cls || ""}">${h}</div>`;
+          const hr = "<hr/>";
+          const mapLines = (arr) =>
+            arr.map((it) => (typeof it === "string" ? ln(it) : it.raw !== undefined ? it.raw : ln(it.h, it.cls)));
+          const dfShow = isT ? `, df = ${dfTxt}` : `, df = ${dfTxt}`;
+          const critTxt = (() => {
+            const pa = r.alt === "two" ? r.alpha / 2 : r.alpha;
+            if (isC) {
+              const q1 = Number((1 - pa).toFixed(4));
+              if (r.alt === "two")
+                return [
+                  ln(`Two-tailed: split α into two tails of α/2 = ${pa}`),
+                  ln(`Lower critical value = χ²(${q1}${dfShow}) = <span class="res">${d(r.crit[0])}</span>`, "wrap"),
+                  ln(`Upper critical value = χ²(${pa}${dfShow}) = <span class="res">${d(r.crit[1])}</span>`, "wrap"),
+                  ln(`Reject H₀ if χ² &lt; ${d(r.crit[0])} or χ² &gt; ${d(r.crit[1])}`, "wrap"),
+                ];
+              if (r.alt === "right")
+                return [
+                  ln(`Right-tailed: all of α = ${pa} in the upper tail`),
+                  ln(`Critical value = χ²(${pa}${dfShow}) = <span class="res">${d(r.crit[0])}</span>`, "wrap"),
+                  ln(`Reject H₀ if χ² &gt; ${d(r.crit[0])}`),
+                ];
+              return [
+                ln(`Left-tailed: all of α = ${pa} in the lower tail`),
+                ln(`Critical value = χ²(${q1}${dfShow}) = <span class="res">${d(r.crit[0])}</span>`, "wrap"),
+                ln(`Reject H₀ if χ² &lt; ${d(r.crit[0])}`),
+              ];
+            }
+            const q = `${sym}(${pa}${dfShow})`;
+            if (r.alt === "two")
+              return [
+                ln(`Two-tailed: split α into two tails of α/2 = ${pa}`),
+                ln(`Critical values = ±${q} = <span class="res">±${d(r.crit[1])}</span>`),
+                ln(`Reject H₀ if ${sym} &lt; ${d(r.crit[0])} or ${sym} &gt; ${d(r.crit[1])}`, "wrap"),
+              ];
+            if (r.alt === "right")
+              return [
+                ln(`Right-tailed: all of α = ${pa} in the right tail`),
+                ln(`Critical value = ${q} = <span class="res">${d(r.crit[0])}</span>`),
+                ln(`Reject H₀ if ${sym} &gt; ${d(r.crit[0])}`),
+              ];
+            return [
+              ln(`Left-tailed: all of α = ${pa} in the left tail`),
+              ln(`Critical value = −${q} = <span class="res">${d(r.crit[0])}</span>`),
+              ln(`Reject H₀ if ${sym} &lt; ${d(r.crit[0])}`),
+            ];
+          })().join("");
+
+          const pLines = (() => {
+            const dfP = ` (df = ${dfTxt})`;
+            if (isC) {
+              const lo = chiLower(r.stat, r.df), up = chiUpper(r.stat, r.df);
+              if (r.alt === "two")
+                return (
+                  ln(`p = 2 × min[ P(χ² ≤ x), P(χ² ≥ x) ]${dfP}`, "wrap") +
+                  ln(`P(χ² ≤ ${d(r.stat)}) = ${fx(lo, Math.max(s.dec, 6))},  P(χ² ≥ ${d(r.stat)}) = ${fx(up, Math.max(s.dec, 6))}`, "wrap") +
+                  ln(`p = 2 × ${fx(Math.min(lo, up), Math.max(s.dec, 6))} = <span class="res">${fp(r.p, s.dec)}</span> <span class="dim">(capped at 1)</span>`, "wrap")
+                );
+              if (r.alt === "right") return ln(`p = P(χ² ≥ ${d(r.stat)})${dfP} = <span class="res">${fp(r.p, s.dec)}</span>`, "wrap");
+              return ln(`p = P(χ² ≤ ${d(r.stat)})${dfP} = <span class="res">${fp(r.p, s.dec)}</span>`, "wrap");
+            }
+            if (r.alt === "two") {
+              const one = r.p / 2;
+              return ln(`p = 2 × P(T ≥ |t|) = 2 × P(T ≥ ${d(Math.abs(r.stat))})${dfP}`) +
+                ln(`p = 2 × ${fx(one, Math.max(s.dec, 6))} = <span class="res">${fp(r.p, s.dec)}</span>`);
+            }
+            if (r.alt === "right")
+              return ln(`p = P(T ≥ ${d(r.stat)})${dfP} = <span class="res">${fp(r.p, s.dec)}</span>`);
+            return ln(`p = P(T ≤ ${d(r.stat)})${dfP} = <span class="res">${fp(r.p, s.dec)}</span>`);
+          })();
+
+          const inReg = isC
+            ? r.alt === "two" ? r.stat < r.crit[0] || r.stat > r.crit[1] : r.alt === "right" ? r.stat > r.crit[0] : r.stat < r.crit[0]
+            : r.alt === "two" ? Math.abs(r.stat) > r.crit[1] : r.alt === "right" ? r.stat > r.crit[0] : r.stat < r.crit[0];
+          const critCmp = (() => {
+            if (isC) {
+              if (r.alt === "two") return `χ² = ${d(r.stat)} lies ${inReg ? "outside" : "inside"} [${d(r.crit[0])}, ${d(r.crit[1])}]`;
+              if (r.alt === "right") return `χ² = ${d(r.stat)} ${inReg ? ">" : "≤"} ${d(r.crit[0])}`;
+              return `χ² = ${d(r.stat)} ${inReg ? "<" : "≥"} ${d(r.crit[0])}`;
+            }
+            if (r.alt === "two") return `|${sym}| = ${d(Math.abs(r.stat))} ${inReg ? ">" : "≤"} ${d(r.crit[1])}`;
+            if (r.alt === "right") return `${sym} = ${d(r.stat)} ${inReg ? ">" : "≤"} ${d(r.crit[0])}`;
+            return `${sym} = ${d(r.stat)} ${inReg ? "<" : "≥"} ${d(r.crit[0])}`;
+          })();
+
+          const steps = [];
+          steps.push(["State the hypotheses", [
+            ln(`Test: <span class="hl">${I.title}</span>`, "wrap"),
+            ln(`<span class="org">${H0}</span>`, "wrap"),
+            ln(`<span class="org">${H1}</span> &nbsp;<span class="dim">(${ALT_NAME[r.alt]})</span>`, "wrap"),
+            ln(`Significance level: α = ${r.alpha}`),
+            ln(`Distribution used: ${isC ? "chi-square (χ²)" : "Student's t"}`),
+          ]]);
+          steps.push(["Assumptions", [
+            ...I.assumptions.map((a) => ln("✓ " + a, "wrap")),
+            ...r.warn.map((w) => ln(`<span style="color:#ffb347">⚠ ${w}</span>`, "wrap")),
+          ]]);
+          if (isC) {
+            r.calcSteps.forEach((cs) => steps.push([cs[0], mapLines(cs[1])]));
+          } else {
+            steps.push(["Formula & substitution", [
+              ...I.formula.map((f) => ln(`<span class="dim">${f}</span>`)),
+              hr,
+              ...r.pre.map((p) => ln(p)),
+              r.pre.length ? hr : "",
+              ln(r.subst),
+            ]]);
+            steps.push(["Standard error", [
+              ln(`<span class="dim">${r.seFormula}</span>`),
+              ln(r.seSubst),
+              ln(`SE = <span class="res">${d(r.se)}</span>`),
+            ]]);
+            steps.push(["t-statistic & degrees of freedom", [
+              ln(r.statSubst),
+              ln(`${sym} = <span class="res">${d(r.stat)}</span>`),
+              hr,
+              ln(r.dfLine, "wrap"),
+            ]]);
+          }
+          steps.push(["Critical value", [
+            ln(`<span class="dim">From the ${isC ? "chi-square table / inverse χ² distribution (χ²(p, df) has area p to its right)" : "t-table / inverse t-distribution"}:</span>`, "wrap"),
+            critTxt,
+          ]]);
+          steps.push(["p-value", [
+            pLines,
+            ln(`<span class="dim">Compare with α = ${r.alpha}: p ${r.p < r.alpha ? "&lt;" : "≥"} α</span>`),
+          ]]);
+          steps.push(["Decision", [
+            ln(`Critical-value method: ${critCmp} → ${inReg ? "statistic lies in the rejection region" : "statistic lies in the acceptance region"}`, "wrap"),
+            ln(`p-value method: p = ${fp(r.p, s.dec)} ${r.p < r.alpha ? "&lt;" : "≥"} ${r.alpha}`),
+            hr,
+            ln(`<span class="${r.reject ? "org" : "res"}">${r.reject ? "Reject H₀" : "Fail to reject H₀"}</span>`),
+          ]]);
+          steps.push(["Conclusion", [ln(conclusion(r), "wrap")]]);
+
+          $("stepsList").innerHTML = steps
+            .map(
+              (st, i) =>
+                `<div class="step-card"><div class="step-badge">STEP ${i + 1} &nbsp;|&nbsp; ${st[0]}</div><div class="calc-box">${st[1].join("")}</div></div>`,
+            )
+            .join("");
+
+          // extra visuals
+          $("visGof").style.display = r.visual === "gof" ? "block" : "none";
+          $("visInd").style.display = r.visual === "ind" ? "block" : "none";
+          $("visInd").innerHTML = r.visual === "ind" ? r.visualHTML : "";
+          lastBars = r.visual === "gof" ? r.bars : null;
+
+          // graph
+          lastGraph = { dist: r.dist, df: r.df, alt: r.alt, crit: r.crit, stat: r.stat, alpha: r.alpha, dec: s.dec };
+          requestAnimationFrame(() => {
+            drawDist($("distCanvas"), lastGraph);
+            if (lastBars) drawBars($("barCanvas"), lastBars);
+          });
+          $("resultsContent").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function conclusion(r) {
+          let base;
+          if (r.conclReject) {
+            base = r.reject
+              ? `At the ${r.alpha} level of significance there is <b>sufficient evidence</b> ${r.conclReject}. H₀ is rejected.`
+              : `At the ${r.alpha} level of significance there is <b>insufficient evidence</b> ${r.conclReject}. H₀ is not rejected.`;
+          } else {
+            const H1 = `${r.noun} ${ALT_WORD[r.alt]} ${r.nullTxt}`;
+            base = r.reject
+              ? `At the ${r.alpha} level of significance there is <b>sufficient evidence</b> to conclude that ${H1}. H₀ is rejected.`
+              : `At the ${r.alpha} level of significance there is <b>insufficient evidence</b> to conclude that ${H1}. H₀ is not rejected.`;
+          }
+          const plain = r.reject ? r.plainR : r.plainK;
+          return plain ? base + `<br/><i>In plain English: ${plain}</i>` : base;
+        }
+
+        // ── Distribution graph (Student's t and chi-square) ──────────
+        function drawDist(canvas, g, hx) {
+          if (!canvas || !g) return;
+          const wrap = canvas.parentElement;
+          const W = Math.max(260, wrap.clientWidth - 16);
+          const H = W < 520 ? 270 : 330;
+          const DPR = window.devicePixelRatio || 1;
+          canvas.width = W * DPR;
+          canvas.height = H * DPR;
+          canvas.style.width = W + "px";
+          canvas.style.height = H + "px";
+          const ctx = canvas.getContext && canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+          const isC = g.dist === "chi";
+          const sym = isC ? "χ²" : "t";
+          const k = g.df;
+          const pdf = isC ? (x) => chiPdf(x, k) : (x) => tPdf(x, k);
+          const upper = isC ? (x) => chiUpper(x, k) : (x) => tUpper(x, k);
+          let xmin, xmax;
+          if (isC) {
+            const base = Math.max(Math.max(...g.crit) * 1.3, k + 5 * Math.sqrt(2 * k) + 3);
+            xmin = 0;
+            xmax = g.stat <= base * 3 ? Math.max(base, g.stat * 1.1) : base;
+          } else {
+            const cmax = Math.max(...g.crit.map(Math.abs));
+            const L = Math.max(4, cmax * 1.35, Math.min(Math.abs(g.stat) * 1.15, 12));
+            xmin = -L;
+            xmax = L;
+          }
+          const pad = { l: 44, r: 16, t: 52, b: 44 };
+          const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+          let ym = 0;
+          if (isC) {
+            for (let i = 1; i <= 240; i++) ym = Math.max(ym, pdf(xmin + ((xmax - xmin) * i) / 240));
+          } else ym = pdf(0);
+          const ymax = ym * 1.1;
+          const toX = (v) => pad.l + ((v - xmin) / (xmax - xmin)) * pw;
+          const toY = (y) => pad.t + (1 - Math.min(y, ymax) / ymax) * ph;
+          const base = toY(0);
+          const dp = g.dec;
+          canvas._geo = { pad, pw, W, xmin, xmax };
+
+          ctx.fillStyle = "#112230";
+          ctx.fillRect(0, 0, W, H);
+          ctx.strokeStyle = "rgba(26,53,69,0.5)";
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 4; i++) {
+            const y = pad.t + (i * ph) / 4;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, y);
+            ctx.lineTo(W - pad.r, y);
+            ctx.stroke();
+          }
+
+          // shaded rejection regions
+          const shade = (a, b) => {
+            ctx.beginPath();
+            ctx.moveTo(toX(a), base);
+            const N = 200;
+            for (let i = 0; i <= N; i++) {
+              const x = a + ((b - a) * i) / N;
+              ctx.lineTo(toX(x), toY(pdf(x)));
+            }
+            ctx.lineTo(toX(b), base);
+            ctx.closePath();
+            ctx.fillStyle = "rgba(255,107,53,0.42)";
+            ctx.fill();
+          };
+          if (g.alt === "two") {
+            shade(xmin, g.crit[0]);
+            shade(g.crit[1], xmax);
+          } else if (g.alt === "right") shade(g.crit[0], xmax);
+          else shade(xmin, g.crit[0]);
+
+          // curve
+          ctx.beginPath();
+          ctx.strokeStyle = "#00d4ff";
+          ctx.lineWidth = 2.2;
+          let started = false;
+          for (let i = 0; i <= 300; i++) {
+            const x = xmin + ((xmax - xmin) * i) / 300;
+            if (isC && x <= 0) continue;
+            const px = toX(x), py = toY(pdf(x));
+            if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+
+          // axis + ticks
+          ctx.strokeStyle = "rgba(122,154,170,0.6)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(pad.l, base);
+          ctx.lineTo(W - pad.r, base);
+          ctx.stroke();
+          const stepList = [0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 500, 1000];
+          const st = stepList.find((v) => (xmax - xmin) / v <= 10) || 1000;
+          ctx.fillStyle = "#7a9aaa";
+          ctx.font = "10px Space Mono,monospace";
+          ctx.textAlign = "center";
+          for (let v = Math.ceil(xmin / st) * st; v <= xmax + 1e-9; v += st) {
+            ctx.beginPath();
+            ctx.moveTo(toX(v), base);
+            ctx.lineTo(toX(v), base + 4);
+            ctx.stroke();
+            ctx.fillText(String(+v.toFixed(2)), toX(v), base + 16);
+          }
+          ctx.fillText(`${sym}  (df = ${Number.isInteger(g.df) ? g.df : g.df.toFixed(2)})`, pad.l + pw / 2, H - 8);
+          ctx.save();
+          ctx.translate(12, pad.t + ph / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText("density", 0, 0);
+          ctx.restore();
+
+          const label = (txt, x, y, color) => {
+            ctx.font = "bold 10px Space Mono,monospace";
+            const w = ctx.measureText(txt).width;
+            ctx.textAlign = "left";
+            const lx = Math.min(W - 4 - w, Math.max(4, x - w / 2));
+            ctx.fillStyle = color;
+            ctx.fillText(txt, lx, y);
+          };
+
+          // critical lines
+          g.crit.forEach((c) => {
+            const x = toX(c);
+            ctx.strokeStyle = "#ff6b35";
+            ctx.lineWidth = 1.8;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(x, 22);
+            ctx.lineTo(x, base);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            label(`crit ${sym} = ${c.toFixed(dp)}`, x, 16, "#ff6b35");
+          });
+
+          // statistic line
+          const off = g.stat > xmax * 0.97 || (!isC && Math.abs(g.stat) > xmax * 0.97);
+          const sv = off ? Math.sign(g.stat) * xmax * 0.97 : g.stat;
+          const sx = toX(sv);
+          ctx.strokeStyle = "#77dc1e";
+          ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          ctx.moveTo(sx, 40);
+          ctx.lineTo(sx, base);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.fillStyle = "#77dc1e";
+          ctx.arc(sx, toY(pdf(sv)), 4.5, 0, 2 * Math.PI);
+          ctx.fill();
+          label(`${sym} = ${g.stat.toFixed(dp)}${off ? (g.stat > 0 ? "  ▶ off scale" : "  ◀ off scale") : ""}`, sx, 34, "#77dc1e");
+
+          // hover read-out
+          if (typeof hx === "number" && isFinite(hx) && hx >= xmin && hx <= xmax && !(isC && hx <= 0)) {
+            const px = toX(hx), fy = pdf(hx), up = upper(hx);
+            const inRej = g.alt === "two" ? hx < g.crit[0] || hx > g.crit[1] : g.alt === "right" ? hx > g.crit[0] : hx < g.crit[0];
+            ctx.strokeStyle = "rgba(232,244,248,0.7)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 3]);
+            ctx.beginPath();
+            ctx.moveTo(px, pad.t);
+            ctx.lineTo(px, base);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.fillStyle = "#e8f4f8";
+            ctx.arc(px, toY(fy), 3.5, 0, 2 * Math.PI);
+            ctx.fill();
+            const lines = [`${sym} = ${hx.toFixed(3)}`, `f = ${fy.toFixed(4)}`, `P(≥ x) = ${up.toFixed(4)}`, inRej ? "in rejection region" : "in acceptance region"];
+            ctx.font = "10px Space Mono,monospace";
+            const bw = Math.max(...lines.map((t) => ctx.measureText(t).width)) + 14, bh = lines.length * 14 + 8;
+            let bx = px + 10;
+            if (bx + bw > W - 4) bx = px - 10 - bw;
+            const by = pad.t + 14;
+            ctx.fillStyle = "rgba(5,10,14,0.88)";
+            ctx.strokeStyle = inRej ? "#ff6b35" : "#00d4ff";
+            ctx.lineWidth = 1;
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeRect(bx, by, bw, bh);
+            ctx.textAlign = "left";
+            lines.forEach((t, i) => {
+              ctx.fillStyle = i === 3 ? (inRej ? "#ff6b35" : "#77dc1e") : "#e8f4f8";
+              ctx.fillText(t, bx + 7, by + 15 + i * 14);
+            });
+          }
+
+          canvas.setAttribute(
+            "aria-label",
+            `${isC ? "Chi-square" : "t"} distribution, df ${g.df}. Critical value(s): ${g.crit.map((c) => c.toFixed(dp)).join(", ")}. Test statistic: ${g.stat.toFixed(dp)}.`,
+          );
+        }
+
+        // ── Observed vs expected bar chart (goodness of fit) ─────────
+        function drawBars(canvas, b) {
+          if (!canvas || !b) return;
+          const wrap = canvas.parentElement;
+          const W = Math.max(260, wrap.clientWidth - 16);
+          const H = W < 520 ? 260 : 310;
+          const DPR = window.devicePixelRatio || 1;
+          canvas.width = W * DPR;
+          canvas.height = H * DPR;
+          canvas.style.width = W + "px";
+          canvas.style.height = H + "px";
+          const ctx = canvas.getContext && canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+          ctx.fillStyle = "#112230";
+          ctx.fillRect(0, 0, W, H);
+          const pad = { l: 44, r: 12, t: 24, b: 62 };
+          const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+          const n = b.names.length;
+          const vmax = Math.max(...b.O, ...b.E) * 1.15;
+          const toY = (v) => pad.t + (1 - v / vmax) * ph;
+          ctx.font = "10px Space Mono,monospace";
+          ctx.textAlign = "right";
+          for (let i = 0; i <= 4; i++) {
+            const v = (vmax * i) / 4, y = toY(v);
+            ctx.strokeStyle = "rgba(26,53,69,0.6)";
+            ctx.beginPath();
+            ctx.moveTo(pad.l, y);
+            ctx.lineTo(W - pad.r, y);
+            ctx.stroke();
+            ctx.fillStyle = "#7a9aaa";
+            ctx.fillText(String(+v.toFixed(1)), pad.l - 5, y + 3);
+          }
+          const slot = pw / n, bw = Math.min(34, slot * 0.38);
+          const showVals = bw >= 14;
+          b.names.forEach((nm, i) => {
+            const cx = pad.l + slot * (i + 0.5);
+            const bars = [[b.O[i], "#00d4ff", cx - bw], [b.E[i], "#ff6b35", cx]];
+            bars.forEach(([v, col, x0]) => {
+              ctx.fillStyle = col;
+              ctx.fillRect(x0, toY(v), bw, toY(0) - toY(v));
+              if (showVals) {
+                ctx.fillStyle = col;
+                ctx.font = "9px Space Mono,monospace";
+                ctx.textAlign = "center";
+                ctx.fillText(String(+v.toFixed(1)), x0 + bw / 2, toY(v) - 3);
+              }
+            });
+            ctx.save();
+            ctx.translate(cx, H - pad.b + 14);
+            const maxc = slot < 56 ? 7 : 12;
+            const txt = nm.length > maxc ? nm.slice(0, maxc - 1) + "…" : nm;
+            if (slot < 56) ctx.rotate(-Math.PI / 4);
+            ctx.fillStyle = "#7a9aaa";
+            ctx.font = "10px Space Mono,monospace";
+            ctx.textAlign = slot < 56 ? "right" : "center";
+            ctx.fillText(txt, 0, 0);
+            ctx.restore();
+          });
+          ctx.strokeStyle = "rgba(122,154,170,0.6)";
+          ctx.beginPath();
+          ctx.moveTo(pad.l, toY(0));
+          ctx.lineTo(W - pad.r, toY(0));
+          ctx.stroke();
+          canvas.setAttribute("aria-label", "Observed versus expected frequencies: " + b.names.map((nm, i) => `${nm} O=${b.O[i]} E=${+b.E[i].toFixed(2)}`).join("; "));
+        }
+
+        // ── Goodness-of-fit data table ───────────────────────────────
+        let lastBars = null;
+        let gofRows = [];
+        const GOF_DESC = {
+          direct: "Type the expected count for each category. <span class='warn'>Σ expected must equal Σ observed.</span>",
+          uniform: "Every category is equally likely: Eᵢ = N / k.",
+          prob: "Enter pᵢ for each category (positive, adding up to 1). Eᵢ = N × pᵢ.",
+          ratio: "Enter relative weights such as 9, 3, 3, 1 — they are converted to probabilities for you.",
+          binom: "Name each category with its whole number <span class='eg'>k</span> (0, 1, 2, …). Eᵢ = N × C(n,k) pᵏ (1−p)ⁿ⁻ᵏ.",
+          poisson: "Name each category with its whole number <span class='eg'>k</span> (0, 1, 2, …). Eᵢ = N × e^(−λ) λᵏ / k!. Use “k or more” for an open last category.",
+        };
+        const GOF_HEAD = { direct: "Expected E", uniform: "Expected (auto)", prob: "Probability p", ratio: "Ratio part", binom: "Expected (auto)", poisson: "Expected (auto)" };
+        function gofDefault() {
+          return [["1", 5, 10], ["2", 8, 10], ["3", 9, 10], ["4", 8, 10], ["5", 10, 10], ["6", 20, 10]].map((r) => ({ name: r[0], obs: String(r[1]), exp: String(r[2]) }));
+        }
+        function gofSync() {
+          const rows = [];
+          document.querySelectorAll("#gofRows tr").forEach((tr) => {
+            rows.push({ name: tr.querySelector(".g-name").value, obs: tr.querySelector(".g-obs").value, exp: tr.querySelector(".g-exp").value });
+          });
+          if (rows.length) gofRows = rows;
+        }
+        function gofRender() {
+          $("gofRows").innerHTML = gofRows
+            .map(
+              (r, i) =>
+                `<tr><td><input class="g-name" type="text" value="${esc(r.name)}" aria-label="Category ${i + 1} name" /></td>` +
+                `<td><input class="g-obs" type="number" step="1" min="0" value="${esc(r.obs)}" aria-label="Observed frequency ${i + 1}" /></td>` +
+                `<td><input class="g-exp" type="number" step="any" min="0" value="${esc(r.exp)}" aria-label="Expected value ${i + 1}" /></td></tr>`,
+            )
+            .join("");
+          gofModeUI();
+        }
+        function gofModeUI() {
+          const m = $("gofMode").value;
+          const dist = m === "binom" || m === "poisson";
+          const given = $("gofEst").value === "given";
+          $("gofDistRow").style.display = dist ? "flex" : "none";
+          $("gofNWrap").style.display = m === "binom" ? "flex" : "none";
+          $("gofPWrap").style.display = m === "binom" && given ? "flex" : "none";
+          $("gofLWrap").style.display = m === "poisson" && given ? "flex" : "none";
+          $("gofMRow").style.display = dist ? "none" : "flex";
+          $("gofCatHead").textContent = dist ? "Value k" : "Category";
+          $("gofExpHead").textContent = GOF_HEAD[m];
+          document.querySelectorAll("#gofRows .g-exp").forEach((el) => {
+            el.disabled = m === "uniform" || dist;
+            el.placeholder = el.disabled ? "auto" : "";
+          });
+          $("gofModeDesc").innerHTML = GOF_DESC[m];
+          gofUpdateSum();
+        }
+        function gofUpdateSum() {
+          const m = $("gofMode").value;
+          let N = 0;
+          document.querySelectorAll("#gofRows .g-obs").forEach((i) => {
+            const v = Number(i.value);
+            if (i.value !== "" && isFinite(v)) N += v;
+          });
+          let txt = `Σ Observed = ${N}`;
+          if (m === "direct") {
+            let E = 0;
+            document.querySelectorAll("#gofRows .g-exp").forEach((i) => {
+              const v = Number(i.value);
+              if (i.value !== "" && isFinite(v)) E += v;
+            });
+            txt += `   |   Σ Expected = ${+E.toFixed(6)}   ${Math.abs(E - N) <= 1e-6 * Math.max(1, N) ? "✓ totals match" : "✗ totals must match"}`;
+          }
+          $("gofSum").textContent = txt;
+        }
+        window.gofAdd = function () {
+          gofSync();
+          if (gofRows.length >= 30) return;
+          const m = $("gofMode").value;
+          const last = Number(gofRows[gofRows.length - 1].name);
+          const name = (m === "binom" || m === "poisson") && Number.isInteger(last) ? String(last + 1) : "Category " + (gofRows.length + 1);
+          gofRows.push({ name, obs: "", exp: "" });
+          gofRender();
+        };
+        window.gofRemove = function () {
+          gofSync();
+          if (gofRows.length <= 2) return;
+          gofRows.pop();
+          gofRender();
+        };
+        function loadGof(g) {
+          $("gofMode").value = g.mode;
+          gofRows = g.rows.map((r) => ({ name: String(r[0]), obs: String(r[1]), exp: r[2] === undefined ? "" : String(r[2]) }));
+          $("gofp_n").value = g.n !== undefined ? g.n : 4;
+          $("gofp_p").value = g.p !== undefined ? g.p : 0.5;
+          $("gofp_lam").value = g.lam !== undefined ? g.lam : 1;
+          $("gofp_m").value = g.m !== undefined ? g.m : 0;
+          $("gofEst").value = g.est || "given";
+          $("gofTail").value = g.tail || "exact";
+          gofRender();
+        }
+
+        // ── Contingency table (independence) ─────────────────────────
+        let indState = null;
+        function indDefault() {
+          return { rn: ["Group 1", "Group 2"], cn: ["Option A", "Option B", "Option C"], cells: [["30", "20", "50"], ["20", "40", "40"]] };
+        }
+        function indSync() {
+          const t = $("indTable");
+          const rn = [...t.querySelectorAll(".i-rname")].map((x) => x.value);
+          const cn = [...t.querySelectorAll(".i-cname")].map((x) => x.value);
+          if (!rn.length) return;
+          const cells = rn.map(() => cn.map(() => ""));
+          t.querySelectorAll(".i-cell").forEach((x) => { cells[+x.dataset.r][+x.dataset.c] = x.value; });
+          indState = { rn, cn, cells };
+        }
+        function indRender() {
+          const { rn, cn, cells } = indState;
+          let h = `<thead><tr><th></th>${cn.map((c, j) => `<th><input class="i-cname" type="text" value="${esc(c)}" aria-label="Column ${j + 1} name" /></th>`).join("")}<th>Row total</th></tr></thead><tbody>`;
+          rn.forEach((r, i) => {
+            h += `<tr><td><input class="i-rname" type="text" value="${esc(r)}" aria-label="Row ${i + 1} name" /></td>${cn
+              .map((c, j) => `<td><input class="i-cell" type="number" step="1" min="0" data-r="${i}" data-c="${j}" value="${esc(cells[i][j])}" aria-label="Count row ${i + 1} column ${j + 1}" /></td>`)
+              .join("")}<td class="tt rt" data-r="${i}"></td></tr>`;
+          });
+          h += `<tr class="tot"><td style="font-size:.65rem;color:var(--text-dim)">Column total</td>${cn.map((c, j) => `<td class="tt ct" data-c="${j}"></td>`).join("")}<td class="tt gt"></td></tr></tbody>`;
+          $("indTable").innerHTML = h;
+          indTotals();
+        }
+        function indTotals() {
+          const t = $("indTable");
+          const R = {}, C = {};
+          let N = 0;
+          t.querySelectorAll(".i-cell").forEach((x) => {
+            const v = Number(x.value);
+            const val = x.value !== "" && isFinite(v) ? v : 0;
+            R[x.dataset.r] = (R[x.dataset.r] || 0) + val;
+            C[x.dataset.c] = (C[x.dataset.c] || 0) + val;
+            N += val;
+          });
+          t.querySelectorAll(".rt").forEach((td) => (td.textContent = R[td.dataset.r] || 0));
+          t.querySelectorAll(".ct").forEach((td) => (td.textContent = C[td.dataset.c] || 0));
+          const gt = t.querySelector(".gt");
+          if (gt) gt.textContent = N;
+        }
+        window.indResize = function (kind) {
+          indSync();
+          const st = indState;
+          if (kind === "addRow" && st.rn.length < 10) { st.rn.push("Row " + (st.rn.length + 1)); st.cells.push(st.cn.map(() => "")); }
+          if (kind === "delRow" && st.rn.length > 2) { st.rn.pop(); st.cells.pop(); }
+          if (kind === "addCol" && st.cn.length < 10) { st.cn.push("Column " + (st.cn.length + 1)); st.cells.forEach((r) => r.push("")); }
+          if (kind === "delCol" && st.cn.length > 2) { st.cn.pop(); st.cells.forEach((r) => r.pop()); }
+          indRender();
+        };
+        function loadInd(o) {
+          indState = { rn: o.rn.slice(), cn: o.cn.slice(), cells: o.cells.map((r) => r.map(String)) };
+          $("indAttA").value = o.A || "Group";
+          $("indAttB").value = o.B || "Preference";
+          indRender();
+        }
+
+        // ── Examples ─────────────────────────────────────────────────
+        const EX = [
+          { name: "χ² · variance (right)", test: "cv", cvmode: "var", v: { cvn_n: 20, cvv_s2: 44, cvv_sig0sq: 25 }, alpha: "0.05", alt: "right" },
+          { name: "χ² · variance (left, s)", test: "cv", cvmode: "sd", v: { cvn_n: 15, cvs_s: 2, cvs_sig0: 3 }, alpha: "0.05", alt: "left" },
+          { name: "χ² · variance (two-tailed)", test: "cv", cvmode: "var", v: { cvn_n: 16, cvv_s2: 7.5, cvv_sig0sq: 5 }, alpha: "0.05", alt: "two" },
+          { name: "χ² · fit: dice", test: "gof", alpha: "0.05", gof: { mode: "direct", rows: [["1", 5, 10], ["2", 8, 10], ["3", 9, 10], ["4", 8, 10], ["5", 10, 10], ["6", 20, 10]] } },
+          { name: "χ² · fit: Mendel 9:3:3:1", test: "gof", alpha: "0.05", gof: { mode: "ratio", rows: [["Round yellow", 315, 9], ["Round green", 108, 3], ["Wrinkled yellow", 101, 3], ["Wrinkled green", 32, 1]] } },
+          { name: "χ² · fit: Poisson", test: "gof", alpha: "0.05", gof: { mode: "poisson", est: "est", tail: "tail", rows: [["0", 109], ["1", 65], ["2", 22], ["3", 4]] } },
+          { name: "χ² · independence 2×3", test: "ind", alpha: "0.05", ind: { A: "Group", B: "Preference", rn: ["Group 1", "Group 2"], cn: ["Option A", "Option B", "Option C"], cells: [[30, 20, 50], [20, 40, 40]] } },
+          { name: "χ² · independence 2×2", test: "ind", alpha: "0.05", ind: { A: "Treatment", B: "Outcome", rn: ["Drug", "Placebo"], cn: ["Improved", "Not improved"], cells: [[12, 8], [5, 15]] } },
+        ];
+        function buildExamples() {
+          $("exStrip").innerHTML = EX.map((e, i) => `<span class="ex-chip" onclick="loadEx(${i})">${e.name}</span>`).join("");
+        }
+        window.loadEx = function (i) {
+          const e = EX[i];
+          $("testType").value = e.test;
+          if (e.cvmode) $("cvmode").value = e.cvmode;
+          if (e.gof) loadGof(e.gof);
+          if (e.ind) loadInd(e.ind);
+          Object.keys(e.v || {}).forEach((k) => ($(k).value = e.v[k]));
+          $("alpha").value = e.alpha;
+          if (e.alt) $("altSel").value = e.alt;
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          updateVisibility();
+        };
+
+        // ── Reset / alerts / popups ──────────────────────────────────
+        window.resetAll = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          $("emptyState").style.display = "block";
+          $("resultsContent").style.display = "none";
+          lastGraph = null;
+          lastBars = null;
+          buildFields();
+          ["testType", "cvmode", "gofMode", "gofEst", "gofTail", "alpha", "altSel"].forEach((id) => {
+            const sel = $(id);
+            const def = [...sel.options].find((o) => o.defaultSelected);
+            sel.value = def ? def.value : sel.options[0].value;
+          });
+          $("gofp_n").value = 4;
+          $("gofp_p").value = 0.5;
+          $("gofp_lam").value = 1;
+          $("gofp_m").value = 0;
+          $("indAttA").value = "Group";
+          $("indAttB").value = "Preference";
+          gofRows = gofDefault();
+          gofRender();
+          indState = indDefault();
+          indRender();
+          $("decimals").value = 4;
+          updateVisibility();
+        };
+        window.togglePop = function (id) {
+          const p = $(id);
+          if (!p) return;
+          const open = p.classList.contains("show");
+          document.querySelectorAll(".info-popup").forEach((x) => x.classList.remove("show"));
+          if (!open) p.classList.add("show");
+        };
+        document.addEventListener("click", (e) => {
+          if (!e.target.classList.contains("info-btn"))
+            document.querySelectorAll(".info-popup").forEach((p) => p.classList.remove("show"));
+        });
+        function showError(m) {
+          const e = $("errorAlert");
+          e.textContent = "✕ Error: " + m;
+          e.style.display = "block";
+        }
+        function showSuccess(m) {
+          const e = $("successAlert");
+          e.textContent = m;
+          e.style.display = "block";
+        }
+        function hideAlert(id) {
+          $(id).style.display = "none";
+        }
+
+        // ── Init ─────────────────────────────────────────────────────
+        buildFields();
+        buildExamples();
+        gofRows = gofDefault();
+        gofRender();
+        indState = indDefault();
+        indRender();
+        ["testType", "cvmode"].forEach((id) =>
+          $(id).addEventListener("change", updateVisibility),
+        );
+        ["gofMode", "gofEst"].forEach((id) => $(id).addEventListener("change", gofModeUI));
+        $("gofRows").addEventListener("input", gofUpdateSum);
+        $("indTable").addEventListener("input", indTotals);
+        updateVisibility();
+
+        // interactive read-out on the distribution graph (mouse hover / touch)
+        (function () {
+          const cv = $("distCanvas");
+          const move = (e) => {
+            if (!lastGraph || !cv._geo) return;
+            const gx = cv._geo, rect = cv.getBoundingClientRect();
+            const px = ((e.clientX - rect.left) * gx.W) / rect.width;
+            if (px < gx.pad.l || px > gx.W - gx.pad.r) return drawDist(cv, lastGraph);
+            drawDist(cv, lastGraph, gx.xmin + ((px - gx.pad.l) / gx.pw) * (gx.xmax - gx.xmin));
+          };
+          cv.addEventListener("pointermove", move);
+          cv.addEventListener("pointerdown", move);
+          cv.addEventListener("pointerleave", (e) => {
+            if (e.pointerType === "mouse" && lastGraph) drawDist(cv, lastGraph);
+          });
+        })();
+
+        window.addEventListener("resize", () => {
+          if (lastGraph) drawDist($("distCanvas"), lastGraph);
+          if (lastBars) drawBars($("barCanvas"), lastBars);
+        });
+        // test hook (used by automated checks only)
+        window.__HT = { zUpper, tUpper, chiUpper, chiLower, upperQuantile, calc, decide, state };
+
+        // ── Background animation ─────────────────────────────────────
+        (() => {
+          const gridCv = $("bgGrid"),
+            partCv = $("bgParticles"),
+            symW = $("bgSymbols");
+          if (!gridCv || !partCv || !symW) return;
+          const gctx = gridCv.getContext("2d"),
+            pctx = partCv.getContext("2d");
+          if (!gctx || !pctx) return;
+          const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+          const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+          const particles = [];
+          const pc = 90;
+          let w = 0, h = 0, dpr = 1;
+          function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = window.innerWidth;
+            h = window.innerHeight;
+            [gridCv, partCv].forEach((cv) => {
+              cv.width = Math.floor(w * dpr);
+              cv.height = Math.floor(h * dpr);
+              cv.style.width = w + "px";
+              cv.style.height = h + "px";
+            });
+            gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          function seed() {
+            particles.length = 0;
+            for (let i = 0; i < pc; i++)
+              particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 1.5 + Math.random() * 2.3,
+                c: palette[(Math.random() * palette.length) | 0],
+              });
+          }
+          function seedSym() {
+            const syms = ["H₀", "H₁", "α", "z", "t", "p-value", "x̄", "μ₀", "df", "s²", "σ", "Sp", "t(α,df)", "n−1", "Δ₀", "β"];
+            symW.innerHTML = "";
+            for (let i = 0; i < 22; i++) {
+              const s = document.createElement("span");
+              const t = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+              s.className = "bg-symbol " + t;
+              s.textContent = syms[i % syms.length];
+              s.style.left = Math.random() * 98 + "%";
+              s.style.top = 80 + Math.random() * 50 + "%";
+              s.style.fontSize = 13 + Math.random() * 20 + "px";
+              s.style.animationDuration = 22 + Math.random() * 20 + "s";
+              s.style.animationDelay = -Math.random() * 26 + "s";
+              symW.appendChild(s);
+            }
+          }
+          function drawGrid(t) {
+            gctx.clearRect(0, 0, w, h);
+            const gap = 56, ox = (t * 0.008) % gap, oy = (t * 0.005) % gap;
+            gctx.strokeStyle = "rgba(0,212,255,.11)";
+            gctx.lineWidth = 1;
+            for (let x = -gap; x < w + gap; x += gap) {
+              gctx.beginPath();
+              gctx.moveTo(x + ox, 0);
+              gctx.lineTo(x + ox, h);
+              gctx.stroke();
+            }
+            for (let y = -gap; y < h + gap; y += gap) {
+              gctx.beginPath();
+              gctx.moveTo(0, y + oy);
+              gctx.lineTo(w, y + oy);
+              gctx.stroke();
+            }
+            gctx.strokeStyle = "rgba(124,58,237,.08)";
+            for (let x = -h; x < w + h; x += gap * 1.5) {
+              gctx.beginPath();
+              gctx.moveTo(x - ox * 0.7, 0);
+              gctx.lineTo(x + h - oy * 0.7, h);
+              gctx.stroke();
+            }
+          }
+          function drawPart() {
+            pctx.clearRect(0, 0, w, h);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > w) p.vx *= -1;
+              if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            for (let i = 0; i < particles.length; i++) {
+              const a = particles[i];
+              for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j], dx = a.x - b.x, dy = a.y - b.y, dist = Math.hypot(dx, dy);
+                if (dist < 120) {
+                  pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                  pctx.lineWidth = 1;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(b.x, b.y);
+                  pctx.stroke();
+                }
+              }
+              if (mouse.active) {
+                const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (md < mouse.r) {
+                  pctx.strokeStyle = `rgba(124,58,237,${(1 - md / mouse.r) * 0.45})`;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(mouse.x, mouse.y);
+                  pctx.stroke();
+                }
+              }
+            }
+            for (const p of particles) {
+              const near = mouse.active ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r : false;
+              pctx.beginPath();
+              pctx.fillStyle = p.c;
+              pctx.globalAlpha = near ? 1 : 0.82;
+              pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+              pctx.fill();
+              if (near) {
+                pctx.beginPath();
+                pctx.globalAlpha = 0.15;
+                pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+                pctx.fill();
+              }
+            }
+            pctx.globalAlpha = 1;
+          }
+          function loop(t) {
+            drawGrid(t);
+            drawPart();
+            requestAnimationFrame(loop);
+          }
+          window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+          });
+          window.addEventListener("mouseleave", () => {
+            mouse.active = false;
+          });
+          window.addEventListener("resize", resize);
+          resize();
+          seed();
+          seedSym();
+          requestAnimationFrame(loop);
+        })();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Testing of Hypothesis Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      @media (max-width: 600px) {
+        .container {
+          padding: 1rem;
+          padding-bottom: 5rem;
+        }
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      @media (max-width: 600px) {
+        header {
+          padding: 2rem 0 1rem;
+        }
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.2rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1.05;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 900px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+        min-width: 0;
+      }
+      @media (max-width: 600px) {
+        .panel {
+          padding: 1rem;
+        }
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 130px;
+        position: relative;
+      }
+      .control-group.wide {
+        flex-basis: 100%;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+        position: relative;
+      }
+      label .sym {
+        color: var(--accent);
+        font-size: 0.75rem;
+      }
+      input[type="number"],
+      input[type="text"],
+      select,
+      textarea {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      textarea {
+        resize: vertical;
+        line-height: 1.6;
+      }
+      select option,
+      select optgroup {
+        background: #0d1a22;
+        color: var(--text);
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+      .func-input-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .func-input-wrap select {
+        background: transparent;
+        color: var(--accent3);
+        border-color: var(--border);
+      }
+      .func-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        position: relative;
+        flex-wrap: wrap;
+      }
+      .field-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-top: 0.1rem;
+        padding: 0.3rem 0.5rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.2);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .field-desc .eg {
+        color: var(--accent3);
+      }
+      .field-desc .warn {
+        color: var(--accent2);
+      }
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.3rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      .full-width {
+        grid-column: 1/-1;
+      }
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.61rem;
+        color: var(--text);
+        line-height: 1.75;
+        z-index: 200;
+        width: 280px;
+        max-width: 78vw;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.64rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      /* overview boxes */
+      .ov-box {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .ov-box.orange {
+        background: rgba(255, 107, 53, 0.06);
+        border-color: rgba(255, 107, 53, 0.2);
+      }
+      .ov-box.green {
+        background: rgba(119, 220, 30, 0.05);
+        border-color: rgba(119, 220, 30, 0.18);
+      }
+      .ov-h {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.7rem;
+      }
+      .ov-box.orange .ov-h {
+        color: var(--accent2);
+      }
+      .ov-box.green .ov-h {
+        color: var(--accent3);
+      }
+      .ov-body {
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        line-height: 2;
+        overflow-x: auto;
+      }
+      .ov-body .k {
+        color: var(--accent2);
+      }
+      .ov-body .g {
+        color: var(--accent3);
+      }
+      .ov-list {
+        font-family: "Space Mono", monospace;
+        font-size: 0.64rem;
+        color: var(--text-dim);
+        line-height: 1.9;
+        list-style: none;
+      }
+      .ov-list li::before {
+        content: "\2713\00a0";
+        color: var(--accent3);
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem 0.6rem;
+        text-align: center;
+        min-width: 0;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+        overflow-wrap: anywhere;
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+      .decision {
+        border-radius: 10px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.2rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 1.8;
+      }
+      .decision b {
+        font-size: 1rem;
+        letter-spacing: 0.05em;
+      }
+      .decision.reject {
+        background: rgba(255, 107, 53, 0.08);
+        border: 1px solid rgba(255, 107, 53, 0.4);
+        color: var(--accent2);
+      }
+      .decision.accept {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.35);
+        color: var(--accent3);
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .dist-canvas-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 0.6rem;
+      }
+      .dist-canvas-wrap canvas {
+        display: block;
+        width: 100%;
+      }
+      .legend {
+        display: flex;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-bottom: 1.4rem;
+      }
+      .legend i {
+        display: inline-block;
+        width: 14px;
+        height: 8px;
+        margin-right: 0.4rem;
+        vertical-align: middle;
+        border-radius: 2px;
+      }
+      .steps-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+      }
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.2rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 0.9rem;
+        max-width: 100%;
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        line-height: 2;
+        color: var(--text);
+        overflow-x: auto;
+      }
+      .calc-box .dim {
+        color: var(--text-dim);
+      }
+      .calc-box .res {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .calc-box .hl {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .calc-box .org {
+        color: var(--accent2);
+        font-weight: 700;
+      }
+      .calc-box .ln {
+        white-space: nowrap;
+      }
+      .calc-box .ln.wrap {
+        white-space: normal;
+      }
+      .calc-box hr {
+        border: none;
+        height: 1px;
+        background: var(--border);
+        margin: 0.4rem 0;
+      }
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+        line-height: 1.6;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+      .alert-warn {
+        display: block;
+        background: rgba(255, 170, 0, 0.08);
+        border: 1px solid rgba(255, 170, 0, 0.35);
+        color: #ffb347;
+        margin-top: 0;
+        margin-bottom: 0.6rem;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+      .type-badge {
+        display: inline-block;
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin-top: 0.6rem;
+      }
+      .tb-z {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        color: var(--accent);
+      }
+      .tb-t {
+        background: rgba(255, 107, 53, 0.15);
+        border: 1px solid rgba(255, 107, 53, 0.35);
+        color: var(--accent2);
+      }
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.5rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 600px) {
+        .site-footer {
+          padding: 0.7rem 1rem;
+          position: static;
+        }
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="bg-motion" aria-hidden="true">
+      <canvas class="bg-canvas" id="bgGrid"></canvas>
+      <canvas class="bg-canvas" id="bgParticles"></canvas>
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">Statistics &mdash; Unit I &middot; Sampling &amp; Inference</div>
+        <h1>Testing of Hypothesis</h1>
+        <p>
+          Small-sample Student's t tests &mdash; single mean &amp; difference of means
+        </p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── INPUT PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Test Type &amp; Inputs</div>
+
+          <!-- STEP 1 -->
+          <div class="func-label">
+            <span style="color: var(--accent2)">STEP 1</span> &mdash; Choose the
+            test type
+            <span class="info-btn" onclick="togglePop('pop-test')">?</span>
+            <div class="info-popup" id="pop-test">
+              <div class="pop-title">Which test?</div>
+              <strong>Small sample (n &lt; 30):</strong> &sigma; unknown, so use
+              the Student's t-distribution with degrees of freedom.<br /><br />
+              Differences of means can be <em>independent</em> or
+              <em>paired</em> (same subjects measured twice).
+            </div>
+          </div>
+          <div class="func-input-wrap">
+            <select id="testType">
+              <optgroup label="Small Sample Tests (Student's t)">
+                <option value="t1" selected>1 · Small Sample — Single Mean</option>
+                <option value="t2">2 · Small Sample — Difference of Means</option>
+              </optgroup>
+            </select>
+            <div><span class="type-badge tb-t" id="testBadge">SMALL SAMPLE</span></div>
+
+            <!-- extra options for test 6 -->
+            <div id="t2opts" style="display: none; margin-top: 1rem">
+              <div class="controls-row" style="margin-bottom: 0.4rem">
+                <div class="control-group">
+                  <label>Sample design</label>
+                  <select id="t2design">
+                    <option value="ind" selected>Independent samples</option>
+                    <option value="paired">Paired samples</option>
+                  </select>
+                  <div class="field-desc">
+                    <span class="eg">Independent:</span> two separate groups.
+                    <span class="eg">Paired:</span> same units measured twice.
+                  </div>
+                </div>
+                <div class="control-group" id="t2varWrap">
+                  <label>
+                    Variance assumption
+                    <span class="info-btn" onclick="togglePop('pop-var')">?</span>
+                    <div class="info-popup" id="pop-var">
+                      <div class="pop-title">Equal or unequal variances?</div>
+                      <strong>Equal (pooled):</strong> assumes &sigma;&sup2;<sub>1</sub> =
+                      &sigma;&sup2;<sub>2</sub>. Uses pooled S<sub>p</sub> and df = n&#8321;+n&#8322;&minus;2.<br /><br />
+                      <strong>Unequal (Welch):</strong> no equal-variance
+                      assumption; uses Welch&ndash;Satterthwaite df. Safer when
+                      the two s values differ a lot.
+                    </div>
+                  </label>
+                  <select id="t2var">
+                    <option value="equal" selected>Equal variances (pooled t)</option>
+                    <option value="welch">Unequal variances (Welch t)</option>
+                  </select>
+                  <div class="field-desc">
+                    <span class="warn">If s&#8321; and s&#8322; differ by more than 2&times;, prefer Welch.</span>
+                  </div>
+                </div>
+                <div class="control-group" id="t2pmodeWrap">
+                  <label>Paired data entry</label>
+                  <select id="t2pmode">
+                    <option value="raw" selected>Raw paired data</option>
+                    <option value="sum">Summary of differences</option>
+                  </select>
+                  <div class="field-desc">
+                    Enter both lists, or just d&#772;, s<sub>d</sub> and n.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="func-label">
+            <span style="color: var(--accent2)">STEP 2</span> &mdash; Enter the
+            sample data
+          </div>
+          <div id="fieldGroups"></div>
+
+          <!-- STEP 3 -->
+          <div class="func-label" style="margin-top: 0.4rem">
+            <span style="color: var(--accent2)">STEP 3</span> &mdash; Significance
+            level &amp; alternative hypothesis
+          </div>
+          <div class="controls-row">
+            <div class="control-group">
+              <label>
+                Significance &nbsp;<span class="sym">&alpha;</span>
+                <span class="info-btn" onclick="togglePop('pop-alpha')">?</span>
+                <div class="info-popup" id="pop-alpha">
+                  <div class="pop-title">Significance level</div>
+                  Probability of rejecting H&#8320; when it is actually true
+                  (Type I error).<br /><br />
+                  0.10 &rarr; 90% confidence<br />
+                  0.05 &rarr; 95% confidence<br />
+                  0.01 &rarr; 99% confidence
+                </div>
+              </label>
+              <select id="alpha">
+                <option value="0.10">&alpha; = 0.10</option>
+                <option value="0.05" selected>&alpha; = 0.05</option>
+                <option value="0.01">&alpha; = 0.01</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>
+                Alternative &nbsp;<span class="sym">H&#8321;</span>
+                <span class="info-btn" onclick="togglePop('pop-alt')">?</span>
+                <div class="info-popup" id="pop-alt">
+                  <div class="pop-title">Alternative hypothesis</div>
+                  <strong>Two-tailed (&ne;):</strong> any difference.<br />
+                  <strong>Left-tailed (&lt;):</strong> parameter is smaller.<br />
+                  <strong>Right-tailed (&gt;):</strong> parameter is larger.
+                </div>
+              </label>
+              <select id="altSel">
+                <option value="two" selected>Two-tailed (&ne;)</option>
+                <option value="left">Left-tailed (&lt;)</option>
+                <option value="right">Right-tailed (&gt;)</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>Decimal Places</label>
+              <input type="number" id="decimals" value="4" min="2" max="10" />
+            </div>
+          </div>
+
+          <div class="func-label" style="margin-top: 0.4rem">
+            <span style="color: var(--accent2)">OR</span> &mdash; pick a ready
+            example
+          </div>
+          <div class="examples-strip" id="exStrip"></div>
+          <div
+            style="
+              font-family: 'Space Mono', monospace;
+              font-size: 0.56rem;
+              color: var(--text-dim);
+            "
+          >
+            Click any chip to auto-fill the test and its data
+          </div>
+        </div>
+
+        <!-- ── OVERVIEW PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Method Overview</div>
+          <div id="overview"></div>
+          <div class="sep"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runTest()">
+              &#9654; Test Hypothesis
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+              &#10005; Reset
+            </button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+        </div>
+
+        <!-- ── RESULTS PANEL ── -->
+        <div class="panel full-width" style="animation-delay: 0.2s">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">H&#8320;</span>
+            Select a test type, enter the sample statistics and the
+            significance level,<br />
+            then click <strong>Test Hypothesis</strong> to get the decision.
+          </div>
+
+          <div id="resultsContent" style="display: none">
+            <div id="warnBox"></div>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="statStat">&mdash;</div>
+                <div class="stat-label" id="statStatLbl">Test Statistic</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statDf">&mdash;</div>
+                <div class="stat-label">Degrees of Freedom</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statCrit">&mdash;</div>
+                <div class="stat-label">Critical Value</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="statP">&mdash;</div>
+                <div class="stat-label">p-value</div>
+              </div>
+            </div>
+
+            <div class="decision" id="decisionBox"></div>
+
+            <div class="solution-display">
+              <div class="sol-title">Test summary</div>
+              <div class="sol-values" id="solutionDisplay"></div>
+            </div>
+
+            <div class="chart-title" id="graphTitle">Sampling Distribution</div>
+            <div class="dist-canvas-wrap">
+              <canvas id="distCanvas" role="img" aria-label="Distribution graph"></canvas>
+            </div>
+            <div class="legend">
+              <span><i style="background: rgba(255, 107, 53, 0.45)"></i>Rejection region (<span id="legAlpha"></span>)</span>
+              <span><i style="background: #ff6b35; height: 2px"></i>Critical value(s)</span>
+              <span><i style="background: #77dc1e; height: 3px"></i>Calculated statistic</span>
+            </div>
+
+            <div class="sep"></div>
+            <div class="steps-header-title">Step-by-Step Solution</div>
+            <div class="steps-list" id="stepsList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">H&#8320;</span>Testing of Hypothesis Calculator
+        &mdash; Small-sample t tests
+      </div>
+      <div class="foot-links">
+        <a href="adam.html">Adams&ndash;Bashforth</a>
+        <a href="euler.html">Euler's Method</a>
+        <a href="gauss_elimination.html">Gauss Elimination</a>
+        <a href="gauss_seidel.html">Gauss-Seidel</a>
+        <a href="gauss_jordan.html">Gauss-Jordan</a>
+        <a href="lagrange.html">Lagrange Interpolation</a>
+        <a href="power1.html">Power Method</a>
+        <a href="milins.html">Milne's Method</a>
+        <a href="Newton_divide.html">Newton's divide</a>
+        <a href="newton_raphson.html">Newton-Raphson</a>
+        <a href="rk%20method.html">RK4 Method</a>
+        <a href="simpson.html">Simpson's Rule</a>
+        <a href="taylor.html">Taylor's Method</a>
+        <a href="trapezoidel.html">Trapezoidal Rule</a>
+        <a href="large%20sample.html">Large Sample Test</a>
+        <a href="small%20sample.html">Small Sample Test</a>
+        <a href="chi-square-test.html">Chi-Square Test</a>
+        <a href="ftest.html">F Test</a>
+        <a href="index.html">Home</a>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        "use strict";
+        const $ = (id) => document.getElementById(id);
+
+        // ==MATH-START==
+        // ── Special functions ────────────────────────────────────────
+        const LG = 7,
+          LC = [
+            0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+            771.32342877765313, -176.61502916214059, 12.507343278686905,
+            -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+          ];
+        function lgamma(z) {
+          if (z < 0.5)
+            return (
+              Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lgamma(1 - z)
+            );
+          z -= 1;
+          let x = LC[0];
+          const t = z + LG + 0.5;
+          for (let i = 1; i < LG + 2; i++) x += LC[i] / (z + i);
+          return (
+            0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x)
+          );
+        }
+        function betacf(a, b, x) {
+          const FP = 1e-300,
+            EPS = 3e-16;
+          const qab = a + b,
+            qap = a + 1,
+            qam = a - 1;
+          let c = 1,
+            d = 1 - (qab * x) / qap;
+          if (Math.abs(d) < FP) d = FP;
+          d = 1 / d;
+          let h = d;
+          for (let m = 1; m <= 1000; m++) {
+            const m2 = 2 * m;
+            let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+            d = 1 + aa * d;
+            if (Math.abs(d) < FP) d = FP;
+            c = 1 + aa / c;
+            if (Math.abs(c) < FP) c = FP;
+            d = 1 / d;
+            h *= d * c;
+            aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+            d = 1 + aa * d;
+            if (Math.abs(d) < FP) d = FP;
+            c = 1 + aa / c;
+            if (Math.abs(c) < FP) c = FP;
+            d = 1 / d;
+            const del = d * c;
+            h *= del;
+            if (Math.abs(del - 1) < EPS) break;
+          }
+          return h;
+        }
+        // regularized incomplete beta I_x(a,b)
+        function betai(a, b, x) {
+          if (x <= 0) return 0;
+          if (x >= 1) return 1;
+          const bt = Math.exp(
+            lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x),
+          );
+          if (x < (a + 1) / (a + b + 2)) return (bt * betacf(a, b, x)) / a;
+          return 1 - (bt * betacf(b, a, 1 - x)) / b;
+        }
+        function gser(a, x) {
+          let ap = a,
+            sum = 1 / a,
+            del = sum;
+          for (let n = 0; n < 1000; n++) {
+            ap++;
+            del *= x / ap;
+            sum += del;
+            if (Math.abs(del) < Math.abs(sum) * 1e-16) break;
+          }
+          return sum * Math.exp(-x + a * Math.log(x) - lgamma(a));
+        }
+        function gcf(a, x) {
+          const FP = 1e-300;
+          let b = x + 1 - a,
+            c = 1 / FP,
+            d = 1 / b,
+            h = d;
+          for (let i = 1; i <= 1000; i++) {
+            const an = -i * (i - a);
+            b += 2;
+            d = an * d + b;
+            if (Math.abs(d) < FP) d = FP;
+            c = b + an / c;
+            if (Math.abs(c) < FP) c = FP;
+            d = 1 / d;
+            const del = d * c;
+            h *= del;
+            if (Math.abs(del - 1) < 1e-16) break;
+          }
+          return Math.exp(-x + a * Math.log(x) - lgamma(a)) * h;
+        }
+        function erfc(x) {
+          if (x < 0) return 2 - erfc(-x);
+          if (x === 0) return 1;
+          const x2 = x * x;
+          return x2 < 1.5 ? 1 - gser(0.5, x2) : gcf(0.5, x2);
+        }
+        // Upper-tail probabilities  P(Z > z)  and  P(T > t)
+        function zUpper(z) {
+          return 0.5 * erfc(z / Math.SQRT2);
+        }
+        function tUpper(t, df) {
+          if (t === 0) return 0.5;
+          if (t < 0) return 1 - tUpper(-t, df);
+          return 0.5 * betai(df / 2, 0.5, df / (df + t * t));
+        }
+        // Positive x with upper(x) = p   (0 < p <= 0.5)
+        function upperQuantile(upper, p) {
+          let lo = 0,
+            hi = 1;
+          while (upper(hi) > p && hi < 1e12) hi *= 2;
+          for (let i = 0; i < 300; i++) {
+            const mid = (lo + hi) / 2;
+            if (upper(mid) > p) lo = mid;
+            else hi = mid;
+          }
+          return (lo + hi) / 2;
+        }
+        function zPdf(x) {
+          return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+        }
+        function tPdf(x, v) {
+          return Math.exp(
+            lgamma((v + 1) / 2) - lgamma(v / 2) - 0.5 * Math.log(v * Math.PI) -
+              ((v + 1) / 2) * Math.log(1 + (x * x) / v),
+          );
+        }
+        // ==MATH-END==
+
+        // ── Formatting ───────────────────────────────────────────────
+        function fx(v, d) {
+          if (typeof v !== "number" || !isFinite(v)) return "N/A";
+          if (Math.abs(v) < 0.5 * Math.pow(10, -d)) return (0).toFixed(d);
+          return v.toFixed(d);
+        }
+        function fp(p, d) {
+          if (p < 0.5 * Math.pow(10, -d)) return "< " + Math.pow(10, -d).toFixed(d);
+          return p.toFixed(d);
+        }
+        const SUB = { 0: "₀", 1: "₁", 2: "₂" };
+
+        // ── Field definitions ────────────────────────────────────────
+        const GROUPS = [
+          {
+            p: "t1",
+            test: "t1",
+            fields: [
+              { id: "xbar", label: "Sample Mean", sym: "x̄", def: 52, desc: "Mean of your sample." },
+              { id: "mu0", label: "Hypothesized Mean", sym: "μ₀", def: 50, desc: "Value claimed in H₀." },
+              { id: "s", label: "Sample Std. Deviation", sym: "s", def: 4, desc: 'Uses n − 1 divisor. <span class="warn">Must be &gt; 0.</span>' },
+              { id: "n", label: "Sample Size", sym: "n", def: 16, desc: '<span class="eg">Small sample: n &lt; 30.</span> Must be ≥ 2.' },
+            ],
+          },
+          {
+            p: "t2i",
+            test: "t2",
+            cond: (s) => s.design === "ind",
+            fields: [
+              { id: "xbar1", label: "Sample 1 Mean", sym: "x̄₁", def: 85, desc: "Mean of sample 1." },
+              { id: "xbar2", label: "Sample 2 Mean", sym: "x̄₂", def: 78, desc: "Mean of sample 2." },
+              { id: "s1", label: "Sample 1 Std. Dev.", sym: "s₁", def: 6, desc: "Uses n − 1 divisor." },
+              { id: "s2", label: "Sample 2 Std. Dev.", sym: "s₂", def: 7, desc: "Uses n − 1 divisor." },
+              { id: "n1", label: "Sample Size 1", sym: "n₁", def: 12, desc: "Whole number ≥ 2." },
+              { id: "n2", label: "Sample Size 2", sym: "n₂", def: 15, desc: "Whole number ≥ 2." },
+              { id: "d0", label: "Hypothesized Difference", sym: "Δ₀", def: 0, desc: '<span class="eg">Default 0.</span> H₀: μ₁ − μ₂ = Δ₀.' },
+            ],
+          },
+          {
+            p: "t2pr",
+            test: "t2",
+            cond: (s) => s.design === "paired" && s.pmode === "raw",
+            fields: [
+              { id: "a", type: "area", label: "Sample 1 (e.g. before)", sym: "x", def: "70 72 68 75 80 66", desc: "Separate values by spaces, commas or new lines." },
+              { id: "b", type: "area", label: "Sample 2 (e.g. after)", sym: "y", def: "67 70 66 71 78 65", desc: "Same count and same order as sample 1." },
+              { id: "d0", label: "Hypothesized Mean Difference", sym: "Δ₀", def: 0, desc: '<span class="eg">Default 0.</span> Differences are d = x − y.' },
+            ],
+          },
+          {
+            p: "t2ps",
+            test: "t2",
+            cond: (s) => s.design === "paired" && s.pmode === "sum",
+            fields: [
+              { id: "dbar", label: "Mean of Differences", sym: "d̄", def: 2.3333, desc: "Mean of d = x − y." },
+              { id: "sd", label: "Std. Dev. of Differences", sym: "s_d", def: 1.0328, desc: 'Must be &gt; 0.' },
+              { id: "n", label: "Number of Pairs", sym: "n", def: 6, desc: "Whole number ≥ 2." },
+              { id: "d0", label: "Hypothesized Mean Difference", sym: "Δ₀", def: 0, desc: '<span class="eg">Default 0.</span>' },
+            ],
+          },
+        ];
+
+        function buildFields() {
+          const host = $("fieldGroups");
+          host.innerHTML = "";
+          GROUPS.forEach((g) => {
+            const wrap = document.createElement("div");
+            wrap.className = "controls-row";
+            wrap.dataset.group = g.p;
+            wrap.innerHTML = g.fields
+              .map((f) => {
+                const inp =
+                  f.type === "area"
+                    ? `<textarea id="${g.p}_${f.id}" rows="3" spellcheck="false">${f.def}</textarea>`
+                    : `<input type="number" id="${g.p}_${f.id}" value="${f.def}" step="any" />`;
+                return `<div class="control-group ${f.type === "area" ? "wide" : ""}">
+                  <label>${f.label} &nbsp;<span class="sym">${f.sym}</span></label>${inp}
+                  <div class="field-desc">${f.desc}</div></div>`;
+              })
+              .join("");
+            host.appendChild(wrap);
+          });
+        }
+
+        function state() {
+          return {
+            test: $("testType").value,
+            design: $("t2design").value,
+            variance: $("t2var").value,
+            pmode: $("t2pmode").value,
+            alpha: parseFloat($("alpha").value),
+            alt: $("altSel").value,
+            dec: Math.min(10, Math.max(2, parseInt($("decimals").value) || 4)),
+          };
+        }
+
+        function updateVisibility() {
+          const s = state();
+          $("t2opts").style.display = s.test === "t2" ? "block" : "none";
+          $("t2varWrap").style.display = s.design === "ind" ? "flex" : "none";
+          $("t2pmodeWrap").style.display = s.design === "paired" ? "flex" : "none";
+          GROUPS.forEach((g) => {
+            const el = document.querySelector(`[data-group="${g.p}"]`);
+            const show = g.test === s.test && (!g.cond || g.cond(s));
+            el.style.display = show ? "flex" : "none";
+          });
+          const badge = $("testBadge");
+          const isT = s.test === "t1" || s.test === "t2";
+          badge.className = "type-badge " + (isT ? "tb-t" : "tb-z");
+          badge.innerHTML = isT
+            ? "SMALL SAMPLE &middot; STUDENT'S t-DISTRIBUTION"
+            : "LARGE SAMPLE &middot; NORMAL (Z) DISTRIBUTION";
+          $("overview").innerHTML = overviewHTML(s);
+        }
+
+        // ── Info per test (used in overview and in the solution) ────
+        function info(s) {
+          switch (s.test) {
+            case "t1":
+              return {
+                title: "Small Sample — Student's t-test for a Single Mean",
+                dist: "t",
+                formula: [
+                  "t = (x̄ − μ₀) / (s / √n)",
+                  "SE = s / √n",
+                  "df = n − 1",
+                ],
+                assumptions: [
+                  "Small, independent random sample",
+                  "Population approximately normal",
+                  "Population standard deviation σ unknown (s used)",
+                ],
+              };
+            default:
+              if (s.design === "paired")
+                return {
+                  title: "Small Sample — Paired-Samples t-test",
+                  dist: "t",
+                  formula: [
+                    "dᵢ = xᵢ − yᵢ",
+                    "t = (d̄ − Δ₀) / (s_d / √n)",
+                    "SE = s_d / √n",
+                    "df = n − 1",
+                  ],
+                  assumptions: [
+                    "Each pair measured on the same unit (dependent samples)",
+                    "Pairs are a random sample; pairs independent of each other",
+                    "Differences dᵢ approximately normal",
+                  ],
+                };
+              if (s.variance === "welch")
+                return {
+                  title: "Small Sample — Welch's t-test (unequal variances)",
+                  dist: "t",
+                  formula: [
+                    "t = [(x̄₁ − x̄₂) − Δ₀] / √(s₁²/n₁ + s₂²/n₂)",
+                    "df = (a + b)² / [a²/(n₁−1) + b²/(n₂−1)]",
+                    "a = s₁²/n₁,  b = s₂²/n₂",
+                  ],
+                  assumptions: [
+                    "Two independent random samples",
+                    "Each population approximately normal",
+                    "Variances NOT assumed equal; σ₁, σ₂ unknown",
+                  ],
+                };
+              return {
+                title: "Small Sample — Pooled-variance t-test (equal variances)",
+                dist: "t",
+                formula: [
+                  "Sp² = [(n₁−1)s₁² + (n₂−1)s₂²] / (n₁+n₂−2)",
+                  "t = [(x̄₁ − x̄₂) − Δ₀] / [Sp √(1/n₁ + 1/n₂)]",
+                  "df = n₁ + n₂ − 2",
+                ],
+                assumptions: [
+                  "Two independent random samples",
+                  "Each population approximately normal",
+                  "Equal population variances (σ₁² = σ₂²), unknown",
+                ],
+              };
+          }
+        }
+
+        function overviewHTML(s) {
+          const I = info(s);
+          const dn = I.dist === "z" ? "z" : "t";
+          return `
+          <div class="ov-box orange">
+            <div class="ov-h">Selected test</div>
+            <div class="ov-body" style="line-height:1.7;font-size:0.78rem;">${I.title}</div>
+          </div>
+          <div class="ov-box">
+            <div class="ov-h">Formula</div>
+            <div class="ov-body">${I.formula.map((l) => "<div style='white-space:nowrap'>" + l + "</div>").join("")}</div>
+          </div>
+          <div class="ov-box">
+            <div class="ov-h">Assumptions</div>
+            <ul class="ov-list">${I.assumptions.map((a) => "<li>" + a + "</li>").join("")}</ul>
+          </div>
+          <div class="ov-box" style="font-family:'Space Mono',monospace;font-size:0.63rem;color:var(--text-dim);line-height:2;">
+            <strong style="color:var(--accent)">Decision rule (${dn}-distribution):</strong><br/>
+            <span style="color:var(--accent2)">Two-tailed:</span> reject H₀ if |${dn}| &gt; ${dn}<sub>α/2</sub><br/>
+            <span style="color:var(--accent2)">Right-tailed:</span> reject H₀ if ${dn} &gt; ${dn}<sub>α</sub><br/>
+            <span style="color:var(--accent2)">Left-tailed:</span> reject H₀ if ${dn} &lt; −${dn}<sub>α</sub>
+          </div>
+          <div class="ov-box green">
+            <div class="ov-h">Key insight</div>
+            <div class="ov-body" style="font-size:0.7rem;line-height:1.9;">
+              ${I.dist === "t"
+                ? "The t-distribution has heavier tails than Z, so small samples need a larger critical value. It approaches Z as df grows."
+                : "For large samples the sampling distribution is approximately normal, so Z critical values and p-values are used."}
+            </div>
+          </div>`;
+        }
+
+        // ── Input readers & validators ───────────────────────────────
+        function num(p, id, label) {
+          const el = $(p + "_" + id);
+          const raw = el.value.trim();
+          const v = Number(raw);
+          if (raw === "" || !isFinite(v))
+            throw new Error(label + " is missing or not a valid number.");
+          return v;
+        }
+        function int(p, id, label, min) {
+          const v = num(p, id, label);
+          if (!Number.isInteger(v) || v < min)
+            throw new Error(label + " must be a whole number ≥ " + min + ".");
+          return v;
+        }
+        function nonNeg(p, id, label) {
+          const v = num(p, id, label);
+          if (v < 0) throw new Error(label + " cannot be negative.");
+          return v;
+        }
+        function parseList(txt, name) {
+          const toks = txt.split(/[\s,;]+/).filter((t) => t.length);
+          return toks.map((t) => {
+            const v = Number(t);
+            if (!isFinite(v))
+              throw new Error(name + ': "' + t + '" is not a valid number.');
+            return v;
+          });
+        }
+
+        // ── Test calculations ────────────────────────────────────────
+        // each returns: par, nullTxt, noun, dist, df, stat, se, warn[], pre[],
+        // subst, seSubst, statSubst, dfLine
+        function calc(s, d) {
+          switch (s.test) {
+            case "t1": return calcT1(d);
+            default:
+              if (s.design === "paired") return calcPaired(s, d);
+              return calcT2(s, d);
+          }
+        }
+
+        function smallNWarn(n, label) {
+          const w = [];
+          if (n <= 3)
+            w.push(`${label} = ${n} is extremely small (very heavy t-tails, almost no power). Results are unreliable.`);
+          if (n < 15)
+            w.push(`${label} = ${n}: normality cannot be verified from so few observations. The t-test is valid only if the population is approximately normal (symmetric, no outliers).`);
+          return w;
+        }
+
+        function calcT1(d) {
+          const xbar = num("t1", "xbar", "Sample mean x̄");
+          const mu0 = num("t1", "mu0", "Hypothesized mean μ₀");
+          const sd = num("t1", "s", "Sample standard deviation s");
+          const n = int("t1", "n", "Sample size n", 2);
+          if (sd < 0) throw new Error("Sample standard deviation cannot be negative.");
+          if (sd === 0)
+            throw new Error("Sample standard deviation s = 0, so SE = 0 and t is undefined (all observations identical). Check your data.");
+          const warn = smallNWarn(n, "n");
+          if (n >= 30)
+            warn.push(`n = ${n} is not a small sample (n ≥ 30). The t-test is still valid; with large n it gives nearly the same result as the Z-test.`);
+          const df = n - 1, se = sd / Math.sqrt(n), t = (xbar - mu0) / se;
+          return {
+            par: "μ", nullTxt: d(mu0), noun: "the population mean μ",
+            dist: "t", df, stat: t, se, warn, pre: [],
+            subst: `t = (${d(xbar)} − ${d(mu0)}) / (${d(sd)} / √${n})`,
+            seFormula: "SE = s / √n",
+            seSubst: `SE = ${d(sd)} / √${n} = ${d(sd)} / ${d(Math.sqrt(n))} = ${d(se)}`,
+            statSubst: `t = ${d(xbar - mu0)} / ${d(se)} = ${d(t)}`,
+            dfLine: `df = n − 1 = ${n} − 1 = ${df}`,
+          };
+        }
+
+        function calcT2(s, d) {
+          const x1 = num("t2i", "xbar1", "Sample 1 mean x̄₁");
+          const x2 = num("t2i", "xbar2", "Sample 2 mean x̄₂");
+          const s1 = nonNeg("t2i", "s1", "Sample 1 std. dev. s₁");
+          const s2 = nonNeg("t2i", "s2", "Sample 2 std. dev. s₂");
+          const n1 = int("t2i", "n1", "Sample size n₁", 2);
+          const n2 = int("t2i", "n2", "Sample size n₂", 2);
+          const d0 = num("t2i", "d0", "Hypothesized difference Δ₀");
+          if (s1 === 0 && s2 === 0)
+            throw new Error("Both sample standard deviations are 0, so SE = 0 and t is undefined.");
+          const warn = [...smallNWarn(n1, "n₁"), ...smallNWarn(n2, "n₂")];
+          if (n1 >= 30 && n2 >= 30)
+            warn.push("Both samples are large (≥ 30). The t-test is still valid, but the Z-test would give almost the same answer.");
+          const hi = Math.max(s1, s2), lo = Math.min(s1, s2);
+          const base = { par: "μ₁ − μ₂", nullTxt: d(d0), noun: "the difference of population means μ₁ − μ₂", dist: "t" };
+          if (s.variance === "welch") {
+            const a = (s1 * s1) / n1, b = (s2 * s2) / n2;
+            const se = Math.sqrt(a + b);
+            const df = Math.pow(a + b, 2) / ((a * a) / (n1 - 1) + (b * b) / (n2 - 1));
+            const t = (x1 - x2 - d0) / se;
+            return {
+              ...base, df, stat: t, se, warn,
+              pre: [
+                `a = s₁²/n₁ = ${d(s1)}²/${n1} = ${d(a)}`,
+                `b = s₂²/n₂ = ${d(s2)}²/${n2} = ${d(b)}`,
+              ],
+              subst: `t = [(${d(x1)} − ${d(x2)}) − ${d(d0)}] / √(${d(a)} + ${d(b)})`,
+              seFormula: "SE = √(s₁²/n₁ + s₂²/n₂)",
+              seSubst: `SE = √(${d(a)} + ${d(b)}) = √${d(a + b)} = ${d(se)}`,
+              statSubst: `t = ${d(x1 - x2 - d0)} / ${d(se)} = ${d(t)}`,
+              dfLine: `df = (a + b)² / [a²/(n₁−1) + b²/(n₂−1)] = ${d(a + b)}² / [${d(a)}²/${n1 - 1} + ${d(b)}²/${n2 - 1}] = ${d(df)}  (Welch–Satterthwaite)`,
+            };
+          }
+          if (lo === 0)
+            throw new Error("One sample standard deviation is 0. The pooled-variance test is not meaningful; choose Welch's test or check your data.");
+          if (hi / lo > 2)
+            warn.push(`s₁ = ${d(s1)} and s₂ = ${d(s2)} differ by more than a factor of 2 (variance ratio ${d((hi * hi) / (lo * lo))}). The equal-variance assumption looks doubtful; consider Welch's t-test.`);
+          const sp2 = ((n1 - 1) * s1 * s1 + (n2 - 1) * s2 * s2) / (n1 + n2 - 2);
+          const sp = Math.sqrt(sp2);
+          const df = n1 + n2 - 2;
+          const se = sp * Math.sqrt(1 / n1 + 1 / n2);
+          const t = (x1 - x2 - d0) / se;
+          return {
+            ...base, df, stat: t, se, warn,
+            pre: [
+              `Sp² = [(${n1}−1)(${d(s1)})² + (${n2}−1)(${d(s2)})²] / (${n1}+${n2}−2)`,
+              `Sp² = [${d((n1 - 1) * s1 * s1)} + ${d((n2 - 1) * s2 * s2)}] / ${df} = ${d(sp2)}`,
+              `Sp = √${d(sp2)} = ${d(sp)}`,
+            ],
+            subst: `t = [(${d(x1)} − ${d(x2)}) − ${d(d0)}] / [${d(sp)} × √(1/${n1} + 1/${n2})]`,
+            seFormula: "SE = Sp × √(1/n₁ + 1/n₂)",
+            seSubst: `SE = ${d(sp)} × √${d(1 / n1 + 1 / n2)} = ${d(se)}`,
+            statSubst: `t = ${d(x1 - x2 - d0)} / ${d(se)} = ${d(t)}`,
+            dfLine: `df = n₁ + n₂ − 2 = ${n1} + ${n2} − 2 = ${df}`,
+          };
+        }
+
+        function calcPaired(s, d) {
+          const warn = [];
+          let n, dbar, sd, d0, pre = [];
+          if (s.pmode === "raw") {
+            const A = parseList($("t2pr_a").value, "Sample 1"),
+              B = parseList($("t2pr_b").value, "Sample 2");
+            if (A.length === 0 || B.length === 0)
+              throw new Error("Please enter values for both paired samples.");
+            if (A.length !== B.length)
+              throw new Error(`Paired samples must have the same number of values (Sample 1 has ${A.length}, Sample 2 has ${B.length}). Use independent-samples testing if the groups are unrelated.`);
+            n = A.length;
+            if (n < 2) throw new Error("At least 2 pairs are required.");
+            d0 = num("t2pr", "d0", "Hypothesized mean difference Δ₀");
+            const diffs = A.map((v, i) => v - B[i]);
+            dbar = diffs.reduce((a, b) => a + b, 0) / n;
+            const ss = diffs.reduce((a, b) => a + (b - dbar) * (b - dbar), 0);
+            sd = Math.sqrt(ss / (n - 1));
+            const shown = diffs.slice(0, 15).map((v) => d(v)).join(", ") + (n > 15 ? ", …" : "");
+            pre = [
+              `Differences dᵢ = xᵢ − yᵢ :  ${shown}`,
+              `d̄ = Σdᵢ / n = ${d(dbar)}`,
+              `s_d = √[Σ(dᵢ − d̄)² / (n − 1)] = ${d(sd)}`,
+            ];
+          } else {
+            dbar = num("t2ps", "dbar", "Mean of differences d̄");
+            sd = num("t2ps", "sd", "Std. dev. of differences s_d");
+            n = int("t2ps", "n", "Number of pairs n", 2);
+            d0 = num("t2ps", "d0", "Hypothesized mean difference Δ₀");
+            if (sd < 0) throw new Error("Standard deviation of differences cannot be negative.");
+            pre = [`Given: d̄ = ${d(dbar)},  s_d = ${d(sd)},  n = ${n} pairs`];
+          }
+          if (sd === 0 || sd < 1e-12 * Math.max(1, Math.abs(dbar)))
+            throw new Error("All paired differences are identical (s_d = 0), so SE = 0 and t is undefined. Check your data.");
+          warn.push(...smallNWarn(n, "Number of pairs n").map((w) => w.replace("the population is", "the population of differences is")));
+          if (n >= 30)
+            warn.push(`n = ${n} pairs is not small; the t-test is still valid.`);
+          const df = n - 1, se = sd / Math.sqrt(n), t = (dbar - d0) / se;
+          return {
+            par: "μ_d (= μ₁ − μ₂)", nullTxt: d(d0), noun: "the mean paired difference μ_d",
+            dist: "t", df, stat: t, se, warn, pre,
+            subst: `t = (${d(dbar)} − ${d(d0)}) / (${d(sd)} / √${n})`,
+            seFormula: "SE = s_d / √n",
+            seSubst: `SE = ${d(sd)} / √${n} = ${d(sd)} / ${d(Math.sqrt(n))} = ${d(se)}`,
+            statSubst: `t = ${d(dbar - d0)} / ${d(se)} = ${d(t)}`,
+            dfLine: `df = n − 1 = ${n} − 1 = ${df}`,
+          };
+        }
+
+        // ── Critical value, p-value, decision ───────────────────────
+        function decide(r, s) {
+          const U = r.dist === "z" ? zUpper : (t) => tUpper(t, r.df);
+          const a = s.alpha;
+          let crit, p, reject;
+          if (s.alt === "two") {
+            const c = upperQuantile(U, a / 2);
+            crit = [-c, c];
+            p = Math.min(1, 2 * U(Math.abs(r.stat)));
+            reject = Math.abs(r.stat) > c;
+          } else if (s.alt === "right") {
+            const c = upperQuantile(U, a);
+            crit = [c];
+            p = U(r.stat);
+            reject = r.stat > c;
+          } else {
+            const c = upperQuantile(U, a);
+            crit = [-c];
+            p = U(-r.stat);
+            reject = r.stat < -c;
+          }
+          return { ...r, crit, p, reject, alpha: a, alt: s.alt };
+        }
+
+        // ── Run ──────────────────────────────────────────────────────
+        let lastGraph = null;
+        window.runTest = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          const s = state();
+          if (![0.1, 0.05, 0.01].includes(s.alpha)) {
+            showError("Significance level must be 0.10, 0.05 or 0.01.");
+            return;
+          }
+          const d = (v) => fx(v, s.dec);
+          let r;
+          try {
+            r = decide(calc(s, d), s);
+          } catch (e) {
+            showError(e.message);
+            return;
+          }
+          if (!isFinite(r.stat)) {
+            showError("The test statistic could not be computed. Check your inputs.");
+            return;
+          }
+          render(r, s, d);
+          showSuccess(
+            "✓ " + info(s).title + " | " + (r.dist === "z" ? "z" : "t") + " = " + d(r.stat) +
+              " | p " + (r.p < 0.5 * Math.pow(10, -s.dec) ? "" : "= ") + fp(r.p, s.dec) +
+              " | " + (r.reject ? "Reject H₀" : "Fail to reject H₀"),
+          );
+        };
+
+        const ALT_SYM = { two: "≠", left: "<", right: ">" };
+        const ALT_WORD = { two: "differs from", left: "is less than", right: "is greater than" };
+        const ALT_NAME = { two: "Two-tailed", left: "Left-tailed", right: "Right-tailed" };
+
+        function render(r, s, d) {
+          const I = info(s);
+          const sym = r.dist === "z" ? "z" : "t";
+          const isT = r.dist === "t";
+          $("emptyState").style.display = "none";
+          $("resultsContent").style.display = "block";
+
+          // warnings
+          $("warnBox").innerHTML = r.warn.map((w) => `<div class="alert alert-warn">⚠ ${w}</div>`).join("");
+
+          // stat cards
+          $("statStatLbl").textContent = isT ? "t-statistic" : "z-statistic";
+          $("statStat").textContent = d(r.stat);
+          $("statDf").textContent = isT ? (Number.isInteger(r.df) ? r.df : d(r.df)) : "n/a (Z)";
+          $("statCrit").textContent =
+            r.alt === "two" ? "±" + d(r.crit[1]) : d(r.crit[0]);
+          $("statP").textContent = fp(r.p, s.dec);
+
+          // decision
+          const H0 = `H₀: ${r.par} = ${r.nullTxt}`;
+          const H1 = `H₁: ${r.par} ${ALT_SYM[r.alt]} ${r.nullTxt}`;
+          const dec = $("decisionBox");
+          dec.className = "decision " + (r.reject ? "reject" : "accept");
+          dec.innerHTML = `<b>${r.reject ? "REJECT H₀" : "FAIL TO REJECT H₀"}</b> &nbsp;at α = ${r.alpha}<br/>${conclusion(r)}`;
+
+          // chips
+          const chips = [
+            { v: `${sym} = ${d(r.stat)}`, c: "#00d4ff" },
+            { v: `α = ${r.alpha}`, c: "#77dc1e" },
+            { v: ALT_NAME[r.alt], c: "#ff6b35" },
+            { v: isT ? `df = ${Number.isInteger(r.df) ? r.df : d(r.df)}` : "Normal (Z)", c: "#a78bfa" },
+          ];
+          const sol = $("solutionDisplay");
+          sol.innerHTML = "";
+          chips.forEach((ch) => {
+            const el = document.createElement("div");
+            el.className = "sol-chip";
+            el.style.cssText = `color:${ch.c};border-color:${ch.c}44;background:${ch.c}11;`;
+            el.textContent = ch.v;
+            sol.appendChild(el);
+          });
+
+          $("graphTitle").textContent = isT
+            ? `Student's t-distribution (df = ${Number.isInteger(r.df) ? r.df : d(r.df)}) — critical region & test statistic`
+            : "Standard normal (Z) distribution — critical region & test statistic";
+          $("legAlpha").textContent = `α = ${r.alpha}`;
+
+          // steps
+          const ln = (h, cls) => `<div class="ln ${cls || ""}">${h}</div>`;
+          const hr = "<hr/>";
+          const critTxt = (() => {
+            const pa = r.alt === "two" ? r.alpha / 2 : r.alpha;
+            const dfPart = isT ? `, df = ${Number.isInteger(r.df) ? r.df : d(r.df)}` : "";
+            const q = `${sym}(${pa}${dfPart})`;
+            if (r.alt === "two")
+              return [
+                ln(`Two-tailed: split α into two tails of α/2 = ${pa}`),
+                ln(`Critical values = ±${q} = <span class="res">±${d(r.crit[1])}</span>`),
+                ln(`Reject H₀ if ${sym} &lt; ${d(r.crit[0])} or ${sym} &gt; ${d(r.crit[1])}`, "wrap"),
+              ];
+            if (r.alt === "right")
+              return [
+                ln(`Right-tailed: all of α = ${pa} in the right tail`),
+                ln(`Critical value = ${q} = <span class="res">${d(r.crit[0])}</span>`),
+                ln(`Reject H₀ if ${sym} &gt; ${d(r.crit[0])}`),
+              ];
+            return [
+              ln(`Left-tailed: all of α = ${pa} in the left tail`),
+              ln(`Critical value = −${q} = <span class="res">${d(r.crit[0])}</span>`),
+              ln(`Reject H₀ if ${sym} &lt; ${d(r.crit[0])}`),
+            ];
+          })().join("");
+
+          const P = isT ? "T" : "Z";
+          const pLines = (() => {
+            const dfP = isT ? ` (df = ${Number.isInteger(r.df) ? r.df : d(r.df)})` : "";
+            if (r.alt === "two") {
+              const one = r.p / 2;
+              return ln(`p = 2 × P(${P} ≥ |${sym}|) = 2 × P(${P} ≥ ${d(Math.abs(r.stat))})${dfP}`) +
+                ln(`p = 2 × ${fx(one, Math.max(s.dec, 6))} = <span class="res">${fp(r.p, s.dec)}</span>`);
+            }
+            if (r.alt === "right")
+              return ln(`p = P(${P} ≥ ${d(r.stat)})${dfP} = <span class="res">${fp(r.p, s.dec)}</span>`);
+            return ln(`p = P(${P} ≤ ${d(r.stat)})${dfP} = <span class="res">${fp(r.p, s.dec)}</span>`);
+          })();
+
+          const inReg = r.alt === "two" ? Math.abs(r.stat) > r.crit[1] : r.alt === "right" ? r.stat > r.crit[0] : r.stat < r.crit[0];
+          const critCmp = (() => {
+            if (r.alt === "two") return `|${sym}| = ${d(Math.abs(r.stat))} ${inReg ? ">" : "≤"} ${d(r.crit[1])}`;
+            if (r.alt === "right") return `${sym} = ${d(r.stat)} ${inReg ? ">" : "≤"} ${d(r.crit[0])}`;
+            return `${sym} = ${d(r.stat)} ${inReg ? "<" : "≥"} ${d(r.crit[0])}`;
+          })();
+
+          const steps = [];
+          steps.push(["State the hypotheses", [
+            ln(`Test: <span class="hl">${I.title}</span>`, "wrap"),
+            ln(`<span class="org">${H0}</span>`),
+            ln(`<span class="org">${H1}</span> &nbsp;<span class="dim">(${ALT_NAME[r.alt]})</span>`),
+            ln(`Significance level: α = ${r.alpha}`),
+            ln(`Distribution used: ${isT ? "Student's t" : "standard normal (Z)"}`),
+          ]]);
+          steps.push(["Assumptions", [
+            ...I.assumptions.map((a) => ln("✓ " + a, "wrap")),
+            ...r.warn.map((w) => ln(`<span style="color:#ffb347">⚠ ${w}</span>`, "wrap")),
+          ]]);
+          steps.push(["Formula & substitution", [
+            ...I.formula.map((f) => ln(`<span class="dim">${f}</span>`)),
+            hr,
+            ...r.pre.map((p) => ln(p)),
+            r.pre.length ? hr : "",
+            ln(r.subst),
+          ]]);
+          steps.push(["Standard error", [
+            ln(`<span class="dim">${r.seFormula}</span>`),
+            ln(r.seSubst),
+            ln(`SE = <span class="res">${d(r.se)}</span>`),
+          ]]);
+          steps.push([isT ? "t-statistic & degrees of freedom" : "z-statistic", [
+            ln(r.statSubst),
+            ln(`${sym} = <span class="res">${d(r.stat)}</span>`),
+            hr,
+            isT ? ln(r.dfLine, "wrap") : ln('<span class="dim">Z-test: degrees of freedom not applicable (standard normal).</span>', "wrap"),
+          ]]);
+          steps.push(["Critical value", [
+            ln(`<span class="dim">From the ${isT ? "t-table / inverse t-distribution" : "standard normal table"}:</span>`, "wrap"),
+            critTxt,
+          ]]);
+          steps.push(["p-value", [
+            pLines,
+            ln(`<span class="dim">Compare with α = ${r.alpha}: p ${r.p < r.alpha ? "&lt;" : "≥"} α</span>`),
+          ]]);
+          steps.push(["Decision", [
+            ln(`Critical-value method: ${critCmp} → ${inReg ? "statistic lies in the rejection region" : "statistic lies in the acceptance region"}`, "wrap"),
+            ln(`p-value method: p = ${fp(r.p, s.dec)} ${r.p < r.alpha ? "&lt;" : "≥"} ${r.alpha}`),
+            hr,
+            ln(`<span class="${r.reject ? "org" : "res"}">${r.reject ? "Reject H₀" : "Fail to reject H₀"}</span>`),
+          ]]);
+          steps.push(["Conclusion", [ln(conclusion(r), "wrap")]]);
+
+          $("stepsList").innerHTML = steps
+            .map(
+              (st, i) =>
+                `<div class="step-card"><div class="step-badge">STEP ${i + 1} &nbsp;|&nbsp; ${st[0]}</div><div class="calc-box">${st[1].join("")}</div></div>`,
+            )
+            .join("");
+
+          // graph
+          lastGraph = { dist: r.dist, df: r.df, alt: r.alt, crit: r.crit, stat: r.stat, alpha: r.alpha, dec: s.dec };
+          requestAnimationFrame(() => drawDist($("distCanvas"), lastGraph));
+          $("resultsContent").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function conclusion(r) {
+          const H1 = `${r.noun} ${ALT_WORD[r.alt]} ${r.nullTxt}`;
+          return r.reject
+            ? `At the ${r.alpha} level of significance there is <b>sufficient evidence</b> to conclude that ${H1}. H₀ is rejected.`
+            : `At the ${r.alpha} level of significance there is <b>insufficient evidence</b> to conclude that ${H1}. H₀ is not rejected.`;
+        }
+
+        // ── Distribution graph ───────────────────────────────────────
+        function drawDist(canvas, g) {
+          if (!canvas || !g) return;
+          const wrap = canvas.parentElement;
+          const W = Math.max(260, wrap.clientWidth - 16);
+          const H = W < 520 ? 270 : 330;
+          const DPR = window.devicePixelRatio || 1;
+          canvas.width = W * DPR;
+          canvas.height = H * DPR;
+          canvas.style.width = W + "px";
+          canvas.style.height = H + "px";
+          const ctx = canvas.getContext && canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+          const isT = g.dist === "t";
+          const sym = isT ? "t" : "z";
+          const pdf = isT ? (x) => tPdf(x, g.df) : zPdf;
+          const cmax = Math.max(...g.crit.map(Math.abs));
+          const L = Math.max(4, cmax * 1.35, Math.min(Math.abs(g.stat) * 1.15, 12));
+          const pad = { l: 44, r: 16, t: 52, b: 44 };
+          const pw = W - pad.l - pad.r,
+            ph = H - pad.t - pad.b;
+          const ymax = pdf(0) * 1.1;
+          const toX = (v) => pad.l + ((v + L) / (2 * L)) * pw;
+          const toY = (y) => pad.t + (1 - y / ymax) * ph;
+          const base = toY(0);
+          const dp = g.dec;
+
+          ctx.fillStyle = "#112230";
+          ctx.fillRect(0, 0, W, H);
+
+          // grid
+          ctx.strokeStyle = "rgba(26,53,69,0.5)";
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 4; i++) {
+            const y = pad.t + (i * ph) / 4;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, y);
+            ctx.lineTo(W - pad.r, y);
+            ctx.stroke();
+          }
+
+          // shaded rejection regions
+          const shade = (a, b) => {
+            ctx.beginPath();
+            ctx.moveTo(toX(a), base);
+            const N = 160;
+            for (let i = 0; i <= N; i++) {
+              const x = a + ((b - a) * i) / N;
+              ctx.lineTo(toX(x), toY(pdf(x)));
+            }
+            ctx.lineTo(toX(b), base);
+            ctx.closePath();
+            ctx.fillStyle = "rgba(255,107,53,0.42)";
+            ctx.fill();
+          };
+          if (g.alt === "two") {
+            shade(-L, g.crit[0]);
+            shade(g.crit[1], L);
+          } else if (g.alt === "right") shade(g.crit[0], L);
+          else shade(-L, g.crit[0]);
+
+          // curve
+          ctx.beginPath();
+          ctx.strokeStyle = "#00d4ff";
+          ctx.lineWidth = 2.2;
+          for (let i = 0; i <= 300; i++) {
+            const x = -L + (2 * L * i) / 300;
+            const px = toX(x),
+              py = toY(pdf(x));
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+
+          // axis
+          ctx.strokeStyle = "rgba(122,154,170,0.6)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(pad.l, base);
+          ctx.lineTo(W - pad.r, base);
+          ctx.stroke();
+
+          // ticks
+          const steps = [1, 2, 5, 10, 20, 50, 100];
+          let st = steps.find((v) => (2 * L) / v <= 10) || 100;
+          ctx.fillStyle = "#7a9aaa";
+          ctx.font = "10px Space Mono,monospace";
+          ctx.textAlign = "center";
+          for (let v = -Math.floor(L / st) * st; v <= L; v += st) {
+            ctx.beginPath();
+            ctx.moveTo(toX(v), base);
+            ctx.lineTo(toX(v), base + 4);
+            ctx.stroke();
+            ctx.fillText(String(v), toX(v), base + 16);
+          }
+          ctx.fillText(isT ? `t  (df = ${Number.isInteger(g.df) ? g.df : g.df.toFixed(2)})` : "z", pad.l + pw / 2, H - 8);
+          ctx.save();
+          ctx.translate(12, pad.t + ph / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText("density", 0, 0);
+          ctx.restore();
+
+          const label = (txt, x, y, color) => {
+            ctx.font = "bold 10px Space Mono,monospace";
+            const w = ctx.measureText(txt).width;
+            let cx = x;
+            ctx.textAlign = "left";
+            const lx = Math.min(W - 4 - w, Math.max(4, cx - w / 2));
+            ctx.fillStyle = color;
+            ctx.fillText(txt, lx, y);
+          };
+
+          // critical lines
+          g.crit.forEach((c) => {
+            const x = toX(c);
+            ctx.strokeStyle = "#ff6b35";
+            ctx.lineWidth = 1.8;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(x, 22);
+            ctx.lineTo(x, base);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            label(`crit ${sym} = ${c.toFixed(dp)}`, x, 16, "#ff6b35");
+          });
+
+          // statistic line
+          const off = Math.abs(g.stat) > L * 0.97;
+          const sv = off ? Math.sign(g.stat) * L * 0.97 : g.stat;
+          const sx = toX(sv);
+          ctx.strokeStyle = "#77dc1e";
+          ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          ctx.moveTo(sx, 40);
+          ctx.lineTo(sx, base);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.fillStyle = "#77dc1e";
+          ctx.arc(sx, toY(pdf(sv)), 4.5, 0, 2 * Math.PI);
+          ctx.fill();
+          label(`${sym} = ${g.stat.toFixed(dp)}${off ? (g.stat > 0 ? "  ▶ off scale" : "  ◀ off scale") : ""}`, sx, 34, "#77dc1e");
+
+          canvas.setAttribute(
+            "aria-label",
+            `${isT ? "t" : "Z"} distribution. Critical value(s): ${g.crit.map((c) => c.toFixed(dp)).join(", ")}. Test statistic: ${g.stat.toFixed(dp)}.`,
+          );
+        }
+
+        // ── Examples ─────────────────────────────────────────────────
+        const EX = [
+          { name: "t · single mean", test: "t1", v: { t1_xbar: 52, t1_mu0: 50, t1_s: 4, t1_n: 16 }, alpha: "0.05", alt: "two" },
+          { name: "t · pooled", test: "t2", design: "ind", variance: "equal", v: { t2i_xbar1: 85, t2i_xbar2: 78, t2i_s1: 6, t2i_s2: 7, t2i_n1: 12, t2i_n2: 15, t2i_d0: 0 }, alpha: "0.05", alt: "right" },
+          { name: "t · Welch", test: "t2", design: "ind", variance: "welch", v: { t2i_xbar1: 24, t2i_xbar2: 20, t2i_s1: 3, t2i_s2: 8, t2i_n1: 10, t2i_n2: 14, t2i_d0: 0 }, alpha: "0.05", alt: "two" },
+          { name: "t · paired", test: "t2", design: "paired", pmode: "raw", v: { t2pr_a: "70 72 68 75 80 66", t2pr_b: "67 70 66 71 78 65", t2pr_d0: 0 }, alpha: "0.05", alt: "right" },
+        ];
+        function buildExamples() {
+          $("exStrip").innerHTML = EX.map((e, i) => `<span class="ex-chip" onclick="loadEx(${i})">${e.name}</span>`).join("");
+        }
+        window.loadEx = function (i) {
+          const e = EX[i];
+          $("testType").value = e.test;
+          if (e.design) $("t2design").value = e.design;
+          if (e.variance) $("t2var").value = e.variance;
+          if (e.pmode) $("t2pmode").value = e.pmode;
+          Object.keys(e.v).forEach((k) => ($(k).value = e.v[k]));
+          $("alpha").value = e.alpha;
+          $("altSel").value = e.alt;
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          updateVisibility();
+        };
+
+        // ── Reset / alerts / popups ──────────────────────────────────
+        window.resetAll = function () {
+          hideAlert("errorAlert");
+          hideAlert("successAlert");
+          $("emptyState").style.display = "block";
+          $("resultsContent").style.display = "none";
+          lastGraph = null;
+          buildFields();
+          ["testType", "t2design", "t2var", "t2pmode", "alpha", "altSel"].forEach((id) => {
+            const sel = $(id);
+            const def = [...sel.options].find((o) => o.defaultSelected);
+            sel.value = def ? def.value : sel.options[0].value;
+          });
+          $("decimals").value = 4;
+          updateVisibility();
+        };
+        window.togglePop = function (id) {
+          const p = $(id);
+          if (!p) return;
+          const open = p.classList.contains("show");
+          document.querySelectorAll(".info-popup").forEach((x) => x.classList.remove("show"));
+          if (!open) p.classList.add("show");
+        };
+        document.addEventListener("click", (e) => {
+          if (!e.target.classList.contains("info-btn"))
+            document.querySelectorAll(".info-popup").forEach((p) => p.classList.remove("show"));
+        });
+        function showError(m) {
+          const e = $("errorAlert");
+          e.textContent = "✕ Error: " + m;
+          e.style.display = "block";
+        }
+        function showSuccess(m) {
+          const e = $("successAlert");
+          e.textContent = m;
+          e.style.display = "block";
+        }
+        function hideAlert(id) {
+          $(id).style.display = "none";
+        }
+
+        // ── Init ─────────────────────────────────────────────────────
+        buildFields();
+        buildExamples();
+        ["testType", "t2design", "t2var", "t2pmode"].forEach((id) =>
+          $(id).addEventListener("change", updateVisibility),
+        );
+        updateVisibility();
+        window.addEventListener("resize", () => {
+          if (lastGraph) drawDist($("distCanvas"), lastGraph);
+        });
+        // test hook (used by automated checks only)
+        window.__HT = { zUpper, tUpper, upperQuantile, calc, decide, state };
+
+        // ── Background animation ─────────────────────────────────────
+        (() => {
+          const gridCv = $("bgGrid"),
+            partCv = $("bgParticles"),
+            symW = $("bgSymbols");
+          if (!gridCv || !partCv || !symW) return;
+          const gctx = gridCv.getContext("2d"),
+            pctx = partCv.getContext("2d");
+          if (!gctx || !pctx) return;
+          const palette = ["#00d4ff", "#7c3aed", "#77dc1e"];
+          const mouse = { x: -9999, y: -9999, active: false, r: 130 };
+          const particles = [];
+          const pc = 90;
+          let w = 0, h = 0, dpr = 1;
+          function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = window.innerWidth;
+            h = window.innerHeight;
+            [gridCv, partCv].forEach((cv) => {
+              cv.width = Math.floor(w * dpr);
+              cv.height = Math.floor(h * dpr);
+              cv.style.width = w + "px";
+              cv.style.height = h + "px";
+            });
+            gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          function seed() {
+            particles.length = 0;
+            for (let i = 0; i < pc; i++)
+              particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.35,
+                vy: (Math.random() - 0.5) * 0.35,
+                r: 1.5 + Math.random() * 2.3,
+                c: palette[(Math.random() * palette.length) | 0],
+              });
+          }
+          function seedSym() {
+            const syms = ["H₀", "H₁", "α", "z", "t", "p-value", "x̄", "μ₀", "df", "s²", "σ", "Sp", "t(α,df)", "n−1", "Δ₀", "β"];
+            symW.innerHTML = "";
+            for (let i = 0; i < 22; i++) {
+              const s = document.createElement("span");
+              const t = i % 3 === 1 ? "violet" : i % 3 === 2 ? "mint" : "";
+              s.className = "bg-symbol " + t;
+              s.textContent = syms[i % syms.length];
+              s.style.left = Math.random() * 98 + "%";
+              s.style.top = 80 + Math.random() * 50 + "%";
+              s.style.fontSize = 13 + Math.random() * 20 + "px";
+              s.style.animationDuration = 22 + Math.random() * 20 + "s";
+              s.style.animationDelay = -Math.random() * 26 + "s";
+              symW.appendChild(s);
+            }
+          }
+          function drawGrid(t) {
+            gctx.clearRect(0, 0, w, h);
+            const gap = 56, ox = (t * 0.008) % gap, oy = (t * 0.005) % gap;
+            gctx.strokeStyle = "rgba(0,212,255,.11)";
+            gctx.lineWidth = 1;
+            for (let x = -gap; x < w + gap; x += gap) {
+              gctx.beginPath();
+              gctx.moveTo(x + ox, 0);
+              gctx.lineTo(x + ox, h);
+              gctx.stroke();
+            }
+            for (let y = -gap; y < h + gap; y += gap) {
+              gctx.beginPath();
+              gctx.moveTo(0, y + oy);
+              gctx.lineTo(w, y + oy);
+              gctx.stroke();
+            }
+            gctx.strokeStyle = "rgba(124,58,237,.08)";
+            for (let x = -h; x < w + h; x += gap * 1.5) {
+              gctx.beginPath();
+              gctx.moveTo(x - ox * 0.7, 0);
+              gctx.lineTo(x + h - oy * 0.7, h);
+              gctx.stroke();
+            }
+          }
+          function drawPart() {
+            pctx.clearRect(0, 0, w, h);
+            for (const p of particles) {
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > w) p.vx *= -1;
+              if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            for (let i = 0; i < particles.length; i++) {
+              const a = particles[i];
+              for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j], dx = a.x - b.x, dy = a.y - b.y, dist = Math.hypot(dx, dy);
+                if (dist < 120) {
+                  pctx.strokeStyle = `rgba(0,212,255,${(1 - dist / 120) * 0.22})`;
+                  pctx.lineWidth = 1;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(b.x, b.y);
+                  pctx.stroke();
+                }
+              }
+              if (mouse.active) {
+                const md = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (md < mouse.r) {
+                  pctx.strokeStyle = `rgba(124,58,237,${(1 - md / mouse.r) * 0.45})`;
+                  pctx.beginPath();
+                  pctx.moveTo(a.x, a.y);
+                  pctx.lineTo(mouse.x, mouse.y);
+                  pctx.stroke();
+                }
+              }
+            }
+            for (const p of particles) {
+              const near = mouse.active ? Math.hypot(p.x - mouse.x, p.y - mouse.y) < mouse.r : false;
+              pctx.beginPath();
+              pctx.fillStyle = p.c;
+              pctx.globalAlpha = near ? 1 : 0.82;
+              pctx.arc(p.x, p.y, near ? p.r + 0.8 : p.r, 0, Math.PI * 2);
+              pctx.fill();
+              if (near) {
+                pctx.beginPath();
+                pctx.globalAlpha = 0.15;
+                pctx.arc(p.x, p.y, p.r + 7, 0, Math.PI * 2);
+                pctx.fill();
+              }
+            }
+            pctx.globalAlpha = 1;
+          }
+          function loop(t) {
+            drawGrid(t);
+            drawPart();
+            requestAnimationFrame(loop);
+          }
+          window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+          });
+          window.addEventListener("mouseleave", () => {
+            mouse.active = false;
+          });
+          window.addEventListener("resize", resize);
+          resize();
+          seed();
+          seedSym();
+          requestAnimationFrame(loop);
+        })();
+      })();
+    </script>
+  </body>
+</html>
