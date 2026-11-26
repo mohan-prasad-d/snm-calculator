@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>One-way ANOVA Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#050a0e; --surface:#0d1a22; --surface2:#112230;
+  --accent:#00d4ff; --accent2:#ff6b35; --accent3:#77dc1e;
+  --text:#e8f4f8; --text-dim:#7a9aaa; --border:#1a3545;
+  --glow:0 0 20px rgba(0,212,255,.3);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:"Syne",sans-serif;min-height:100vh;overflow-x:hidden;padding-bottom:70px}
+body::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.bg-motion{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bg-symbols{position:absolute;inset:0;overflow:hidden}
+.bg-symbol{position:absolute;bottom:-60px;font-family:"Space Mono",monospace;color:rgba(0,212,255,.12);animation:floatMath linear infinite;white-space:nowrap;font-size:.9rem}
+.bg-symbol.violet{color:rgba(124,58,237,.15)}
+.bg-symbol.mint{color:rgba(119,220,30,.1)}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;animation:pulseBlob 8s ease-in-out infinite}
+.b1{width:600px;height:600px;top:-200px;left:-150px;background:rgba(0,212,255,.04)}
+.b2{width:500px;height:500px;top:30%;right:-200px;background:rgba(124,58,237,.05);animation-delay:-3s}
+.b3{width:400px;height:400px;bottom:-100px;left:30%;background:rgba(119,220,30,.03);animation-delay:-6s}
+@keyframes floatMath{from{transform:translate3d(0,0,0) rotate(0deg);opacity:.08}50%{opacity:.32}to{transform:translate3d(24px,-125vh,0) rotate(8deg);opacity:.08}}
+@keyframes pulseBlob{0%,100%{transform:scale(1) translate3d(0,0,0);opacity:.3}50%{transform:scale(1.16) translate3d(16px,-12px,0);opacity:.45}}
+.container{max-width:1300px;margin:0 auto;padding:2rem;position:relative;z-index:1;padding-bottom:5rem}
+header{text-align:center;padding:3rem 0 2rem}
+.header-tag{font-family:"Space Mono",monospace;font-size:.7rem;color:var(--accent);letter-spacing:.3em;text-transform:uppercase;margin-bottom:1rem;opacity:0;animation:fadeUp .6s ease forwards}
+header h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 50%,var(--accent3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:0;animation:fadeUp .6s ease .1s forwards}
+header p{color:var(--text-dim);font-family:"Space Mono",monospace;font-size:.85rem;margin-top:.8rem;opacity:0;animation:fadeUp .6s ease .2s forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem}
+@media (max-width:768px){.main-grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;position:relative;overflow:visible;opacity:0;animation:fadeUp .6s ease forwards;min-width:0}
+.panel::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.panel.full-width{grid-column:1/-1;overflow:hidden}
+.panel-title{font-family:"Space Mono",monospace;font-size:.7rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem}
+.panel-title::before{content:"";width:6px;height:6px;background:var(--accent);border-radius:50%;box-shadow:var(--glow);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.func-label{font-family:"Space Mono",monospace;font-size:.6rem;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase;margin:.9rem 0 .4rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.step-tag{color:var(--accent2)}
+.field-desc{font-family:"Space Mono",monospace;font-size:.58rem;color:var(--text-dim);line-height:1.6;margin-top:.4rem;padding:.3rem .5rem;border-left:2px solid rgba(0,212,255,.2);background:rgba(0,212,255,.03);border-radius:0 4px 4px 0}
+.field-desc .eg{color:var(--accent3)}
+.field-desc .warn{color:var(--accent2)}
+.info-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);border-radius:50%;font-family:"Space Mono",monospace;font-size:.55rem;color:var(--accent);cursor:pointer;user-select:none;line-height:1;flex-shrink:0}
+.info-wrap{position:relative;display:inline-flex}
+.info-popup{display:none;position:absolute;left:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:.75rem .9rem;font-family:"Space Mono",monospace;font-size:.61rem;color:var(--text);line-height:1.75;z-index:99;width:260px;box-shadow:0 8px 24px rgba(0,0,0,.5);text-transform:none;letter-spacing:0;font-weight:400}
+.info-popup.show{display:block}
+.info-popup .pop-title{color:var(--accent);font-size:.64rem;font-weight:700;margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase}
+.info-popup strong{color:var(--accent3)}
+.controls-row{display:flex;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap}
+.control-group{display:flex;flex-direction:column;gap:.4rem;flex:1;min-width:150px;position:relative}
+label{font-family:"Space Mono",monospace;font-size:.65rem;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
+input[type="number"],input[type="text"],select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:8px;font-family:"Space Mono",monospace;font-size:.85rem;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+textarea.field{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:8px;font-family:"Space Mono",monospace;font-size:.82rem;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;min-height:78px;resize:vertical}
+input:focus,select:focus,textarea.field:focus{border-color:var(--accent);box-shadow:var(--glow)}
+input.field{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:8px;font-family:"Space Mono",monospace;font-size:.85rem;outline:none;width:100%}
+.group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.9rem;margin-bottom:1rem}
+.group-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;position:relative;overflow:hidden}
+.group-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent3))}
+.gh{font-family:"Space Mono",monospace;font-size:.6rem;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem}
+.gname{margin-bottom:.5rem}
+.count{font-family:"Space Mono",monospace;font-size:.6rem;color:var(--text-dim);margin-top:.4rem}
+.func-hint{font-family:"Space Mono",monospace;font-size:.58rem;color:var(--text-dim);margin-top:.4rem;line-height:1.7}
+.examples-strip{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem}
+.btn{padding:.7rem 1.4rem;border:none;border-radius:8px;font-family:"Syne",sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.05em}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:var(--glow)}
+.btn-danger{background:transparent;border:1px solid #ff3355;color:#ff3355}
+.btn-danger:hover:not(:disabled){background:rgba(255,51,85,.1)}
+.btn-ghost{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-ghost:hover:not(:disabled){background:rgba(0,212,255,.08)}
+.btn-orange{background:transparent;border:1px solid var(--accent2);color:var(--accent2)}
+.btn-orange:hover:not(:disabled){background:rgba(255,107,53,.1)}
+.btn-small{padding:.4rem .8rem;font-size:.7rem;font-family:"Space Mono",monospace;letter-spacing:.04em}
+.btn-row{display:flex;gap:.8rem;margin-top:1rem;flex-wrap:wrap}
+.sep{height:1px;background:var(--border);margin:.8rem 0}
+.alpha-row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:.4rem 0 .2rem}
+.alpha-row .lbl{font-family:"Space Mono",monospace;font-size:.65rem;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase}
+.radio{display:inline-flex;align-items:center;gap:6px;padding:.45rem .8rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--surface2);font-family:"Space Mono",monospace;font-size:.75rem;color:var(--text-dim);transition:all .2s}
+.radio:hover{border-color:var(--accent);color:var(--accent)}
+.radio input{accent-color:var(--accent2)}
+.radio:has(input:checked){border-color:var(--accent);color:var(--accent);box-shadow:var(--glow)}
+.alert{display:none;padding:.7rem 1rem;border-radius:8px;font-family:"Space Mono",monospace;font-size:.75rem;margin-top:.8rem}
+.msgs{font-family:"Space Mono",monospace;font-size:.75rem;margin-top:.8rem}
+.msg{padding:.7rem 1rem;border-radius:8px;margin-bottom:.6rem;line-height:1.6}
+.msg.err{background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.3);color:#ff3355}
+.msg.ok{background:rgba(119,220,30,.08);border:1px solid rgba(119,220,30,.25);color:var(--accent3)}
+.msg ul{margin:.3rem 0 0 1.1rem}
+.phase-box{border-radius:10px;padding:1rem;margin-bottom:1rem;font-family:"Space Mono",monospace;font-size:.72rem;line-height:2}
+.phase-box .ptitle{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.6rem}
+.pb-orange{background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.2)}
+.pb-orange .ptitle{color:var(--accent2)}
+.pb-cyan{background:rgba(0,0,0,.25);border:1px solid var(--border)}
+.pb-cyan .ptitle{color:var(--accent)}
+.pb-green{background:rgba(119,220,30,.05);border:1px solid rgba(119,220,30,.18)}
+.pb-green .ptitle{color:var(--accent3)}
+.insight{font-family:"Space Mono",monospace;font-size:.65rem;color:var(--text-dim);line-height:2;margin-bottom:.8rem}
+.insight strong{color:var(--accent)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-bottom:1.2rem}
+@media (max-width:700px){.stats-grid{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center}
+.stat-value{font-family:"Space Mono",monospace;font-size:1.4rem;font-weight:700;color:var(--accent);text-shadow:var(--glow);word-break:break-word}
+.stat-value.orange{color:var(--accent2);text-shadow:0 0 20px rgba(255,107,53,.3)}
+.stat-value.green{color:var(--accent3);text-shadow:0 0 20px rgba(119,220,30,.3)}
+.stat-label{font-family:"Space Mono",monospace;font-size:.6rem;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase;margin-top:.3rem}
+.solution-display{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.2rem}
+.sol-title{font-family:"Space Mono",monospace;font-size:.65rem;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.6rem}
+.sol-text{font-family:"Space Mono",monospace;font-size:.8rem;color:var(--text);line-height:1.8}
+.chart-title{font-family:"Space Mono",monospace;font-size:.6rem;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin:1.2rem 0 .5rem}
+.final-chart-wrap,.chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;overflow-x:auto}
+.chart-wrap svg{width:100%;height:auto;display:block;min-width:320px}
+.chart-wrap svg text{font-size:12px;fill:var(--text-dim);font-family:"Space Mono",monospace}
+.chart-wrap svg .lbl-crit{fill:var(--accent2);font-weight:700}
+.chart-wrap svg .lbl-obs{fill:var(--accent);font-weight:700}
+.chart-wrap svg .lbl-region{fill:var(--text);font-size:11px}
+.chart-wrap svg .lbl-name{fill:var(--text);font-weight:700}
+.chart-wrap svg .lbl-gm{fill:var(--accent3);font-weight:700}
+.chart-wrap svg .lbl-mean{fill:var(--text);font-weight:700;font-size:11px}
+.chart-wrap svg .axis{stroke:var(--text-dim);stroke-width:1}
+.chart-wrap svg .grid{stroke:rgba(26,53,69,.8);stroke-width:1}
+.chart-wrap svg .curve{fill:none;stroke:var(--accent);stroke-width:2.2}
+.chart-wrap svg .acc{fill:rgba(0,212,255,.10)}
+.chart-wrap svg .rej{fill:rgba(255,107,53,.30)}
+.chart-wrap svg .crit{stroke:var(--accent2);stroke-width:2;stroke-dasharray:6 4}
+.chart-wrap svg .obs{stroke:var(--accent3);stroke-width:2.4}
+.chart-wrap svg .pt{fill:var(--accent);opacity:.9}
+.chart-wrap svg .mean{stroke:var(--accent2);stroke-width:3}
+.chart-wrap svg .gm{stroke:var(--accent3);stroke-width:1.6;stroke-dasharray:5 4}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+@media (max-width:900px){.charts-row{grid-template-columns:1fr}}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-family:"Space Mono",monospace;font-size:.6rem;color:var(--text-dim);margin-top:.6rem}
+.sw{display:inline-block;width:12px;height:10px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1rem;flex-wrap:wrap}
+.seg button{font-family:"Space Mono",monospace;font-size:.68rem;letter-spacing:.05em;border:none;background:var(--surface2);padding:.55rem 1rem;cursor:pointer;color:var(--text-dim);transition:all .2s}
+.seg button[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;font-weight:700}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:.8rem}
+table.iter-table{border-collapse:collapse;font-family:"Space Mono",monospace;font-size:.72rem;color:var(--text);width:100%}
+.iter-table th{padding:.5rem .7rem;text-align:right;font-size:.6rem;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;background:rgba(0,0,0,.15)}
+.iter-table td{padding:.5rem .7rem;text-align:right;border-bottom:1px solid rgba(26,53,69,.4);white-space:nowrap}
+.iter-table td:not(.l):not(.na){color:var(--accent)}
+.iter-table tr:last-child td{border-bottom:none}
+.iter-table th.l,.iter-table td.l{text-align:left}
+.iter-table td.l{white-space:normal;color:var(--text)}
+.iter-table td.sub-cell{font-size:.68rem;color:var(--text-dim);white-space:normal;word-break:break-word;min-width:160px}
+.iter-table td small{display:block;color:var(--text-dim);font-size:.6rem}
+.iter-table td.f-cell{background:rgba(255,107,53,.12);color:var(--accent2);font-weight:700;box-shadow:inset 0 0 0 1px rgba(255,107,53,.45)}
+.iter-table td.na{color:var(--text-dim)}
+.iter-table td.ok{color:var(--accent3);font-weight:700}
+.check-line{font-family:"Space Mono",monospace;font-size:.68rem;color:var(--text-dim);margin-bottom:.4rem}
+.step-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;position:relative;overflow:hidden;margin-bottom:.9rem}
+.step-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent3))}
+.step-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);border-radius:99px;padding:.2rem .8rem;font-family:"Space Mono",monospace;font-size:.62rem;color:var(--accent);letter-spacing:.1em;margin-bottom:.6rem}
+.step-card h3{font-size:.95rem;margin-bottom:.3rem;color:var(--text)}
+.step-card .f{font-family:"Space Mono",monospace;font-size:.78rem;color:var(--accent3);margin:.2rem 0 .4rem}
+pre.sub{font-family:"Space Mono",monospace;font-size:.7rem;line-height:1.7;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;color:var(--text);white-space:pre-wrap;word-break:break-word;overflow-x:auto}
+.verdict{border-radius:12px;padding:1.1rem 1.2rem;margin-top:.8rem;border:1px solid;font-family:"Space Mono",monospace}
+.verdict strong{display:block;font-family:"Syne",sans-serif;font-size:1.05rem;margin-bottom:.4rem}
+.verdict p{font-size:.72rem;line-height:1.8;color:var(--text)}
+.verdict.reject{background:rgba(255,107,53,.08);border-color:rgba(255,107,53,.35)}
+.verdict.reject strong{color:var(--accent2)}
+.verdict.fail{background:rgba(119,220,30,.07);border-color:rgba(119,220,30,.3)}
+.verdict.fail strong{color:var(--accent3)}
+.verdict.none{background:rgba(0,212,255,.06);border-color:rgba(0,212,255,.3)}
+.verdict.none strong{color:var(--accent)}
+.h-box{font-family:"Space Mono",monospace;font-size:.75rem;line-height:2;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;margin-bottom:.9rem;color:var(--text)}
+.h-box span.k{color:var(--accent3)}
+.notes-list{font-family:"Space Mono",monospace;font-size:.66rem;color:var(--text-dim);line-height:1.9;margin-left:1rem}
+.notes-list li{margin-bottom:.3rem}
+.site-footer{position:fixed;bottom:0;left:0;right:0;background:rgba(5,10,14,.92);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;z-index:100;font-family:"Space Mono",monospace;font-size:.55rem;color:var(--text-dim);gap:1rem;flex-wrap:wrap}
+.foot-left{display:flex;align-items:center;gap:.5rem}
+.foot-left .inf{font-size:1.1rem;color:var(--accent);margin-right:.3rem}
+.foot-links{display:flex;gap:1.1rem;flex-wrap:wrap}
+.foot-links a{color:var(--text-dim);text-decoration:none;transition:color .2s}
+.foot-links a:hover{color:var(--accent)}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text-dim);font-family:"Space Mono",monospace;font-size:.8rem;line-height:2}
+.empty-state .icon{display:block;font-size:2.4rem;margin-bottom:1rem;opacity:.3}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--surface2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+[hidden]{display:none!important}
+@media (max-width:640px){
+  .container{padding:1rem .8rem 5rem}
+  .panel{padding:1.1rem}
+  .site-footer{padding:.7rem 1rem;font-size:.5rem}
+}
+</style>
+</head>
+<body>
+<div class="bg-motion" aria-hidden="true">
+  <div class="bg-symbols" id="bgSymbols"></div>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+
+<div class="container">
+  <header>
+    <div class="header-tag">Numerical Methods &mdash; Statistics &middot; Hypothesis Testing</div>
+    <h1>One-way ANOVA</h1>
+    <p>Test whether at least one population mean differs &middot; F-test with k groups</p>
+  </header>
+
+  <div class="main-grid">
+    <!-- INPUT PANEL -->
+    <div class="panel" style="animation-delay:0s">
+      <div class="panel-title">Experimental Groups</div>
+
+      <div class="func-label"><span class="step-tag">STEP 1</span> &mdash; Enter observations for each group
+        <span class="info-wrap"><span class="info-btn" onclick="togglePop('pop-obs')">?</span>
+          <div class="info-popup" id="pop-obs">
+            <div class="pop-title">Observations</div>
+            Type the numerical observations of each group, separated by commas, spaces or new lines.<br /><br />
+            Example: <strong>12, 15, 14, 13</strong><br /><br />
+            Each group needs at least <strong>2</strong> observations. Groups must be separate, independent samples.
+          </div></span>
+      </div>
+      <div class="group-grid" id="groups"></div>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn btn-ghost btn-small" id="addBtn" type="button">+ Add Group</button>
+        <button class="btn btn-ghost btn-small" id="removeBtn" type="button">&minus; Remove Group</button>
+        <button class="btn btn-orange btn-small" id="exampleBtn" type="button">Load Example</button>
+      </div>
+
+      <div class="func-label" style="margin-top:1.2rem"><span class="step-tag">STEP 2</span> &mdash; Choose significance level &alpha;
+        <span class="info-wrap"><span class="info-btn" onclick="togglePop('pop-alpha')">?</span>
+          <div class="info-popup" id="pop-alpha">
+            <div class="pop-title">Significance Level &alpha;</div>
+            The risk of rejecting H&#8320; when it is actually true.<br /><br />
+            <strong>0.10</strong>, <strong>0.05</strong> or <strong>0.01</strong>.<br /><br />
+            Reject H&#8320; when <strong>p &le; &alpha;</strong>.
+          </div></span>
+      </div>
+      <div class="alpha-row" role="radiogroup" aria-label="Significance level">
+        <span class="lbl">&alpha; =</span>
+        <label class="radio"><input type="radio" name="alpha" value="0.1"> 0.10</label>
+        <label class="radio"><input type="radio" name="alpha" value="0.05" checked> 0.05</label>
+        <label class="radio"><input type="radio" name="alpha" value="0.01"> 0.01</label>
+      </div>
+
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="calcBtn" type="button">&#9654; Calculate</button>
+        <button class="btn btn-danger" id="resetBtn" type="button">&#10005; Reset</button>
+      </div>
+      <div id="msgs" class="msgs" aria-live="polite"></div>
+    </div>
+
+    <!-- OVERVIEW PANEL -->
+    <div class="panel" style="animation-delay:.1s">
+      <div class="panel-title">Method Overview</div>
+
+      <div class="phase-box pb-orange">
+        <div class="ptitle">Partition of variation</div>
+        <span style="color:var(--accent3)">SST</span> = <span style="color:var(--accent3)">SSB</span> + <span style="color:var(--accent3)">SSW</span><br />
+        SSB = &Sigma; n&#7522;(x&#772;&#7522; &minus; x&#772;)&sup2; &nbsp;(between groups)<br />
+        SSW = &Sigma;&Sigma;(x&#7522;&#11388; &minus; x&#772;&#7522;)&sup2; &nbsp;(within groups)<br />
+        SST = &Sigma;&Sigma;(x&#7522;&#11388; &minus; x&#772;)&sup2; &nbsp;(total)
+      </div>
+
+      <div class="phase-box pb-cyan">
+        <div class="ptitle">F-test</div>
+        MSB = SSB / (k &minus; 1)<br />
+        MSW = SSW / (N &minus; k)<br />
+        <span style="color:var(--accent3)">F = MSB / MSW</span> &nbsp;&sim; F(k&minus;1, N&minus;k)
+      </div>
+
+      <div class="phase-box pb-green">
+        <div class="ptitle">Hypotheses</div>
+        H&#8320;: &mu;&#8321; = &mu;&#8322; = &hellip; = &mu;&#8342;<br />
+        H&#8321;: at least one population mean is different
+      </div>
+
+      <div class="insight">
+        ANOVA compares <strong>between-group</strong> variation with <strong>within-group</strong> variation.<br />
+        A large F suggests the group means differ more than chance alone would explain.
+      </div>
+
+      <div class="field-desc" style="margin-top:0">
+        <span class="eg">Assumptions:</span> independent random samples, approximately normal populations, equal population variances.
+      </div>
+    </div>
+
+    <!-- RESULTS PANEL -->
+    <div class="panel full-width" style="animation-delay:.2s">
+      <div class="panel-title">Results</div>
+
+      <div id="emptyState" class="empty-state">
+        <span class="icon">F</span>
+        Enter at least two groups with two or more observations each,<br />
+        then click <strong>Calculate</strong> to run the one-way ANOVA.
+      </div>
+
+      <div id="results" hidden>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value" id="statF">&mdash;</div><div class="stat-label">F-statistic</div></div>
+          <div class="stat-card"><div class="stat-value green" id="statP">&mdash;</div><div class="stat-label">p-value</div></div>
+          <div class="stat-card"><div class="stat-value orange" id="statCrit">&mdash;</div><div class="stat-label">Critical F</div></div>
+          <div class="stat-card"><div class="stat-value" id="statDec" style="font-size:.95rem">&mdash;</div><div class="stat-label">Decision</div></div>
+        </div>
+
+        <div class="chart-title">Steps 1&ndash;3 &mdash; Observations, group totals and means</div>
+        <div id="sec1"></div>
+
+        <div class="chart-title">Steps 4&ndash;11 &mdash; Calculation details</div>
+        <p class="check-line">Substitutions show values rounded to 4 decimal places. All calculations use full precision.</p>
+        <div id="sec2"></div>
+
+        <div class="chart-title">ANOVA table</div>
+        <div class="seg" role="group" aria-label="Table view">
+          <button type="button" id="modeFull" aria-pressed="true">Completed ANOVA table</button>
+          <button type="button" id="modeSteps" aria-pressed="false">Step-by-step table</button>
+        </div>
+        <div id="tblFull"></div>
+        <div id="tblSteps" hidden></div>
+        <div id="tblChecks"></div>
+
+        <div class="chart-title">Steps 12&ndash;14 &mdash; Hypothesis test and conclusion</div>
+        <div id="sec3"></div>
+
+        <div class="chart-title">Visualization</div>
+        <div class="charts-row">
+          <div>
+            <div class="chart-wrap" id="fChart"></div>
+            <div class="legend">
+              <span><span class="sw" style="background:rgba(0,212,255,.35)"></span>Acceptance region</span>
+              <span><span class="sw" style="background:rgba(255,107,53,.5)"></span>Rejection region</span>
+              <span><span class="sw" style="background:var(--accent2)"></span>F critical</span>
+              <span><span class="sw" style="background:var(--accent3)"></span>Calculated F</span>
+            </div>
+          </div>
+          <div>
+            <div class="chart-wrap" id="mChart"></div>
+            <div class="legend">
+              <span>Dots = observations</span>
+              <span><span class="sw" style="background:var(--accent2)"></span>Group mean</span>
+              <span><span class="sw" style="background:var(--accent3)"></span>Grand mean</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-title">Assumptions and notes</div>
+        <ul class="notes-list">
+          <li>Observations are independent, and each group is a separate random sample.</li>
+          <li>Classical one-way ANOVA assumes each population is approximately normal.</li>
+          <li>It also assumes equal population variances across groups.</li>
+          <li>Strong skew, outliers or unequal variances call for other methods, such as Welch&rsquo;s ANOVA or the Kruskal&ndash;Wallis test.</li>
+          <li>A significant result says at least one mean differs. It does not identify which groups differ; a post-hoc comparison such as Tukey&rsquo;s HSD is needed for that.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="foot-left"><span class="inf">F</span>One-way ANOVA Calculator &mdash; Numerical Methods Lab</div>
+  <div class="foot-links">
+    <a href="factorial-design.html">Factorial Design</a>
+    <a href="latin-square.html">Latin Square</a>
+    <a href="index.html">Home</a>
+        <a href="euler.html">Euler's Method</a>
+        <a href="gauss_elimination.html">Gauss Elimination</a>
+        <a href="gauss_seidel.html">Gauss-Seidel</a>
+        <a href="gauss_jordan.html">Gauss-Jordan</a>
+        <a href="lagrange.html">Lagrange Interpolation</a>
+        <a href="power1.html">Power Method</a>
+        <a href="milins.html">Milne's Method</a>
+        <a href="Newton_divide.html">Newton's divide</a>
+        <a href="newton_raphson.html">Newton-Raphson</a>
+        <a href="rk method.html">RK4 Method</a>
+        <a href="simpson.html">Simpson's Rule</a>
+        <a href="taylor.html">Taylor's Method</a>
+        <a href="trapezoidel.html">Trapezoidal Rule</a>
+        <a href="large%20sample.html">Large Sample Test</a>
+        <a href="small%20sample.html">Small Sample Test</a>
+        <a href="chi-square-test.html">Chi-Square Test</a>
+        <a href="ftest.html">F Test</a>
+        <a href="twoway-anova.html">Two-way ANOVA</a>
+        <a href="adam.html">Adam's Method</a>
+  </div>
+</footer>
+
+<script>
+/* ===================== STATISTICAL ENGINE (no DOM) ===================== */
+/* ENGINE-START */
+function lnGamma(z){
+  const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,
+           -176.61503916999385,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI/Math.abs(Math.sin(Math.PI*z)))-lnGamma(1-z);
+  z-=1;
+  let x=c[0];
+  for(let i=1;i<9;i++) x+=c[i]/(z+i);
+  const t=z+7.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+function lnBeta(a,b){ return lnGamma(a)+lnGamma(b)-lnGamma(a+b); }
+function betacf(a,b,x){
+  const MAXIT=500, EPS=3e-16, FPMIN=1e-300;
+  const qab=a+b, qap=a+1, qam=a-1;
+  let c=1, d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN) d=FPMIN;
+  d=1/d;
+  let h=d;
+  for(let m=1;m<=MAXIT;m++){
+    const m2=2*m;
+    let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d;
+    const del=d*c; h*=del;
+    if(Math.abs(del-1)<EPS) break;
+  }
+  return h;
+}
+function regIncBeta(a,b,x){
+  if(x<=0) return 0;
+  if(x>=1) return 1;
+  const front=Math.exp(a*Math.log(x)+b*Math.log(1-x)-lnBeta(a,b));
+  if(x<(a+1)/(a+b+2)) return front*betacf(a,b,x)/a;
+  return 1-front*betacf(b,a,1-x)/b;
+}
+function fSurvival(f,d1,d2){
+  if(f===Infinity) return 0;
+  if(!(f>0)) return 1;
+  return regIncBeta(d2/2,d1/2,d2/(d2+d1*f));
+}
+function fCritical(alpha,d1,d2){
+  let lo=0, hi=1;
+  while(fSurvival(hi,d1,d2)>alpha && hi<1e12) hi*=2;
+  for(let i=0;i<300;i++){
+    const mid=(lo+hi)/2;
+    if(fSurvival(mid,d1,d2)>alpha) lo=mid; else hi=mid;
+    if(hi-lo<=1e-13*Math.max(1,hi)) break;
+  }
+  return (lo+hi)/2;
+}
+function fPdf(x,d1,d2){
+  if(!(x>0)) return 0;
+  const lnp=0.5*(d1*Math.log(d1*x)+d2*Math.log(d2)-(d1+d2)*Math.log(d1*x+d2))-Math.log(x)-lnBeta(d1/2,d2/2);
+  return Math.exp(lnp);
+}
+function computeANOVA(input,alpha){
+  const k=input.length;
+  const groups=input.map(g=>{
+    const n=g.values.length;
+    const T=g.values.reduce((s,v)=>s+v,0);
+    return {name:g.name, values:g.values, n, T, mean:T/n};
+  });
+  const N=groups.reduce((s,g)=>s+g.n,0);
+  const grandTotal=groups.reduce((s,g)=>s+g.T,0);
+  const grandMean=grandTotal/N;
+  let SSB=0;
+  groups.forEach(g=>{ g.dev2=(g.mean-grandMean)*(g.mean-grandMean); g.between=g.n*g.dev2; SSB+=g.between; });
+  groups.forEach(g=>{ g.ssi=g.values.reduce((s,v)=>s+(v-g.mean)*(v-g.mean),0); });
+  const SSW=groups.reduce((s,g)=>s+g.ssi,0);
+  let SST=0;
+  groups.forEach(g=>g.values.forEach(v=>{ SST+=(v-grandMean)*(v-grandMean); }));
+  const dfB=k-1, dfW=N-k, dfT=N-1;
+  const MSB=SSB/dfB, MSW=SSW/dfW;
+  const scale=Math.max(1,SST);
+  const zeroW=SSW<=1e-12*scale;
+  const zeroB=SSB<=1e-12*scale;
+  let F, p, status;
+  if(zeroW && zeroB){ F=null; p=null; status='undefined'; }
+  else if(zeroW){ F=Infinity; p=0; status='infinite'; }
+  else { F=MSB/MSW; p=fSurvival(F,dfB,dfW); status='ok'; }
+  const Fcrit=fCritical(alpha,dfB,dfW);
+  const reject=(status==='infinite')||(status==='ok' && p<=alpha);
+  const verified=Math.abs(SST-(SSB+SSW))<=1e-9*scale;
+  return {k,N,groups,grandTotal,grandMean,SSB,SSW,SST,dfB,dfW,dfT,MSB,MSW,F,p,Fcrit,alpha,status,reject,verified};
+}
+/* ENGINE-END */
+
+/* ===================== UI ===================== */
+const MIN_G=2, MAX_G=10;
+const NUM_RE=/^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
+const EX=[
+  {name:'Method A', text:'12 15 14 13 16'},
+  {name:'Method B', text:'18 17 20 19'},
+  {name:'Method C', text:'14 16 15 13 17 14'}
+];
+const state={live:false, mode:'full'};
+const $=id=>document.getElementById(id);
+const SUBS='₀₁₂₃₄₅₆₇₈₉';
+const sub=i=>String(i).split('').map(d=>SUBS[+d]).join('');
+
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function num(x){
+  if(!Number.isFinite(x)) return String(x);
+  const s=Number(x.toFixed(4));
+  return Object.is(s,-0)?'0':String(s);
+}
+function fmt(x,d=4){
+  if(x===null) return 'undefined';
+  if(x===Infinity) return '∞';
+  if(Number.isFinite(x)) return x.toFixed(d);
+  return '—';
+}
+function P(x){ return x<0?'('+num(x)+')':num(x); }
+function diff(a,b){ return '('+P(a)+' − '+P(b)+')'; }
+
+window.togglePop=function(id){
+  document.querySelectorAll('.info-popup').forEach(p=>{ if(p.id!==id) p.classList.remove('show'); });
+  const el=document.getElementById(id);
+  if(el) el.classList.toggle('show');
+};
+
+function parseTokens(text){
+  const values=[], bad=[];
+  text.split(/[\s,;]+/).filter(Boolean).forEach(t=>{
+    const v=Number(t);
+    if(NUM_RE.test(t) && Number.isFinite(v)) values.push(v); else bad.push(t);
+  });
+  return {values,bad};
+}
+function cardHTML(i,name,text){
+  return '<div class="group-card">'+
+    '<div class="gh">Group '+i+'</div>'+
+    '<input class="field gname" type="text" maxlength="40" placeholder="Group '+i+' name" value="'+esc(name)+'" aria-label="Group '+i+' name">'+
+    '<textarea class="field gdata" placeholder="e.g. 12, 15, 14, 13" aria-label="Group '+i+' observations">'+esc(text)+'</textarea>'+
+    '<div class="count"></div>'+
+  '</div>';
+}
+function groupsDOM(){ return [...document.querySelectorAll('.group-card')]; }
+function setGroups(data){
+  $('groups').innerHTML=data.map((d,i)=>cardHTML(i+1,d.name||'',d.text||'')).join('');
+  refreshControls();
+}
+function refreshControls(){
+  const cards=groupsDOM();
+  cards.forEach((card,i)=>{
+    card.querySelector('.gh').textContent='Group '+(i+1);
+    card.querySelector('.gname').placeholder='Group '+(i+1)+' name';
+    const {values,bad}=parseTokens(card.querySelector('.gdata').value);
+    const c=card.querySelector('.count');
+    if(bad.length){ c.textContent=bad.length+' non-numeric entr'+(bad.length>1?'ies':'y')+' found'; c.style.color='#ff3355'; }
+    else { c.textContent=values.length+' observation'+(values.length===1?'':'s'); c.style.color=''; }
+  });
+  $('addBtn').disabled = cards.length>=MAX_G;
+  $('removeBtn').disabled = cards.length<=MIN_G;
+}
+function collectInput(){
+  const errors=[], groups=[];
+  groupsDOM().forEach((card,i)=>{
+    const name=card.querySelector('.gname').value.trim() || ('Group '+(i+1));
+    const {values,bad}=parseTokens(card.querySelector('.gdata').value);
+    if(bad.length) errors.push(name+': "'+bad.join('", "')+'" is not a valid number. Enter numbers only.');
+    else if(values.length===0) errors.push(name+': no observations entered. Each group needs at least 2 observations.');
+    else if(values.length<2) errors.push(name+': only '+values.length+' observation. Each group needs at least 2 observations.');
+    groups.push({name,values});
+  });
+  if(groups.length<MIN_G) errors.push('At least two groups are required.');
+  return {groups,errors};
+}
+function showMsgs(list,kind){
+  if(!list.length){ $('msgs').innerHTML=''; return; }
+  let html;
+  if(kind==='err'){
+    html='<div class="msg err"><strong>Please fix the following:</strong>';
+    if(list.length>1) html+='<ul>'+list.map(m=>'<li>'+esc(m)+'</li>').join('')+'</ul>';
+    else html+='<div>'+esc(list[0])+'</div>';
+    html+='</div>';
+  } else {
+    html='<div class="msg ok">'+esc(list[0])+'</div>';
+  }
+  $('msgs').innerHTML=html;
+}
+function hideResults(){ $('results').hidden=true; $('emptyState').style.display=''; }
+
+function runCalc(){
+  const {groups,errors}=collectInput();
+  if(errors.length){ showMsgs(errors,'err'); hideResults(); return; }
+  const alpha=parseFloat(document.querySelector('input[name=alpha]:checked').value);
+  const r=computeANOVA(groups,alpha);
+  renderResults(r);
+  showMsgs(['Calculation complete: k = '+r.k+' groups, N = '+r.N+' observations, α = '+alpha.toFixed(2)+'.'],'ok');
+  $('emptyState').style.display='none';
+  $('results').hidden=false;
+}
+
+function stepBox(title,formula,lines){
+  return '<div class="step-card"><div class="step-badge">'+title.split(':')[0]+'</div><h3>'+title.split(':').slice(1).join(':').trim()+'</h3><div class="f">'+formula+'</div>'+
+    (lines?'<pre class="sub">'+lines+'</pre>':'')+'</div>';
+}
+
+function renderResults(r){
+  const {k,N,groups,grandTotal,grandMean,SSB,SSW,SST,dfB,dfW,dfT,MSB,MSW,F,p,Fcrit,alpha,status,reject,verified}=r;
+
+  let s1='<div class="sol-text" style="margin-bottom:.8rem">Groups k = '+k+' &nbsp;&middot;&nbsp; Total observations N = '+N+' &nbsp;&middot;&nbsp; &alpha; = '+alpha.toFixed(2)+'</div>';
+  s1+='<div class="tbl-wrap"><table class="iter-table"><thead><tr><th class="l">Group</th><th class="l">Observations</th><th>n&#7522;</th><th>Total T&#7522;</th><th>Mean x&#772;&#7522;</th></tr></thead><tbody>';
+  groups.forEach(g=>{
+    s1+='<tr><td class="l"><strong>'+esc(g.name)+'</strong></td><td class="l">'+g.values.map(num).join(', ')+'</td><td>'+g.n+'</td><td>'+num(g.T)+'</td><td>'+fmt(g.mean)+'</td></tr>';
+  });
+  s1+='</tbody></table></div>';
+  s1+=stepBox('Step 1: Given observations','Listed above for each group.','');
+  s1+=stepBox('Step 2: Number of groups and total observations','k = '+k+',&nbsp;&nbsp; N = &Sigma; n&#7522;',
+    'N = '+groups.map(g=>g.n).join(' + ')+' = '+N);
+  s1+=stepBox('Step 3: Group totals and group means','T&#7522; = &Sigma; x&#7522;&#11388;&nbsp;&nbsp; and&nbsp;&nbsp; x&#772;&#7522; = T&#7522; / n&#7522;',
+    groups.map((g,i)=>
+      'T'+sub(i+1)+' = '+g.values.map(num).join(' + ')+' = '+num(g.T)+'\n'+
+      'x̄'+sub(i+1)+' = T'+sub(i+1)+' / n'+sub(i+1)+' = '+num(g.T)+' / '+g.n+' = '+fmt(g.mean)
+    ).join('\n\n'));
+  $('sec1').innerHTML=s1;
+
+  const allTerms=groups.flatMap(g=>g.values.map(v=>diff(v,grandMean)+'²')).join(' + ');
+  const ssbTerms=groups.map(g=>num(g.between)).join(' + ');
+  let fLine;
+  if(status==='ok') fLine='F = MSB / MSW = '+fmt(MSB)+' / '+fmt(MSW)+' = '+fmt(F);
+  else if(status==='infinite') fLine='F = MSB / MSW = '+fmt(MSB)+' / 0 = ∞  (MSW = 0)';
+  else fLine='F = MSB / MSW = 0 / 0  →  undefined';
+  const verifyF = status==='ok' ? '\nCheck: MSB / MSW = '+fmt(MSB/MSW)+' = F  ✔' : '';
+
+  let s2='';
+  s2+=stepBox('Step 4: Grand total and grand mean','T = &Sigma; T&#7522;,&nbsp;&nbsp; x&#772; = T / N',
+    'T = '+groups.map(g=>num(g.T)).join(' + ')+' = '+num(grandTotal)+'\n'+
+    'x̄ = T / N = '+num(grandTotal)+' / '+N+' = '+fmt(grandMean));
+  s2+=stepBox('Step 5: Between-group sum of squares (SSB)','SSB = &Sigma; n&#7522;(x&#772;&#7522; &minus; x&#772;)&sup2;',
+    groups.map((g,i)=>'n'+sub(i+1)+'(x̄'+sub(i+1)+' − x̄)² = '+g.n+' × '+diff(g.mean,grandMean)+'² = '+g.n+' × '+fmt(g.dev2)+' = '+fmt(g.between)).join('\n')+
+    '\nSSB = '+ssbTerms+' = '+fmt(SSB));
+  s2+=stepBox('Step 6: Within-group sum of squares (SSW)','SSW = &Sigma;&Sigma;(x&#7522;&#11388; &minus; x&#772;&#7522;)&sup2;',
+    groups.map((g,i)=>'SSW'+sub(i+1)+' = '+g.values.map(v=>diff(v,g.mean)+'²').join(' + ')+' = '+fmt(g.ssi)).join('\n')+
+    '\nSSW = '+groups.map(g=>fmt(g.ssi)).join(' + ')+' = '+fmt(SSW));
+  s2+=stepBox('Step 7: Total sum of squares (SST)','SST = &Sigma;&Sigma;(x&#7522;&#11388; &minus; x&#772;)&sup2;',
+    'SST = '+allTerms+' = '+fmt(SST));
+  s2+=stepBox('Step 8: Verification','SST = SSB + SSW',
+    fmt(SST)+' = '+fmt(SSB)+' + '+fmt(SSW)+' = '+fmt(SSB+SSW)+(verified?'   ✔ verified':'   ✖ mismatch'));
+  s2+=stepBox('Step 9: Degrees of freedom','df (between) = k &minus; 1,&nbsp; df (within) = N &minus; k,&nbsp; df (total) = N &minus; 1',
+    'df (between) = k − 1 = '+k+' − 1 = '+dfB+'\n'+
+    'df (within)  = N − k = '+N+' − '+k+' = '+dfW+'\n'+
+    'df (total)   = N − 1 = '+N+' − 1 = '+dfT+'\n'+
+    'Check: '+dfB+' + '+dfW+' = '+(dfB+dfW)+' = '+dfT);
+  s2+=stepBox('Step 10: Mean squares','MSB = SSB / (k &minus; 1),&nbsp;&nbsp; MSW = SSW / (N &minus; k)',
+    'MSB = '+fmt(SSB)+' / '+dfB+' = '+fmt(MSB)+'\n'+
+    'MSW = '+fmt(SSW)+' / '+dfW+' = '+fmt(MSW));
+  s2+=stepBox('Step 11: F-statistic','F = MSB / MSW', fLine+verifyF);
+  $('sec2').innerHTML=s2;
+
+  const fTxt=status==='undefined'?'undefined':fmt(F);
+  $('tblFull').innerHTML=
+    '<div class="tbl-wrap"><table class="iter-table" style="min-width:560px"><thead><tr>'+
+    '<th class="l">Source of Variation</th><th>Sum of Squares (SS)</th><th>Degrees of Freedom (df)</th><th>Mean Square (MS)</th><th>F-Value</th></tr></thead><tbody>'+
+    '<tr><td class="l">Between Groups</td><td>'+fmt(SSB)+'</td><td>'+dfB+'<small>k &minus; 1</small></td><td>'+fmt(MSB)+'</td><td class="f-cell">'+fTxt+'</td></tr>'+
+    '<tr><td class="l">Within Groups (Error)</td><td>'+fmt(SSW)+'</td><td>'+dfW+'<small>N &minus; k</small></td><td>'+fmt(MSW)+'</td><td class="na">&mdash;</td></tr>'+
+    '<tr><td class="l">Total</td><td>'+fmt(SST)+'</td><td>'+dfT+'<small>N &minus; 1</small></td><td class="na">&mdash;</td><td class="na">&mdash;</td></tr>'+
+    '</tbody></table></div>';
+
+  const row=(rw,col,formula,subst,result,cls)=>
+    '<tr><td class="l">'+rw+'</td><td class="l">'+col+'</td><td class="l sub-cell">'+formula+'</td><td class="l sub-cell">'+subst+'</td><td class="'+(cls||'')+'">'+result+'</td></tr>';
+  $('tblSteps').innerHTML=
+    '<div class="tbl-wrap"><table class="iter-table" style="min-width:680px"><thead><tr>'+
+    '<th class="l">Row</th><th class="l">Column</th><th class="l">Formula</th><th class="l">Where the value comes from</th><th>Result</th></tr></thead><tbody>'+
+    row('Between Groups','SS','SSB = &Sigma; n&#7522;(x&#772;&#7522; &minus; x&#772;)&sup2;',ssbTerms,fmt(SSB))+
+    row('Between Groups','df','k &minus; 1',k+' − 1',dfB)+
+    row('Between Groups','MS','SSB / (k &minus; 1)',fmt(SSB)+' / '+dfB,fmt(MSB))+
+    row('Between Groups','F','MSB / MSW',fmt(MSB)+' / '+fmt(MSW),fTxt,'f-cell')+
+    row('Within Groups','SS','SSW = &Sigma;&Sigma;(x&#7522;&#11388; &minus; x&#772;&#7522;)&sup2;',groups.map(g=>fmt(g.ssi)).join(' + '),fmt(SSW))+
+    row('Within Groups','df','N &minus; k',N+' − '+k,dfW)+
+    row('Within Groups','MS','SSW / (N &minus; k)',fmt(SSW)+' / '+dfW,fmt(MSW))+
+    row('Within Groups','F','Not applicable (error term)','—','—','na')+
+    row('Total','SS','SST = &Sigma;&Sigma;(x&#7522;&#11388; &minus; x&#772;)&sup2;','SST = SSB + SSW (verified)',fmt(SST))+
+    row('Total','df','N &minus; 1',N+' − 1',dfT)+
+    row('Total','MS','Not applicable','—','—','na')+
+    '</tbody></table></div>';
+
+  $('tblChecks').innerHTML='<p class="check-line">Checks: SST = SSB + SSW '+(verified?'✔ holds':'✖ does not hold')+
+    '. F = MSB / MSW '+(status==='ok'?'✔ holds ('+fmt(F)+')':(status==='infinite'?'— F is infinite because MSW = 0':'— F is undefined'))+'.</p>';
+  setMode(state.mode);
+
+  const H0='H₀: μ₁ = μ₂ = … = μ'+sub(k);
+  const H1='H₁: At least one population mean is different.';
+  let s3='<div class="h-box"><span class="k">'+H0+'</span><br><span class="k">'+H1+'</span></div>';
+  s3+=stepBox('Step 12: Critical F-value','F<sub>crit</sub> = F(&alpha; = '+alpha.toFixed(2)+'; df&#8321; = '+dfB+', df&#8322; = '+dfW+')',
+    'Upper-tail critical value: P(F &ge; F_crit) = '+alpha.toFixed(2)+'\nF_crit = '+fmt(Fcrit));
+  const pTxt = status==='undefined' ? 'undefined' : (p<0.0001 ? '< 0.0001' : p.toFixed(4));
+  s3+=stepBox('Step 13: p-value','p = P(F &ge; '+fTxt+')',
+    status==='undefined' ? 'F is undefined, so no p-value can be computed.' : 'p = '+pTxt);
+  let decisionLine, verdictCls, verdictTitle, verdictBody, decShort;
+  if(status==='undefined'){
+    decisionLine='No decision can be made because F is undefined.';
+    verdictCls='none'; decShort='No test';
+    verdictTitle='No test possible: all observations are identical';
+    verdictBody='SSB = 0 and SSW = 0, so F = 0 / 0. There is no variation to test. Check the data.';
+  } else if(reject){
+    decisionLine='p '+(p<=alpha?'≤':'>')+' α : '+pTxt+' ≤ '+alpha.toFixed(2)+'  →  Reject H₀';
+    verdictCls='reject'; decShort='Reject H₀';
+    verdictTitle='Decision: Reject H₀ (at α = '+alpha.toFixed(2)+')';
+    verdictBody=status==='infinite'
+      ? 'Within-group variation is zero, so F is infinite. The data show at least one population mean is different. This is an extreme case; check that the observations are correct.'
+      : 'The data provide sufficient evidence, at the '+alpha.toFixed(2)+' significance level, to conclude that at least one population mean is different from the others. The test does not show which groups differ.';
+  } else {
+    decisionLine='p '+(p<=alpha?'≤':'>')+' α : '+pTxt+' > '+alpha.toFixed(2)+'  →  Fail to reject H₀';
+    verdictCls='fail'; decShort='Fail to reject H₀';
+    verdictTitle='Decision: Fail to reject H₀ (at α = '+alpha.toFixed(2)+')';
+    verdictBody='The data do not provide sufficient evidence, at the '+alpha.toFixed(2)+' significance level, to conclude that the population means differ. This does not prove that the means are equal.';
+  }
+  s3+=stepBox('Step 14: Decision','Reject H₀ if p &le; &alpha;; otherwise fail to reject H₀',
+    decisionLine+(status==='undefined'?'':'\nEquivalently: F = '+fmt(F)+(F>Fcrit?' > ':' ≤ ')+'F_crit = '+fmt(Fcrit)));
+  s3+='<div class="verdict '+verdictCls+'"><strong>'+verdictTitle+'</strong><p>'+verdictBody+'</p></div>';
+  $('sec3').innerHTML=s3;
+
+  $('statF').textContent = status==='undefined'?'undefined':(status==='infinite'?'∞':fmt(F));
+  $('statP').textContent = pTxt;
+  $('statCrit').textContent = fmt(Fcrit);
+  $('statDec').textContent = decShort;
+
+  $('fChart').innerHTML=fChartSVG(r);
+  $('mChart').innerHTML=meansSVG(r);
+}
+
+function setMode(m){
+  state.mode=m;
+  const full=m==='full';
+  $('tblFull').hidden=!full;
+  $('tblSteps').hidden=full;
+  $('modeFull').setAttribute('aria-pressed',String(full));
+  $('modeSteps').setAttribute('aria-pressed',String(!full));
+}
+
+function fChartSVG(r){
+  const W=640,H=330,L=54,R=616,TOP=34,BOT=280;
+  const d1=r.dfB,d2=r.dfW,Fc=r.Fcrit,Fo=r.F;
+  const hasF=(r.status==='ok' && Number.isFinite(Fo));
+  let xmax=Fc*2.2, off=false;
+  if(hasF){
+    if(Fo<=Fc*3) xmax=Math.max(xmax,Fo*1.2);
+    else off=true;
+  }
+  const xs=[];
+  const NS=400;
+  for(let i=1;i<=NS;i++) xs.push(xmax*i/NS);
+  xs.push(Fc);
+  if(hasF && !off) xs.push(Fo);
+  xs.sort((a,b)=>a-b);
+  const dens=xs.map(x=>fPdf(x,d1,d2));
+  let ymax=0;
+  xs.forEach((x,i)=>{ if(x>=0.05*xmax && dens[i]>ymax) ymax=dens[i]; });
+  if(!(ymax>0)) ymax=1;
+  ymax*=1.12;
+  const X=x=>L+(x/xmax)*(R-L);
+  const Y=y=>BOT-(Math.min(y,ymax)/ymax)*(BOT-TOP);
+
+  let svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="F distribution with critical value, calculated F and rejection region">';
+  svg+='<text x="'+L+'" y="18" style="fill:var(--text);font-weight:700">F-distribution, df₁ = '+d1+', df₂ = '+d2+'</text>';
+
+  const acc=xs.map((x,i)=>[x,dens[i]]).filter(p=>p[0]>0 && p[0]<=Fc);
+  if(acc.length){
+    let d='M'+X(0).toFixed(1)+','+BOT+' ';
+    acc.forEach(([x,y])=>{ d+='L'+X(x).toFixed(1)+','+Y(y).toFixed(1)+' '; });
+    d+='L'+X(Fc).toFixed(1)+','+BOT+' Z';
+    svg+='<path d="'+d+'" class="acc"/>';
+  }
+  const rej=xs.map((x,i)=>[x,dens[i]]).filter(p=>p[0]>=Fc);
+  if(rej.length){
+    let d='M'+X(Fc).toFixed(1)+','+BOT+' ';
+    rej.forEach(([x,y])=>{ d+='L'+X(x).toFixed(1)+','+Y(y).toFixed(1)+' '; });
+    d+='L'+X(xmax).toFixed(1)+','+BOT+' Z';
+    svg+='<path d="'+d+'" class="rej"/>';
+  }
+  let c='';
+  xs.forEach((x,i)=>{ if(x>0) c+=(c?'L':'M')+X(x).toFixed(1)+','+Y(dens[i]).toFixed(1)+' '; });
+  svg+='<path d="'+c+'" class="curve"/>';
+
+  svg+='<line x1="'+L+'" y1="'+BOT+'" x2="'+R+'" y2="'+BOT+'" class="axis"/>';
+  for(let t=0;t<=4;t++){
+    const xv=xmax*t/4;
+    svg+='<line x1="'+X(xv).toFixed(1)+'" y1="'+BOT+'" x2="'+X(xv).toFixed(1)+'" y2="'+(BOT+5)+'" class="axis"/>';
+    svg+='<text x="'+X(xv).toFixed(1)+'" y="'+(BOT+18)+'" text-anchor="middle">'+xv.toFixed(2)+'</text>';
+  }
+  svg+='<text x="'+((L+R)/2)+'" y="'+(BOT+36)+'" text-anchor="middle">F value</text>';
+
+  svg+='<line x1="'+X(Fc).toFixed(1)+'" y1="'+TOP+'" x2="'+X(Fc).toFixed(1)+'" y2="'+BOT+'" class="crit"/>';
+  svg+='<text x="'+(X(Fc)+6).toFixed(1)+'" y="'+(TOP+12)+'" class="lbl-crit">F_crit = '+Fc.toFixed(4)+'</text>';
+
+  if(hasF && !off){
+    const left=Fo<Fc;
+    svg+='<line x1="'+X(Fo).toFixed(1)+'" y1="'+TOP+'" x2="'+X(Fo).toFixed(1)+'" y2="'+BOT+'" class="obs"/>';
+    svg+='<text x="'+(X(Fo)+(left?-6:6)).toFixed(1)+'" y="'+(TOP+28)+'" text-anchor="'+(left?'end':'start')+'" class="lbl-obs">F = '+Fo.toFixed(4)+'</text>';
+  } else if(r.status==='infinite' || off){
+    const txt=Number.isFinite(Fo)?'F = '+Fo.toFixed(2)+' (off scale →)':'F = ∞ (off scale →)';
+    svg+='<text x="'+(R-4)+'" y="'+(TOP+28)+'" text-anchor="end" class="lbl-obs">'+txt+'</text>';
+  } else {
+    svg+='<text x="'+(R-4)+'" y="'+(TOP+28)+'" text-anchor="end" class="lbl-obs">F undefined</text>';
+  }
+
+  svg+='<text x="'+X(Fc*0.5).toFixed(1)+'" y="'+(BOT-10)+'" text-anchor="middle" class="lbl-region">Acceptance region (1 &minus; &alpha;)</text>';
+  svg+='<text x="'+X((Fc+xmax)/2).toFixed(1)+'" y="'+(BOT-10)+'" text-anchor="middle" class="lbl-region" style="fill:var(--accent2);font-weight:700">Rejection region (&alpha; = '+r.alpha.toFixed(2)+')</text>';
+  svg+='</svg>';
+  return svg;
+}
+
+function meansSVG(r){
+  const W=640,H=320,L=54,R=616,TOP=20,BOT=270;
+  const all=r.groups.flatMap(g=>g.values);
+  let lo=Math.min(...all), hi=Math.max(...all);
+  const pad=(hi-lo)*0.12 || Math.max(1,Math.abs(hi))*0.1;
+  lo-=pad; hi+=pad;
+  const Y=v=>BOT-(v-lo)/(hi-lo)*(BOT-TOP);
+  const k=r.groups.length;
+  const colW=(R-L)/k;
+
+  let svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Observations and group means for each group">';
+  for(let t=0;t<=4;t++){
+    const v=lo+(hi-lo)*t/4;
+    svg+='<line x1="'+L+'" y1="'+Y(v).toFixed(1)+'" x2="'+R+'" y2="'+Y(v).toFixed(1)+'" class="grid"/>';
+    svg+='<text x="'+(L-8)+'" y="'+(Y(v)+4).toFixed(1)+'" text-anchor="end">'+v.toFixed(1)+'</text>';
+  }
+  svg+='<line x1="'+L+'" y1="'+Y(r.grandMean).toFixed(1)+'" x2="'+R+'" y2="'+Y(r.grandMean).toFixed(1)+'" class="gm"/>';
+  svg+='<text x="'+(L+6)+'" y="'+(Y(r.grandMean)-6).toFixed(1)+'" text-anchor="start" class="lbl-gm">Grand mean = '+r.grandMean.toFixed(2)+'</text>';
+
+  r.groups.forEach((g,i)=>{
+    const cx=L+colW*(i+0.5);
+    g.values.forEach((v,j)=>{
+      const off=(g.n>1 ? (j/(g.n-1)-0.5) : 0)*Math.min(40,colW*0.5);
+      svg+='<circle cx="'+(cx+off).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="4.5" class="pt"/>';
+    });
+    svg+='<line x1="'+(cx-30).toFixed(1)+'" y1="'+Y(g.mean).toFixed(1)+'" x2="'+(cx+30).toFixed(1)+'" y2="'+Y(g.mean).toFixed(1)+'" class="mean"/>';
+    svg+='<text x="'+(cx+34).toFixed(1)+'" y="'+(Y(g.mean)+4).toFixed(1)+'" class="lbl-mean">x̄ = '+g.mean.toFixed(2)+'</text>';
+    svg+='<text x="'+cx.toFixed(1)+'" y="'+(BOT+20)+'" text-anchor="middle" class="lbl-name">'+esc(g.name)+'</text>';
+  });
+  svg+='<text x="'+L+'" y="'+(H-6)+'" style="font-size:10px">Dots = observations &middot; orange bars = group means &middot; green dashed = grand mean</text>';
+  svg+='</svg>';
+  return svg;
+}
+
+/* background floating symbols (as in adam.html) */
+(function(){
+  const box=$('bgSymbols'); if(!box) return;
+  const syms=['∑','x̄','F','σ²','α','SSB','SSW','MSB','p','μ'];
+  const cls=['','violet','mint'];
+  for(let i=0;i<18;i++){
+    const s=document.createElement('span');
+    s.className='bg-symbol '+cls[i%3];
+    s.textContent=syms[i%syms.length];
+    s.style.left=(Math.random()*100).toFixed(1)+'%';
+    s.style.animationDuration=(18+Math.random()*22).toFixed(1)+'s';
+    s.style.animationDelay=(-Math.random()*30).toFixed(1)+'s';
+    s.style.fontSize=(0.7+Math.random()*0.8).toFixed(2)+'rem';
+    box.appendChild(s);
+  }
+})();
+
+/* ---------- Events ---------- */
+function loadExample(){ setGroups(EX); state.live=true; runCalc(); }
+function resetAll(){
+  setGroups([{name:'',text:''},{name:'',text:''},{name:'',text:''}]);
+  state.live=false;
+  document.querySelector('input[name=alpha][value="0.05"]').checked=true;
+  hideResults();
+  showMsgs([],'ok');
+}
+$('groups').addEventListener('input',()=>{ refreshControls(); if(state.live) runCalc(); });
+document.querySelectorAll('input[name=alpha]').forEach(el=>{
+  el.addEventListener('change',()=>{ if(state.live) runCalc(); });
+});
+$('addBtn').addEventListener('click',()=>{
+  const n=groupsDOM().length;
+  if(n>=MAX_G) return;
+  $('groups').insertAdjacentHTML('beforeend',cardHTML(n+1,'',''));
+  refreshControls();
+  if(state.live) runCalc();
+});
+$('removeBtn').addEventListener('click',()=>{
+  const cards=groupsDOM();
+  if(cards.length<=MIN_G) return;
+  cards[cards.length-1].remove();
+  refreshControls();
+  if(state.live) runCalc();
+});
+$('calcBtn').addEventListener('click',()=>{ state.live=true; runCalc(); });
+$('exampleBtn').addEventListener('click',loadExample);
+$('resetBtn').addEventListener('click',resetAll);
+$('modeFull').addEventListener('click',()=>setMode('full'));
+$('modeSteps').addEventListener('click',()=>setMode('steps'));
+
+resetAll();
+</script>
+</body>
+</html>

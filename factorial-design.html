@@ -1,0 +1,1968 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2² Factorial Design Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #050a0e;
+        --surface: #0d1a22;
+        --surface2: #112230;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --accent3: #77dc1e;
+        --text: #e8f4f8;
+        --text-dim: #7a9aaa;
+        --border: #1a3545;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 5rem;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 0 2rem;
+      }
+      .header-tag {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent2) 50%,
+          var(--accent3) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+      header p {
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      @media (max-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+      }
+      .panel:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .panel-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .panel-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: var(--glow);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .controls-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 120px;
+        position: relative;
+      }
+      label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--glow);
+      }
+      .func-input-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .func-input-wrap input[type="text"] {
+        background: transparent;
+        border: none;
+        color: var(--accent3);
+        font-size: 1rem;
+        padding: 0.3rem 0;
+        width: 100%;
+      }
+      .func-input-wrap input[type="text"]:focus {
+        box-shadow: none;
+        border: none;
+      }
+      .func-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .func-hint {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        margin-top: 0.4rem;
+        line-height: 1.7;
+      }
+      .func-hint span {
+        color: var(--accent3);
+      }
+      .field-desc {
+        font-family: "Space Mono", monospace;
+        font-size: 0.58rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-top: 0.3rem;
+        padding: 0.3rem 0.5rem;
+        border-left: 2px solid rgba(0, 212, 255, 0.2);
+        background: rgba(0, 212, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .field-desc .eg {
+        color: var(--accent3);
+      }
+      .field-desc .warn {
+        color: var(--accent2);
+      }
+      .examples-strip {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ex-chip {
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .ex-chip:hover {
+        background: rgba(0, 212, 255, 0.15);
+        border-color: var(--accent);
+      }
+      .btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.05em;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #0099cc);
+        color: #000;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow);
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ff3355;
+        color: #ff3355;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 51, 85, 0.1);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .sep {
+        height: 1px;
+        background: var(--border);
+        margin: 0.8rem 0;
+      }
+      .full-width {
+        grid-column: 1/-1;
+      }
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 50%;
+        font-family: "Space Mono", monospace;
+        font-size: 0.55rem;
+        color: var(--accent);
+        cursor: pointer;
+        user-select: none;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .info-popup {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 6px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.61rem;
+        color: var(--text);
+        line-height: 1.75;
+        z-index: 99;
+        width: 260px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .info-popup.show {
+        display: block;
+      }
+      .info-popup .pop-title {
+        color: var(--accent);
+        font-size: 0.64rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+      }
+      @media (max-width: 700px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-family: "Space Mono", monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: var(--glow);
+        word-break: break-word;
+      }
+      .stat-label {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 0.3rem;
+      }
+      .solution-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .sol-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .sol-values {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .sol-chip {
+        background: rgba(0, 212, 255, 0.08);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+      .sol-text {
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        line-height: 1.8;
+        margin-top: 0.6rem;
+      }
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        height: 260px;
+        overflow: hidden;
+      }
+      .chart-wrap svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .chart-wrap svg text {
+        font-size: 12px;
+        fill: var(--text-dim);
+        font-family: "Space Mono", monospace;
+      }
+      .chart-wrap svg .lbl-crit {
+        fill: var(--accent2);
+        font-weight: 700;
+      }
+      .chart-wrap svg .lbl-obs {
+        fill: var(--accent);
+        font-weight: 700;
+      }
+      .chart-wrap svg .lbl-region {
+        fill: var(--text);
+        font-size: 11px;
+      }
+      .chart-wrap svg .lbl-name {
+        fill: var(--text);
+        font-weight: 700;
+      }
+      .chart-wrap svg .lbl-val {
+        fill: var(--text);
+        font-weight: 700;
+        font-size: 11px;
+      }
+      .chart-wrap svg .axis {
+        stroke: var(--text-dim);
+        stroke-width: 1;
+      }
+      .chart-wrap svg .grid {
+        stroke: rgba(26, 53, 69, 0.8);
+        stroke-width: 1;
+      }
+      .chart-wrap svg .curve {
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 2.2;
+      }
+      .chart-wrap svg .acc {
+        fill: rgba(0, 212, 255, 0.1);
+      }
+      .chart-wrap svg .rej {
+        fill: rgba(255, 107, 53, 0.3);
+      }
+      .chart-wrap svg .crit {
+        stroke: var(--accent2);
+        stroke-width: 2;
+        stroke-dasharray: 6 4;
+      }
+      .chart-wrap svg .obs {
+        stroke: var(--accent3);
+        stroke-width: 2.4;
+      }
+      .chart-wrap svg .bar {
+        fill: rgba(0, 212, 255, 0.55);
+        stroke: var(--accent);
+      }
+      .chart-wrap svg .gm {
+        stroke: var(--accent3);
+        stroke-width: 1.6;
+        stroke-dasharray: 5 4;
+      }
+      .chart-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .final-chart-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+      }
+      .iter-table {
+        border-collapse: collapse;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text);
+        width: 100%;
+        min-width: 540px;
+      }
+      .iter-table th {
+        padding: 0.45rem 0.7rem;
+        text-align: right;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .iter-table th:first-child,
+      .iter-table th:nth-child(5) {
+        text-align: center;
+      }
+      .iter-table td {
+        padding: 0.3rem 0.7rem;
+        text-align: right;
+        border-bottom: 1px solid rgba(26, 53, 69, 0.4);
+        white-space: nowrap;
+      }
+      .iter-table td:first-child {
+        text-align: center;
+        color: var(--text-dim);
+      }
+      .iter-table td.x-col {
+        color: var(--accent);
+      }
+      .iter-table td.fx-col {
+        color: var(--text);
+      }
+      .iter-table td.coeff-col {
+        text-align: center;
+        color: var(--accent2);
+        font-weight: 700;
+      }
+      .iter-table td.area-col {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .iter-table tr.endpoint-row td {
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .iter-table tr.endpoint-row td.x-col {
+        color: var(--accent2);
+      }
+      .iter-table tr:last-child td {
+        border-bottom: none;
+      }
+      .iter-table tfoot td {
+        border-top: 2px solid var(--border);
+        padding-top: 0.6rem;
+        font-weight: 700;
+      }
+      /* two-way additions: left-aligned text cells, highlighted F cells, inputs inside table */
+      .iter-table td.l,
+      .iter-table th.l {
+        text-align: left;
+        white-space: normal;
+      }
+      .iter-table td.sub-cell {
+        font-size: 0.66rem;
+        color: var(--text-dim);
+        white-space: normal;
+        word-break: break-word;
+        min-width: 150px;
+      }
+      .iter-table td small {
+        display: block;
+        color: var(--text-dim);
+        font-size: 0.6rem;
+      }
+      .iter-table td.f-cell {
+        background: rgba(255, 107, 53, 0.12);
+        color: var(--accent2);
+        font-weight: 700;
+        box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.45);
+      }
+      .iter-table td.na {
+        color: var(--text-dim);
+      }
+      .iter-table td.total-cell {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .iter-table input {
+        min-width: 90px;
+        padding: 0.4rem 0.5rem;
+        font-size: 0.75rem;
+      }
+      .iter-table input.cname,
+      .iter-table input.rname {
+        min-width: 110px;
+      }
+      .step-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.4rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.35s ease forwards;
+        margin-bottom: 1rem;
+      }
+      .step-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      }
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-radius: 99px;
+        padding: 0.2rem 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+      .step-col-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .calc-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.8rem;
+      }
+      .calc-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+        flex-wrap: wrap;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+      }
+      .calc-label {
+        color: var(--text-dim);
+        min-width: 76px;
+        flex-shrink: 0;
+      }
+      .calc-sub {
+        color: var(--text);
+        word-break: break-word;
+        flex: 1;
+        min-width: 160px;
+      }
+      .calc-result {
+        color: var(--accent3);
+        font-weight: 700;
+      }
+      .steps-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .steps-header-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .step-all-btn {
+        background: transparent;
+        border: 1px solid var(--accent2);
+        color: var(--accent2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-all-btn:hover {
+        background: rgba(255, 107, 53, 0.1);
+      }
+      .step-all-btn.active {
+        background: rgba(255, 107, 53, 0.18);
+      }
+      .step-all-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .alert {
+        display: none;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        margin-top: 0.8rem;
+      }
+      .alert-error {
+        background: rgba(255, 51, 85, 0.1);
+        border: 1px solid rgba(255, 51, 85, 0.3);
+        color: #ff3355;
+      }
+      .alert-success {
+        background: rgba(119, 220, 30, 0.08);
+        border: 1px solid rgba(119, 220, 30, 0.25);
+        color: var(--accent3);
+      }
+      .alert ul {
+        margin: 0.3rem 0 0 1.1rem;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-dim);
+        font-family: "Space Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 2;
+      }
+      .empty-state .icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+      .accuracy-bar-wrap {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .acc-title {
+        font-family: "Space Mono", monospace;
+        font-size: 0.62rem;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .acc-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.68rem;
+        margin-bottom: 0.4rem;
+      }
+      .acc-label {
+        color: var(--text-dim);
+        min-width: 90px;
+      }
+      .acc-track {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .acc-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s;
+      }
+      .acc-val {
+        color: var(--accent3);
+        min-width: 100px;
+        text-align: right;
+      }
+      .bg-motion {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .bg-symbols {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .bg-symbol {
+        position: absolute;
+        font-family: "Space Mono", monospace;
+        color: rgba(0, 212, 255, 0.12);
+        animation: floatMath linear infinite;
+        white-space: nowrap;
+      }
+      .bg-symbol.violet {
+        color: rgba(124, 58, 237, 0.15);
+      }
+      .bg-symbol.mint {
+        color: rgba(119, 220, 30, 0.1);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        pointer-events: none;
+        animation: pulseBlob 8s ease-in-out infinite;
+      }
+      .b1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        left: -150px;
+        background: rgba(0, 212, 255, 0.04);
+      }
+      .b2 {
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        right: -200px;
+        background: rgba(124, 58, 237, 0.05);
+        animation-delay: -3s;
+      }
+      .b3 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: 30%;
+        background: rgba(119, 220, 30, 0.03);
+        animation-delay: -6s;
+      }
+      @keyframes floatMath {
+        from {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+          opacity: 0.08;
+        }
+        50% {
+          opacity: 0.32;
+        }
+        to {
+          transform: translate3d(24px, -125vh, 0) rotate(8deg);
+          opacity: 0.08;
+        }
+      }
+      @keyframes pulseBlob {
+        0%,
+        100% {
+          transform: scale(1) translate3d(0, 0, 0);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.16) translate3d(16px, -12px, 0);
+          opacity: 0.45;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      .site-footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 10, 14, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+        font-family: "Space Mono", monospace;
+        font-size: 0.5rem;
+        color: var(--text-dim);
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .foot-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .foot-left .inf {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin-right: 0.3rem;
+      }
+      .foot-links {
+        display: flex;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+      }
+      .foot-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .foot-links a:hover {
+        color: var(--accent);
+      }
+      .phase-badge {
+        display: inline-block;
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      .phase-rk4 {
+        background: rgba(255, 107, 53, 0.15);
+        border: 1px solid rgba(255, 107, 53, 0.35);
+        color: var(--accent2);
+      }
+      .phase-ab {
+        background: rgba(119, 220, 30, 0.12);
+        border: 1px solid rgba(119, 220, 30, 0.3);
+        color: var(--accent3);
+      }
+      .phase-init {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        color: var(--accent);
+      }
+      .verdict-line {
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        line-height: 1.9;
+        color: var(--text);
+        margin-bottom: 0.8rem;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @media (max-width: 640px) {
+        .container {
+          padding: 1rem 0.8rem 5rem;
+        }
+        .panel {
+          padding: 1.1rem;
+        }
+        .site-footer {
+          padding: 0.7rem 1rem;
+          font-size: 0.5rem;
+        }
+      }
+      .charts-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 1000px) {
+        .charts-3 { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 640px) {
+        .charts-3 { grid-template-columns: 1fr; }
+      }
+      .fx-cell input {
+        display: block;
+        width: 100%;
+        min-width: 80px !important;
+        text-align: center;
+      }
+      .sign-pos { color: var(--accent3); font-weight: 700; }
+      .sign-neg { color: var(--accent2); font-weight: 700; }
+      .mode-row {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .mode-btn.active {
+        background: rgba(0, 212, 255, 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .mode-btn {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 0.4rem 0.9rem;
+        border-radius: 6px;
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .mode-btn:hover { background: rgba(0, 212, 255, 0.1); }
+      .conclusion-box {
+        background: rgba(119, 220, 30, 0.05);
+        border: 1px solid rgba(119, 220, 30, 0.18);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+        font-family: "Space Mono", monospace;
+        font-size: 0.72rem;
+        line-height: 1.9;
+        color: var(--text);
+      }
+      .stat-value.small { font-size: 1.05rem; }
+    </style>
+  </head>
+  <body>
+    <div class="bg-motion" aria-hidden="true">
+      <div class="bg-symbols" id="bgSymbols"></div>
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="header-tag">
+          Numerical Methods &mdash; Statistics &middot; Experimental Design
+        </div>
+        <h1>2² Factorial Design</h1>
+        <p>
+          Two factors &middot; two levels each (&minus;1 / +1) &middot; r replications &middot; main effects and interaction
+        </p>
+      </header>
+
+      <div class="main-grid">
+        <!-- ── INPUT PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Replications &amp; Observations</div>
+
+          <div class="func-label" style="display:flex;align-items:center;gap:.4rem">
+            <span style="color: var(--accent2)">STEP 1</span> &mdash; Choose the number of replications r
+            <span class="info-btn" onclick="togglePop('pop-r')">?</span>
+            <div class="info-popup" id="pop-r" style="z-index:200">
+              <div class="pop-title">Replications (r)</div>
+              The number of times each treatment combination is run.<br /><br />
+              Total observations N = 4r. Error df = 4(r&minus;1), so <strong>r &ge; 2</strong> is required.
+            </div>
+          </div>
+          <div class="controls-row" style="margin-bottom:.6rem">
+            <div class="control-group" style="max-width:260px">
+              <label>Replications r (2 to 10)</label>
+              <input type="number" id="repInput" value="2" min="2" max="10" step="1" />
+            </div>
+          </div>
+
+          <div class="func-label" style="display:flex;align-items:center;gap:.4rem">
+            <span style="color: var(--accent2)">STEP 2</span> &mdash; Enter every observation
+            <span class="info-btn" onclick="togglePop('pop-obs')">?</span>
+            <div class="info-popup" id="pop-obs" style="z-index:200">
+              <div class="pop-title">Observation table</div>
+              Each row is one treatment combination:<br />
+              <strong>(1)</strong>: A low, B low &nbsp; <strong>a</strong>: A high, B low<br />
+              <strong>b</strong>: A low, B high &nbsp; <strong>ab</strong>: A high, B high<br /><br />
+              Every cell must contain a number. Negative and decimal values are allowed.
+            </div>
+          </div>
+          <div class="controls-row" style="margin-bottom:.6rem">
+            <button class="ex-chip" id="exampleBtn" type="button">Load Example</button>
+          </div>
+          <div class="final-chart-wrap" style="margin-bottom:.4rem">
+            <div id="obsWrap"></div>
+          </div>
+          <div class="field-desc">
+            Changing r keeps the values you already entered.
+            <span class="eg">New replication cells start empty.</span>
+          </div>
+
+          <div class="func-label" style="margin-top:1.2rem;display:flex;align-items:center;gap:.4rem">
+            <span style="color: var(--accent2)">STEP 3</span> &mdash; Choose significance level
+            <span class="info-btn" onclick="togglePop('pop-alpha')">?</span>
+            <div class="info-popup" id="pop-alpha" style="z-index:200">
+              <div class="pop-title">Significance Level &alpha;</div>
+              Reject H&#8320; when <strong>p &lt; &alpha;</strong>.<br />
+              The same &alpha; is used for A, B and AB.
+            </div>
+          </div>
+          <div class="controls-row" style="margin-bottom:0">
+            <div class="control-group">
+              <label>Significance level &alpha;</label>
+              <select id="alphaSelect">
+                <option value="0.1">0.10</option>
+                <option value="0.05" selected>0.05</option>
+                <option value="0.01">0.01</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" id="calcBtn" type="button">&#9654; Calculate</button>
+            <button class="btn btn-danger" id="resetBtn" type="button">&#10005; Reset</button>
+          </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
+        </div>
+
+        <!-- ── OVERVIEW PANEL ── -->
+        <div class="panel">
+          <div class="panel-title">Design Overview</div>
+
+          <div class="chart-title">Treatment combinations and sign conventions</div>
+          <div class="final-chart-wrap" style="margin-bottom:1rem">
+            <table class="iter-table" style="min-width:0">
+              <thead>
+                <tr><th class="l">Treatment</th><th>Factor A</th><th>Factor B</th><th>Interaction AB</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="l"><strong>(1)</strong></td><td class="sign-neg">&minus;1</td><td class="sign-neg">&minus;1</td><td class="sign-pos">+1</td></tr>
+                <tr><td class="l"><strong>a</strong></td><td class="sign-pos">+1</td><td class="sign-neg">&minus;1</td><td class="sign-neg">&minus;1</td></tr>
+                <tr><td class="l"><strong>b</strong></td><td class="sign-neg">&minus;1</td><td class="sign-pos">+1</td><td class="sign-neg">&minus;1</td></tr>
+                <tr><td class="l"><strong>ab</strong></td><td class="sign-pos">+1</td><td class="sign-pos">+1</td><td class="sign-pos">+1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.2);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <div style="font-family:'Space Mono',monospace;font-size:.6rem;color:var(--accent2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.7rem">
+              CONTRASTS, SUMS OF SQUARES &amp; EFFECTS
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:.72rem;color:var(--text);line-height:2.1">
+              A = &minus;T(1) + T<sub>a</sub> &minus; T<sub>b</sub> + T<sub>ab</sub> &nbsp; SS<sub>A</sub> = A&sup2; / 4r<br />
+              B = &minus;T(1) &minus; T<sub>a</sub> + T<sub>b</sub> + T<sub>ab</sub> &nbsp; SS<sub>B</sub> = B&sup2; / 4r<br />
+              AB = T(1) &minus; T<sub>a</sub> &minus; T<sub>b</sub> + T<sub>ab</sub> &nbsp; SS<sub>AB</sub> = AB&sup2; / 4r<br />
+              Effect = contrast / 2r &nbsp;(A, B and AB)<br />
+              SST = &Sigma;y&sup2; &minus; CF, &nbsp; CF = G&sup2; / 4r<br />
+              SSE = SST &minus; SSA &minus; SSB &minus; SSAB
+            </div>
+          </div>
+
+          <div style="background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <div style="font-family:'Space Mono',monospace;font-size:.6rem;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.7rem">
+              DEGREES OF FREEDOM &amp; F-TESTS
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:.72rem;color:var(--text);line-height:2.2">
+              df: A = 1, B = 1, AB = 1, Error = 4(r&minus;1), Total = 4r&minus;1<br />
+              F = MS / MSE, with MSE as the common denominator<br />
+              p-value = P(F &ge; F<sub>obs</sub>) from the F-distribution
+            </div>
+          </div>
+
+          <div class="conclusion-box" style="margin-bottom:1rem">
+            <strong style="color: var(--accent)">Reading the interaction:</strong><br />
+            If AB is significant, the effect of A depends on the level of B. Main effects should then be read together with the interaction plot.
+          </div>
+
+          <div class="field-desc">
+            <span class="eg">Assumptions:</span> independent observations; errors approximately normal with equal variance; the four treatment combinations were run in a randomised order.
+          </div>
+        </div>
+
+        <!-- ── RESULTS PANEL ── -->
+        <div class="panel full-width" style="animation-delay:.2s">
+          <div class="panel-title">Results</div>
+
+          <div id="emptyState" class="empty-state">
+            <span class="icon">2²</span>
+            Enter the observations for each treatment combination,<br />
+            then click <strong>Calculate</strong> to run the 2² factorial ANOVA.
+          </div>
+
+          <div id="resultsContent" hidden>
+            <div class="mode-row">
+              <button class="mode-btn active" id="modeComplete" type="button">Complete calculation</button>
+              <button class="mode-btn" id="modeSteps" type="button">Step-by-step calculation</button>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-value small" id="statEffA">&mdash;</div><div class="stat-label">Effect A</div></div>
+              <div class="stat-card"><div class="stat-value small" id="statEffB">&mdash;</div><div class="stat-label">Effect B</div></div>
+              <div class="stat-card"><div class="stat-value small" id="statEffAB">&mdash;</div><div class="stat-label">Effect AB</div></div>
+              <div class="stat-card"><div class="stat-value small" id="statMSE">&mdash;</div><div class="stat-label">MSE &middot; N = <span id="statN">8</span> &middot; r = <span id="statR">2</span></div></div>
+            </div>
+
+            <div class="solution-display">
+              <div class="sol-title">Decisions &mdash; each test at the chosen &alpha;</div>
+              <div class="sol-values" id="solutionDisplay"></div>
+              <div class="sol-text" id="solutionText"></div>
+            </div>
+
+            <div class="chart-title">ANOVA table</div>
+            <div class="final-chart-wrap">
+              <div id="tblFull"></div>
+            </div>
+            <div id="tblChecks" class="field-desc"></div>
+
+            <div class="chart-title">Descriptive statistics</div>
+            <div class="final-chart-wrap">
+              <div id="descWrap"></div>
+            </div>
+
+            <div class="chart-title">Hypothesis tests and conclusions</div>
+            <div id="verdictWrap"></div>
+
+            <div class="conclusion-box" id="finalConclusion" style="margin-top:1rem"></div>
+
+            <div class="sep"></div>
+
+            <div id="stepsSection">
+              <div class="steps-header">
+                <div class="steps-header-title">Step-by-Step Calculation</div>
+              </div>
+              <div id="stepsWrap"></div>
+              <div class="sep"></div>
+            </div>
+
+            <div class="chart-title">Main effect and interaction plots (vertical axis does not start at zero)</div>
+            <div class="charts-3">
+              <div>
+                <div class="chart-title">Main effect of Factor A</div>
+                <div class="chart-wrap" id="mainA"></div>
+              </div>
+              <div>
+                <div class="chart-title">Main effect of Factor B</div>
+                <div class="chart-wrap" id="mainB"></div>
+              </div>
+              <div>
+                <div class="chart-title">Interaction plot A &times; B</div>
+                <div class="chart-wrap" id="interPlot"></div>
+              </div>
+            </div>
+
+            <div class="chart-title">Treatment combination mean comparison</div>
+            <div class="chart-wrap" id="trtChart" style="height:280px;margin-bottom:1.5rem"></div>
+
+            <div class="chart-title">F-distribution graphs with rejection regions</div>
+            <div class="charts-3">
+              <div>
+                <div class="chart-title">Factor A</div>
+                <div class="chart-wrap" id="fChartA"></div>
+              </div>
+              <div>
+                <div class="chart-title">Factor B</div>
+                <div class="chart-wrap" id="fChartB"></div>
+              </div>
+              <div>
+                <div class="chart-title">Interaction AB</div>
+                <div class="chart-wrap" id="fChartAB"></div>
+              </div>
+            </div>
+
+            <div class="field-desc">
+              <span class="eg">Assumptions:</span> independent observations, approximately normal errors, equal error variances. The F-tests assume the model contains no other terms.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="foot-left">
+        <span class="inf">2²</span>2² Factorial Design Calculator &mdash; Numerical Methods Lab
+      </div>
+      <div class="foot-links">
+        <a href="index.html">Home</a>
+        <a href="euler.html">Euler's Method</a>
+        <a href="gauss_elimination.html">Gauss Elimination</a>
+        <a href="gauss_seidel.html">Gauss-Seidel</a>
+        <a href="gauss_jordan.html">Gauss-Jordan</a>
+        <a href="lagrange.html">Lagrange Interpolation</a>
+        <a href="power1.html">Power Method</a>
+        <a href="milins.html">Milne's Method</a>
+        <a href="Newton_divide.html">Newton's divide</a>
+        <a href="newton_raphson.html">Newton-Raphson</a>
+        <a href="rk method.html">RK4 Method</a>
+        <a href="simpson.html">Simpson's Rule</a>
+        <a href="taylor.html">Taylor's Method</a>
+        <a href="trapezoidel.html">Trapezoidal Rule</a>
+        <a href="large%20sample.html">Large Sample Test</a>
+        <a href="small%20sample.html">Small Sample Test</a>
+        <a href="chi-square-test.html">Chi-Square Test</a>
+        <a href="ftest.html">F Test</a>
+        <a href="twoway-anova.html">Two-way ANOVA</a>
+        <a href="oneway-anova.html">One-way ANOVA</a>
+        <a href="latin-square.html">Latin-Square</a>
+        <a href="adam.html">Adam's Method</a>
+      </div>
+    </footer>
+
+    <script>
+      /* ===================== STATISTICAL ENGINE (no DOM) ===================== */
+      function lnGamma(z) {
+        const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+          -176.61503916999385, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+        if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lnGamma(1 - z);
+        z -= 1;
+        let x = c[0];
+        for (let i = 1; i < 9; i++) x += c[i] / (z + i);
+        const t = z + 7.5;
+        return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+      }
+      function lnBeta(a, b) { return lnGamma(a) + lnGamma(b) - lnGamma(a + b); }
+      function betacf(a, b, x) {
+        const MAXIT = 500, EPS = 3e-16, FPMIN = 1e-300;
+        const qab = a + b, qap = a + 1, qam = a - 1;
+        let c = 1, d = 1 - qab * x / qap;
+        if (Math.abs(d) < FPMIN) d = FPMIN;
+        d = 1 / d;
+        let h = d;
+        for (let m = 1; m <= MAXIT; m++) {
+          const m2 = 2 * m;
+          let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+          d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+          c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+          d = 1 / d; h *= d * c;
+          aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+          d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+          c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+          d = 1 / d;
+          const del = d * c; h *= del;
+          if (Math.abs(del - 1) < EPS) break;
+        }
+        return h;
+      }
+      function regIncBeta(a, b, x) {
+        if (x <= 0) return 0;
+        if (x >= 1) return 1;
+        const front = Math.exp(a * Math.log(x) + b * Math.log(1 - x) - lnBeta(a, b));
+        if (x < (a + 1) / (a + b + 2)) return front * betacf(a, b, x) / a;
+        return 1 - front * betacf(b, a, 1 - x) / b;
+      }
+      function fSurvival(f, d1, d2) {
+        if (f === Infinity) return 0;
+        if (!(f > 0)) return 1;
+        return regIncBeta(d2 / 2, d1 / 2, d2 / (d2 + d1 * f));
+      }
+      function fCritical(alpha, d1, d2) {
+        let lo = 0, hi = 1;
+        while (fSurvival(hi, d1, d2) > alpha && hi < 1e12) hi *= 2;
+        for (let i = 0; i < 300; i++) {
+          const mid = (lo + hi) / 2;
+          if (fSurvival(mid, d1, d2) > alpha) lo = mid; else hi = mid;
+          if (hi - lo <= 1e-13 * Math.max(1, hi)) break;
+        }
+        return (lo + hi) / 2;
+      }
+      function fPdf(x, d1, d2) {
+        if (!(x > 0)) return 0;
+        const lnp = 0.5 * (d1 * Math.log(d1 * x) + d2 * Math.log(d2) - (d1 + d2) * Math.log(d1 * x + d2)) - Math.log(x) - lnBeta(d1 / 2, d2 / 2);
+        return Math.exp(lnp);
+      }
+      const $ = id => document.getElementById(id);
+      const SUBS = '₀₁₂₃₄₅₆₇₈₉';
+      const sub = i => String(i).split('').map(d => SUBS[+d]).join('');
+
+      function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+      function num(x) {
+        if (!Number.isFinite(x)) return String(x);
+        const s = Number(x.toFixed(4));
+        return Object.is(s, -0) ? '0' : String(s);
+      }
+      function fmt(x, d = 4) {
+        if (x === null) return 'undefined';
+        if (x === Infinity) return '∞';
+        if (Number.isFinite(x)) return x.toFixed(d);
+        return '—';
+      }
+      function P(x) { return x < 0 ? '(' + num(x) + ')' : num(x); }
+      function diff(a, b) { return '(' + P(a) + ' − ' + P(b) + ')'; }
+      function fText(t) { return t.status === 'undefined' ? 'undefined' : (t.status === 'infinite' ? '∞' : fmt(t.F)); }
+      function pText(t) { return t.status === 'undefined' ? 'undefined' : (t.p < 0.0001 ? '< 0.0001' : t.p.toFixed(4)); }
+
+      window.togglePop = function (id) {
+        document.querySelectorAll('.info-popup').forEach(p => { if (p.id !== id) p.classList.remove('show'); });
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('show');
+      };
+
+      function showAlert(kind, lines) {
+        const box = $(kind === 'err' ? 'errorAlert' : 'successAlert');
+        const other = $(kind === 'err' ? 'successAlert' : 'errorAlert');
+        other.style.display = 'none';
+        if (!lines.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+        if (kind === 'err') {
+          box.innerHTML = '<strong>Please fix the following:</strong>' +
+            (lines.length > 1 ? '<ul>' + lines.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : '<div>' + esc(lines[0]) + '</div>');
+        } else {
+          box.innerHTML = esc(lines[0]);
+        }
+        box.style.display = 'block';
+      }
+      function barChartSVG(names, values, grand, title) {
+        const W = 640, H = 260, L = 54, R = 620, TOP = 22, BOT = 205;
+        const hi = Math.max(...values, grand, 0);
+        const lo = Math.min(...values, grand, 0);
+        const span = (hi - lo) || 1;
+        const Y = v => BOT - ((v - lo) / span) * (BOT - TOP);
+        const k = values.length;
+        const colW = (R - L) / k;
+        let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(title) + '">';
+        for (let t = 0; t <= 4; t++) {
+          const v = lo + span * t / 4;
+          s += '<line x1="' + L + '" y1="' + Y(v).toFixed(1) + '" x2="' + R + '" y2="' + Y(v).toFixed(1) + '" class="grid"/>';
+          s += '<text x="' + (L - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + v.toFixed(1) + '</text>';
+        }
+        values.forEach((v, i) => {
+          const cx = L + colW * (i + 0.5);
+          const top = Y(Math.max(v, 0)), bot = Y(Math.min(v, 0));
+          s += '<rect x="' + (cx - colW * 0.28).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + (colW * 0.56).toFixed(1) + '" height="' + Math.max(1, bot - top).toFixed(1) + '" class="bar"/>';
+          s += '<text x="' + cx.toFixed(1) + '" y="' + (top - 6).toFixed(1) + '" text-anchor="middle" class="lbl-val">' + v.toFixed(2) + '</text>';
+          s += '<text x="' + cx.toFixed(1) + '" y="' + (BOT + 20) + '" text-anchor="middle" class="lbl-name">' + esc(names[i]) + '</text>';
+        });
+        s += '<line x1="' + L + '" y1="' + Y(grand).toFixed(1) + '" x2="' + R + '" y2="' + Y(grand).toFixed(1) + '" class="gm"/>';
+        s += '<text x="' + (R - 4) + '" y="' + (Y(grand) - 6).toFixed(1) + '" text-anchor="end" style="fill:var(--accent3);font-weight:700">Grand mean = ' + grand.toFixed(2) + '</text>';
+        s += '</svg>';
+        return s;
+      }
+
+      function fChartSVG(t, dfE, alpha) {
+        const W = 640, H = 300, L = 54, R = 616, TOP = 30, BOT = 250;
+        const d1 = t.dfNum, d2 = dfE, Fc = t.Fc, Fo = t.F;
+        const hasF = (t.status === 'ok' && Number.isFinite(Fo));
+        let xmax = Fc * 2.2, off = false;
+        if (hasF) { if (Fo <= Fc * 3) xmax = Math.max(xmax, Fo * 1.2); else off = true; }
+        const xs = [];
+        const NS = 400;
+        for (let i = 1; i <= NS; i++) xs.push(xmax * i / NS);
+        xs.push(Fc);
+        if (hasF && !off) xs.push(Fo);
+        xs.sort((a, b) => a - b);
+        const dens = xs.map(x => fPdf(x, d1, d2));
+        let ymax = 0;
+        xs.forEach((x, i) => { if (x >= 0.05 * xmax && dens[i] > ymax) ymax = dens[i]; });
+        if (!(ymax > 0)) ymax = 1;
+        ymax *= 1.12;
+        const X = x => L + (x / xmax) * (R - L);
+        const Y = y => BOT - (Math.min(y, ymax) / ymax) * (BOT - TOP);
+        let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="F distribution for ' + esc(t.label) + '">';
+        s += '<text x="' + L + '" y="16" style="fill:var(--text);font-weight:700">' + esc(t.label) + ': F-distribution, df₁ = ' + d1 + ', df₂ = ' + d2 + '</text>';
+        const acc = xs.map((x, i) => [x, dens[i]]).filter(p => p[0] > 0 && p[0] <= Fc);
+        if (acc.length) {
+          let d = 'M' + X(0).toFixed(1) + ',' + BOT + ' ';
+          acc.forEach(([x, y]) => { d += 'L' + X(x).toFixed(1) + ',' + Y(y).toFixed(1) + ' '; });
+          d += 'L' + X(Fc).toFixed(1) + ',' + BOT + ' Z';
+          s += '<path d="' + d + '" class="acc"/>';
+        }
+        const rej = xs.map((x, i) => [x, dens[i]]).filter(p => p[0] >= Fc);
+        if (rej.length) {
+          let d = 'M' + X(Fc).toFixed(1) + ',' + BOT + ' ';
+          rej.forEach(([x, y]) => { d += 'L' + X(x).toFixed(1) + ',' + Y(y).toFixed(1) + ' '; });
+          d += 'L' + X(xmax).toFixed(1) + ',' + BOT + ' Z';
+          s += '<path d="' + d + '" class="rej"/>';
+        }
+        let c = '';
+        xs.forEach((x, i) => { if (x > 0) c += (c ? 'L' : 'M') + X(x).toFixed(1) + ',' + Y(dens[i]).toFixed(1) + ' '; });
+        s += '<path d="' + c + '" fill="none" stroke="var(--accent)" stroke-width="2.2"/>';
+        s += '<line x1="' + L + '" y1="' + BOT + '" x2="' + R + '" y2="' + BOT + '" class="axis"/>';
+        for (let t2 = 0; t2 <= 4; t2++) {
+          const xv = xmax * t2 / 4;
+          s += '<line x1="' + X(xv).toFixed(1) + '" y1="' + BOT + '" x2="' + X(xv).toFixed(1) + '" y2="' + (BOT + 5) + '" class="axis"/>';
+          s += '<text x="' + X(xv).toFixed(1) + '" y="' + (BOT + 18) + '" text-anchor="middle">' + xv.toFixed(2) + '</text>';
+        }
+        s += '<text x="' + ((L + R) / 2) + '" y="' + (BOT + 36) + '" text-anchor="middle">F value</text>';
+        s += '<line x1="' + X(Fc).toFixed(1) + '" y1="' + TOP + '" x2="' + X(Fc).toFixed(1) + '" y2="' + BOT + '" class="crit"/>';
+        s += '<text x="' + (X(Fc) + 6).toFixed(1) + '" y="' + (TOP + 12) + '" class="lbl-crit">F_crit = ' + Fc.toFixed(4) + '</text>';
+        if (hasF && !off) {
+          const left = Fo < Fc;
+          s += '<line x1="' + X(Fo).toFixed(1) + '" y1="' + TOP + '" x2="' + X(Fo).toFixed(1) + '" y2="' + BOT + '" class="obs"/>';
+          s += '<text x="' + (X(Fo) + (left ? -6 : 6)).toFixed(1) + '" y="' + (TOP + 28) + '" text-anchor="' + (left ? 'end' : 'start') + '" class="lbl-obs">F = ' + Fo.toFixed(4) + '</text>';
+        } else if (t.status === 'infinite' || off) {
+          const txt = Number.isFinite(Fo) ? 'F = ' + Fo.toFixed(2) + ' (off scale →)' : 'F = ∞ (off scale →)';
+          s += '<text x="' + (R - 4) + '" y="' + (TOP + 28) + '" text-anchor="end" class="lbl-obs">' + txt + '</text>';
+        } else {
+          s += '<text x="' + (R - 4) + '" y="' + (TOP + 28) + '" text-anchor="end" class="lbl-obs">F undefined</text>';
+        }
+        s += '<text x="' + X(Fc * 0.5).toFixed(1) + '" y="' + (BOT - 10) + '" text-anchor="middle" class="lbl-region">Acceptance (1 &minus; &alpha;)</text>';
+        s += '<text x="' + X((Fc + xmax) / 2).toFixed(1) + '" y="' + (BOT - 10) + '" text-anchor="middle" class="lbl-region" style="fill:var(--accent2);font-weight:700">Rejection (&alpha; = ' + alpha.toFixed(2) + ')</text>';
+        s += '</svg>';
+        return s;
+      }
+
+      /* ===================== 2² FACTORIAL UI ===================== */
+      const MIN_R = 2, MAX_R = 10;
+      const NUM_RE = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
+      const TREAT = ['(1)', 'a', 'b', 'ab'];
+      /* signs [A, B, AB] for (1), a, b, ab  — exact conventions from the specification */
+      const SG = [[-1, -1, 1], [1, -1, -1], [-1, 1, -1], [1, 1, 1]];
+      const EX_Y = [[20, 22], [25, 27], [24, 26], [32, 34]];
+      const state = { live: false, mode: 'complete' };
+      const sgnHTML = v => v > 0 ? '<span class="sign-pos">+1</span>' : '<span class="sign-neg">&minus;1</span>';
+
+      function fTxt(t) {
+        if (t.status === 'undefined') return 'undefined';
+        
+        return fmt(t.F);
+      }
+      function pTxt(t) {
+        if (t.status === 'undefined') return 'undefined';
+        
+        return t.p < 0.0001 ? '< 0.0001' : t.p.toFixed(4);
+      }
+      function decisionText(t) {
+        if (t.status === 'undefined') return 'No decision';
+        return t.reject ? 'Reject H₀' : 'Fail to reject H₀';
+      }
+      function cellHTML(label, sub_, result) {
+        return '<div class="calc-row"><span class="calc-label">' + label + '</span><span class="calc-sub">' + sub_ + '</span>' +
+          (result !== undefined ? '<span class="calc-result">' + result + '</span>' : '') + '</div>';
+      }
+      function stepCard(badge, title, rowsHTML) {
+        return '<div class="step-card"><div class="step-badge">' + badge + '</div><div class="step-col-title">' + title + '</div><div class="calc-box">' + rowsHTML + '</div></div>';
+      }
+
+      /* ---------- Observation table ---------- */
+      function readObs() {
+        return [...document.querySelectorAll('#obsWrap tbody tr')].map(tr =>
+          [...tr.querySelectorAll('.obs')].map(e => e.value.trim()));
+      }
+      function buildObs(r, vals) {
+        let h = '<table class="iter-table" style="min-width:' + (300 + r * 110) + 'px"><thead><tr><th class="l">Treatment</th><th>Factor A</th><th>Factor B</th><th>Interaction AB</th>';
+        for (let j = 0; j < r; j++) h += '<th>Replication ' + (j + 1) + '</th>';
+        h += '<th>Total T</th></tr></thead><tbody>';
+        TREAT.forEach((name, k) => {
+          h += '<tr><td class="l"><strong>' + name + '</strong></td>' +
+            '<td>' + sgnHTML(SG[k][0]) + '</td><td>' + sgnHTML(SG[k][1]) + '</td><td>' + sgnHTML(SG[k][2]) + '</td>';
+          for (let j = 0; j < r; j++) {
+            h += '<td class="fx-cell"><input type="text" inputmode="decimal" class="obs" value="' + esc(vals[k][j]) + '" aria-label="Treatment ' + esc(name) + ', replication ' + (j + 1) + '"></td>';
+          }
+          h += '<td class="total-cell tt">—</td></tr>';
+        });
+        h += '</tbody><tfoot><tr><td class="l">Replication total</td><td></td><td></td><td></td>';
+        for (let j = 0; j < r; j++) h += '<td class="total-cell rt">—</td>';
+        h += '<td class="total-cell gt">—</td></tr></tfoot></table>';
+        $('obsWrap').innerHTML = h;
+        updateTotals();
+      }
+      function updateTotals() {
+        const rows = [...document.querySelectorAll('#obsWrap tbody tr')];
+        const r = rows.length ? rows[0].querySelectorAll('.obs').length : 0;
+        const colSum = Array(r).fill(0), colOk = Array(r).fill(true);
+        let grand = 0, grandOk = true;
+        rows.forEach(tr => {
+          let ts = 0, ok = true;
+          [...tr.querySelectorAll('.obs')].forEach((e, j) => {
+            const s = e.value.trim();
+            if (NUM_RE.test(s) && Number.isFinite(Number(s))) { ts += Number(s); colSum[j] += Number(s); }
+            else { ok = false; colOk[j] = false; }
+          });
+          tr.querySelector('.tt').textContent = ok ? num(ts) : '—';
+          if (ok) grand += ts; else grandOk = false;
+        });
+        document.querySelectorAll('#obsWrap .rt').forEach((el, j) => { el.textContent = colOk[j] ? num(colSum[j]) : '—'; });
+        document.querySelector('#obsWrap .gt').textContent = grandOk ? num(grand) : '—';
+      }
+      /* Returns the replication count if valid, otherwise null. */
+      function validR(raw) {
+        const v = Number(String(raw).trim());
+        if (String(raw).trim() === '' || !Number.isInteger(v) || v < MIN_R || v > MAX_R) return null;
+        return v;
+      }
+      function setReplications(r) {
+        const old = readObs();
+        const vals = TREAT.map((_, k) => Array.from({ length: r }, (_, j) => (old[k] && old[k][j] !== undefined) ? old[k][j] : ''));
+        buildObs(r, vals);
+      }
+
+      /* ---------- Validation ---------- */
+      function collectInput() {
+        const errors = [];
+        const r = validR($('repInput').value);
+        if (r === null) errors.push('Replications r must be a whole number from ' + MIN_R + ' to ' + MAX_R + '.');
+        const Y = [];
+        if (r !== null) {
+          const vals = readObs();
+          TREAT.forEach((name, k) => {
+            const row = [];
+            for (let j = 0; j < r; j++) {
+              const s = (vals[k] && vals[k][j] !== undefined) ? vals[k][j] : '';
+              const where = 'Treatment ' + name + ', replication ' + (j + 1);
+              if (s === '') errors.push(where + ' is empty. Enter a number.');
+              else if (!NUM_RE.test(s) || !Number.isFinite(Number(s))) errors.push(where + ': "' + s + '" is not a valid number.');
+              row.push(Number(s));
+            }
+            Y.push(row);
+          });
+        }
+        return { errors, r, Y };
+      }
+
+      /* ---------- Computation ---------- */
+      function computeFactorial(Y, alpha) {
+        const r = Y[0].length, N = 4 * r;
+        const T = Y.map(row => row.reduce((s, v) => s + v, 0));
+        const G = T.reduce((s, v) => s + v, 0);
+        const CF = G * G / N;
+        let sumSq = 0;
+        Y.forEach(row => row.forEach(v => { sumSq += v * v; }));
+        const SST = sumSq - CF;
+        const cA = -T[0] + T[1] - T[2] + T[3];
+        const cB = -T[0] - T[1] + T[2] + T[3];
+        const cAB = T[0] - T[1] - T[2] + T[3];
+        const SSA = cA * cA / N, SSB = cB * cB / N, SSAB = cAB * cAB / N;
+        const scale = Math.max(1, sumSq);
+        let SSE = SST - SSA - SSB - SSAB;
+        if (Math.abs(SSE) <= 1e-9 * scale) SSE = 0;
+        const dfE = 4 * (r - 1), dfT = 4 * r - 1;
+        const MSA = SSA, MSB = SSB, MSAB = SSAB, MSE = SSE / dfE;
+        const eA = cA / (2 * r), eB = cB / (2 * r), eAB = cAB / (2 * r);
+
+        /* independent check: cell means and residuals */
+        const cellMean = T.map(v => v / r);
+        const grand = G / N;
+        let sstD = 0, sseD = 0;
+        Y.forEach((row, k) => row.forEach(y => { sstD += (y - grand) * (y - grand); sseD += (y - cellMean[k]) * (y - cellMean[k]); }));
+        const hiA = (T[1] + T[3]) / (2 * r), loA = (T[0] + T[2]) / (2 * r);
+        const hiB = (T[2] + T[3]) / (2 * r), loB = (T[0] + T[1]) / (2 * r);
+        const SSA_D = r * (hiA - loA) * (hiA - loA), SSB_D = r * (hiB - loB) * (hiB - loB);
+        const eABd = (T[0] - T[1] - T[2] + T[3]) / (2 * r);
+        const SSAB_D = r * eABd * eABd;
+        const verified = Math.abs(SST - (SSA + SSB + SSAB + SSE)) <= 1e-9 * scale
+          && Math.abs(sstD - SST) <= 1e-8 * scale
+          && Math.abs(sseD - SSE) <= 1e-7 * scale
+          && Math.abs(SSA_D - SSA) <= 1e-7 * scale
+          && Math.abs(SSB_D - SSB) <= 1e-7 * scale
+          && Math.abs(SSAB_D - SSAB) <= 1e-7 * scale;
+
+        function test(label, eff, SS, MS) {
+          /* MSE = 0 means the F-ratio is not defined, so no p-value or decision is produced */
+          const zeroE = MSE <= 1e-12 * scale;
+          let F = null, p = null, status = 'undefined';
+          if (!zeroE) { F = MS / MSE; p = fSurvival(F, 1, dfE); status = 'ok'; }
+          const Fc = fCritical(alpha, 1, dfE);
+          const reject = status === 'ok' && p < alpha;
+          return { label, eff, SS, MS, dfNum: 1, F, p, Fc, status, reject, alpha };
+        }
+        const TA = test('Factor A', 'main effect of A', SSA, MSA);
+        const TB = test('Factor B', 'main effect of B', SSB, MSB);
+        const TAB = test('Interaction AB', 'interaction AB', SSAB, MSAB);
+
+        return { r, N, Y, T, G, CF, sumSq, SST, cA, cB, cAB, SSA, SSB, SSAB, SSE, dfE, dfT, MSA, MSB, MSAB, MSE,
+          eA, eB, eAB, grand, cellMean, TA, TB, TAB, alpha, verified, sstD, sseD, SSA_D, SSB_D, SSAB_D, hiA, loA, hiB, loB };
+      }
+
+      /* ---------- Rendering ---------- */
+      function conclusion(t, name) {
+        const a = t.alpha.toFixed(2);
+        if (t.status === 'undefined') return 'No decision for ' + name + ': the error mean square is zero (perfect fit), so the F-ratio and p-value cannot be computed.';
+        if (t.reject) return 'At α = ' + a + ', reject H₀. ' + name + ' has a significant ' + t.eff + ' (p ' + '= ' + pTxt(t) + ' < ' + a + ').';
+        return 'At α = ' + a + ', fail to reject H₀. No significant ' + t.eff + ' was found (p = ' + pTxt(t) + ' ≥ ' + a + ').';
+      }
+
+      function renderResults(res) {
+        const { r, N, Y, T, G, CF, sumSq, SST, cA, cB, cAB, SSA, SSB, SSAB, SSE, dfE, dfT, MSA, MSB, MSAB, MSE,
+          eA, eB, eAB, grand, cellMean, TA, TB, TAB, alpha, verified, sstD, sseD } = res;
+        const alphaS = alpha.toFixed(2);
+
+        /* stat cards */
+        $('statEffA').textContent = fmt(eA);
+        $('statEffB').textContent = fmt(eB);
+        $('statEffAB').textContent = fmt(eAB);
+        $('statMSE').textContent = fmt(MSE);
+        $('statN').textContent = String(N);
+        $('statR').textContent = String(r);
+
+        /* decisions */
+        const chip = t => '<span class="sol-chip">' + esc(t.label) + ': ' + decisionText(t) + '</span>' +
+          '<span class="phase-badge ' + (t.reject ? 'phase-rk4' : 'phase-ab') + '">' + (t.status === 'undefined' ? 'NO DECISION' : (t.reject ? 'REJECT' : 'FAIL TO REJECT')) + '</span>';
+        $('solutionDisplay').innerHTML = chip(TA) + chip(TB) + chip(TAB);
+        $('solutionText').innerHTML = [[TA, 'Factor A'], [TB, 'Factor B'], [TAB, 'Interaction AB']]
+          .map(([t, nm]) => '<div style="margin-top:.4rem">' + esc(conclusion(t, nm)) + '</div>').join('');
+
+        /* ANOVA table */
+        const pctRow = (src, df, SS, MS, F, t, dfNote) =>
+          '<tr><td class="l">' + src + '</td><td>' + fmt(SS) + '</td><td>' + df + (dfNote ? '<small>' + dfNote + '</small>' : '') + '</td><td>' + (MS === null ? '&mdash;' : fmt(MS)) + '</td>' +
+          (F === null ? '<td class="na">&mdash;</td><td class="na">&mdash;</td>' : '<td class="f-cell">' + fTxt(t) + '</td><td>' + pTxt(t) + '</td>') + '</tr>';
+        $('tblFull').innerHTML =
+          '<table class="iter-table" style="min-width:640px"><thead><tr><th class="l">Source of Variation</th><th>SS</th><th>df</th><th>MS</th><th>F-value</th><th>p-value</th></tr></thead><tbody>' +
+          pctRow('Factor A', 1, SSA, MSA, 1, TA, 'levels − 1') +
+          pctRow('Factor B', 1, SSB, MSB, 1, TB, 'levels − 1') +
+          pctRow('Interaction AB', 1, SSAB, MSAB, 1, TAB, '(A−1)(B−1)') +
+          '<tr><td class="l">Error</td><td>' + fmt(SSE) + '</td><td>' + dfE + '<small>4(r − 1)</small></td><td>' + fmt(MSE) + '</td><td class="na">&mdash;</td><td class="na">&mdash;</td></tr>' +
+          '<tr><td class="l">Total</td><td>' + fmt(SST) + '</td><td>' + dfT + '<small>4r − 1</small></td><td class="na">&mdash;</td><td class="na">&mdash;</td><td class="na">&mdash;</td></tr>' +
+          '</tbody></table>';
+        $('tblChecks').innerHTML = 'Checks: SST = SSA + SSB + SSAB + SSE ' + (verified ? '✔ holds' : '✖ does not hold') +
+          '. Degrees of freedom: 1 + 1 + 1 + ' + dfE + ' = ' + (3 + dfE) + ' = 4r − 1 = ' + dfT + '. Every F uses MSE as the denominator.';
+
+        /* descriptive statistics */
+        const names = TREAT;
+        let dsc = '<table class="iter-table" style="min-width:520px"><thead><tr><th class="l">Treatment</th><th>Total T</th><th>Mean (T / r)</th><th>Observations</th></tr></thead><tbody>';
+        names.forEach((nm, k) => { dsc += '<tr><td class="l"><strong>' + nm + '</strong></td><td>' + num(T[k]) + '</td><td>' + fmt(cellMean[k]) + '</td><td>' + r + '</td></tr>'; });
+        dsc += '</tbody><tfoot><tr><td class="l">All</td><td>G = ' + num(G) + '</td><td>Grand mean = ' + fmt(grand) + '</td><td>N = ' + N + '</td></tr></tfoot></table>';
+        dsc += '<div class="field-desc" style="margin-top:.8rem">Main effect A = ' + fmt(eA) + ' &nbsp;|&nbsp; Main effect B = ' + fmt(eB) + ' &nbsp;|&nbsp; Interaction AB = ' + fmt(eAB) + ' &nbsp;|&nbsp; Replications r = ' + r + '</div>';
+        $('descWrap').innerHTML = dsc;
+
+        /* verdict blocks */
+        const verdict = (t, hyp0, hyp1) => '<div class="verdict-line"><span class="phase-badge ' + (t.reject ? 'phase-rk4' : 'phase-ab') + '">' +
+          (t.status === 'undefined' ? 'NO TEST' : (t.reject ? 'REJECT H₀' : 'FAIL TO REJECT H₀')) + '</span>' +
+          '<div style="margin-top:.6rem">H₀: ' + hyp0 + '<br>H₁: ' + hyp1 + '</div>' +
+          '<div style="margin-top:.5rem">F = ' + fTxt(t) + ' &nbsp;|&nbsp; F_crit(α = ' + alphaS + '; 1, ' + dfE + ') = ' + fmt(t.Fc) + ' &nbsp;|&nbsp; p = ' + pTxt(t) + ' &nbsp;|&nbsp; Rule: reject if p &lt; α</div>' +
+          '<div style="margin-top:.5rem">' + esc(conclusion(t, t.label)) + '</div></div>';
+        $('verdictWrap').innerHTML =
+          verdict(TA, 'Factor A has no significant main effect.', 'Factor A has a significant main effect.') +
+          verdict(TB, 'Factor B has no significant main effect.', 'Factor B has a significant main effect.') +
+          verdict(TAB, 'There is no significant interaction effect between A and B.', 'There is a significant interaction effect between A and B.');
+
+        /* final conclusion */
+        let fc;
+        if (TAB.reject) fc = '<strong style="color:var(--accent2)">Interaction is significant.</strong> The effect of A depends on the level of B (and vice versa). Read the main effects together with the interaction plot rather than alone.';
+        else fc = '<strong style="color:var(--accent3)">Interaction is not significant.</strong> The main effects can be read on their own. Factor A is ' + (TA.reject ? 'significant' : 'not significant') + ' and Factor B is ' + (TB.reject ? 'significant' : 'not significant') + ' at α = ' + alphaS + '.';
+        $('finalConclusion').innerHTML = '<strong style="color:var(--accent)">Final conclusion:</strong><br>' + fc;
+
+        /* step-by-step cards */
+        const sqTerms = Y.flat().map(v => num(v * v)).join(' + ');
+        const rep = (v) => num(v);
+        let s = '';
+        s += stepCard('STEP 1', 'Original observation table',
+          TREAT.map((nm, k) => cellHTML('(' + nm + ')', 'Treatment ' + nm + ': ' + Y[k].map(rep).join(', '), '')).join('') +
+          cellHTML('Shape', 'Four treatments × r = ' + r + ' replications = N = ' + N, String(N)));
+        s += stepCard('STEP 2', 'Treatment totals T',
+          TREAT.map((nm, k) => cellHTML('T ' + nm, Y[k].map(rep).join(' + '), num(T[k]))).join(''));
+        s += stepCard('STEP 3', 'Grand total G',
+          cellHTML('G', 'G = ' + T.map(num).join(' + '), num(G)));
+        s += stepCard('STEP 4', 'Correction factor CF',
+          cellHTML('CF', 'CF = G² / 4r = ' + num(G) + '² / ' + N, fmt(CF)));
+        s += stepCard('STEP 5', 'Sum of squares of all observations',
+          cellHTML('Σy²', sqTerms, num(sumSq)));
+        s += stepCard('STEP 6', 'Total sum of squares',
+          cellHTML('SST', 'SST = Σy² − CF = ' + num(sumSq) + ' − ' + fmt(CF), fmt(SST)));
+        s += stepCard('STEP 7', 'Contrast for Factor A',
+          cellHTML('A', 'A = −T(1) + Ta − Tb + Tab = −' + num(T[0]) + ' + ' + num(T[1]) + ' − ' + num(T[2]) + ' + ' + num(T[3]), num(cA)) +
+          cellHTML('Effect A', 'Effect A = A / 2r = ' + num(cA) + ' / ' + (2 * r), fmt(eA)));
+        s += stepCard('STEP 8', 'Contrast for Factor B',
+          cellHTML('B', 'B = −T(1) − Ta + Tb + Tab = −' + num(T[0]) + ' − ' + num(T[1]) + ' + ' + num(T[2]) + ' + ' + num(T[3]), num(cB)) +
+          cellHTML('Effect B', 'Effect B = B / 2r = ' + num(cB) + ' / ' + (2 * r), fmt(eB)));
+        s += stepCard('STEP 9', 'Contrast for Interaction AB',
+          cellHTML('AB', 'AB = T(1) − Ta − Tb + Tab = ' + num(T[0]) + ' − ' + num(T[1]) + ' − ' + num(T[2]) + ' + ' + num(T[3]), num(cAB)) +
+          cellHTML('Effect AB', 'Effect AB = AB / 2r = ' + num(cAB) + ' / ' + (2 * r), fmt(eAB)));
+        s += stepCard('STEP 10', 'Sums of squares for A, B and AB',
+          cellHTML('SSA', 'SSA = A² / 4r = ' + num(cA) + '² / ' + N, fmt(SSA)) +
+          cellHTML('SSB', 'SSB = B² / 4r = ' + num(cB) + '² / ' + N, fmt(SSB)) +
+          cellHTML('SSAB', 'SSAB = AB² / 4r = ' + num(cAB) + '² / ' + N, fmt(SSAB)));
+        s += stepCard('STEP 11', 'Error sum of squares',
+          cellHTML('SSE', 'SSE = SST − SSA − SSB − SSAB = ' + fmt(SST) + ' − ' + fmt(SSA) + ' − ' + fmt(SSB) + ' − ' + fmt(SSAB), fmt(SSE)) +
+          cellHTML('Direct', 'Direct check: Σ(y − cell mean)² = ' + fmt(sseD), verified ? '✔' : '✖'));
+        s += stepCard('STEP 12', 'Degrees of freedom',
+          cellHTML('df A', '1', '1') + cellHTML('df B', '1', '1') + cellHTML('df AB', '1', '1') +
+          cellHTML('df E', '4(r − 1) = 4 × ' + (r - 1), String(dfE)) +
+          cellHTML('df T', '4r − 1 = ' + (4 * r) + ' − 1', String(dfT)) +
+          cellHTML('Sum', '1 + 1 + 1 + ' + dfE + ' = ' + (3 + dfE), String(3 + dfE)));
+        s += stepCard('STEP 13', 'Mean squares',
+          cellHTML('MSA', 'SSA / 1 = ' + fmt(SSA), fmt(MSA)) +
+          cellHTML('MSB', 'SSB / 1 = ' + fmt(SSB), fmt(MSB)) +
+          cellHTML('MSAB', 'SSAB / 1 = ' + fmt(SSAB), fmt(MSAB)) +
+          cellHTML('MSE', 'SSE / 4(r − 1) = ' + fmt(SSE) + ' / ' + dfE, fmt(MSE)));
+        s += stepCard('STEP 14', 'F-statistics (denominator = MSE)',
+          cellHTML('FA', 'MSA / MSE = ' + fmt(MSA) + ' / ' + fmt(MSE), fTxt(TA)) +
+          cellHTML('FB', 'MSB / MSE = ' + fmt(MSB) + ' / ' + fmt(MSE), fTxt(TB)) +
+          cellHTML('FAB', 'MSAB / MSE = ' + fmt(MSAB) + ' / ' + fmt(MSE), fTxt(TAB)));
+        s += stepCard('STEP 15', 'p-values and critical F-values',
+          [TA, TB, TAB].map(t => cellHTML(esc(t.label), 'F_crit(α = ' + alphaS + '; 1, ' + dfE + ') = ' + fmt(t.Fc) + ' &nbsp;|&nbsp; p = P(F ≥ ' + fTxt(t) + ') = ' + pTxt(t), pTxt(t))).join(''));
+        s += stepCard('STEP 16', 'Final ANOVA table',
+          '<div class="final-chart-wrap" style="margin:0">' + $('tblFull').innerHTML + '</div>');
+        s += stepCard('STEP 17', 'Statistical conclusions',
+          [[TA, 'Factor A'], [TB, 'Factor B'], [TAB, 'Interaction AB']].map(([t, nm]) =>
+            '<div class="calc-row"><span class="calc-sub">' + esc(decisionText(t)) + ' — ' + esc(conclusion(t, nm)) + '</span></div>').join(''));
+        s += stepCard('CHECK', 'Verification',
+          cellHTML('Identity', 'SST = SSA + SSB + SSAB + SSE = ' + fmt(SSA + SSB + SSAB + SSE) + ' vs ' + fmt(SST), verified ? '✔' : '✖') +
+          cellHTML('Direct SST', 'Σ(y − ḡ)² = ' + fmt(sstD), fmt(sstD)));
+        $('stepsWrap').innerHTML = s;
+
+        /* plots */
+        $('mainA').innerHTML = lineChartSVG(['Low (A = −1)', 'High (A = +1)'], [{ name: 'A', color: 'var(--accent)', ys: [res.loA, res.hiA] }], 'Mean response by level of A');
+        $('mainB').innerHTML = lineChartSVG(['Low (B = −1)', 'High (B = +1)'], [{ name: 'B', color: 'var(--accent)', ys: [res.loB, res.hiB] }], 'Mean response by level of B');
+        $('interPlot').innerHTML = lineChartSVG(['Low (A = −1)', 'High (A = +1)'], [
+          { name: 'B low', color: 'var(--accent)', ys: [cellMean[0], cellMean[1]] },
+          { name: 'B high', color: 'var(--accent2)', ys: [cellMean[2], cellMean[3]] }], 'Mean response, lines = B levels', true);
+        $('trtChart').innerHTML = barChartSVG(TREAT, cellMean, grand, 'Treatment means');
+        $('fChartA').innerHTML = fChartSVG(TA, dfE, alpha);
+        $('fChartB').innerHTML = fChartSVG(TB, dfE, alpha);
+        $('fChartAB').innerHTML = fChartSVG(TAB, dfE, alpha);
+      }
+
+      /* Line chart: x = factor levels, one or two series. Scale is padded, not zero-based. */
+      function lineChartSVG(xLabels, series, yTitle, legend) {
+        const W = 640, H = 280, L = 70, R = 620, TOP = 30, BOT = 226;
+        const all = series.flatMap(s => s.ys);
+        const lo = Math.min(...all), hi = Math.max(...all);
+        let pad = (hi - lo) * 0.2;
+        if (!(pad > 0)) pad = Math.max(1, Math.abs(hi)) * 0.1;
+        const ymin = lo - pad, ymax = hi + pad;
+        const X = i => L + 80 + (R - L - 160) * i / (xLabels.length - 1);
+        const Y = v => BOT - (v - ymin) / (ymax - ymin) * (BOT - TOP);
+        let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(yTitle) + '">';
+        s += '<text x="' + L + '" y="16" style="fill:var(--text);font-weight:700">' + esc(yTitle) + '</text>';
+        for (let t = 0; t <= 4; t++) {
+          const v = ymin + (ymax - ymin) * t / 4;
+          s += '<line x1="' + L + '" y1="' + Y(v).toFixed(1) + '" x2="' + R + '" y2="' + Y(v).toFixed(1) + '" class="grid"/>';
+          s += '<text x="' + (L - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + v.toFixed(1) + '</text>';
+        }
+        s += '<line x1="' + L + '" y1="' + BOT + '" x2="' + R + '" y2="' + BOT + '" class="axis"/>';
+        xLabels.forEach((lab, i) => {
+          s += '<text x="' + X(i).toFixed(1) + '" y="' + (BOT + 18) + '" text-anchor="middle">' + esc(lab) + '</text>';
+        });
+        s += '<text x="' + ((L + R) / 2) + '" y="' + (BOT + 36) + '" text-anchor="middle">Factor level</text>';
+        series.forEach((se, si) => {
+          const pts = se.ys.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ');
+          s += '<polyline points="' + pts + '" fill="none" stroke="' + se.color + '" stroke-width="2.4"/>';
+          se.ys.forEach((v, i) => {
+            s += '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="4.5" fill="' + se.color + '"/>';
+            s += '<text x="' + X(i).toFixed(1) + '" y="' + (Y(v) - 9).toFixed(1) + '" text-anchor="middle" class="lbl-val" style="fill:' + se.color + '">' + v.toFixed(2) + '</text>';
+          });
+          if (legend) {
+            s += '<line x1="' + (L + 10) + '" y1="' + (TOP + 18 + si * 16) + '" x2="' + (L + 34) + '" y2="' + (TOP + 18 + si * 16) + '" stroke="' + se.color + '" stroke-width="2.4"/>';
+            s += '<text x="' + (L + 40) + '" y="' + (TOP + 22 + si * 16) + '" style="fill:var(--text)">' + esc(se.name) + '</text>';
+          }
+        });
+        s += '</svg>';
+        return s;
+      }
+
+      /* ---------- Modes ---------- */
+      function setMode(m) {
+        state.mode = m;
+        $('stepsSection').hidden = m !== 'steps';
+        $('modeComplete').classList.toggle('active', m === 'complete');
+        $('modeSteps').classList.toggle('active', m === 'steps');
+      }
+
+      /* ---------- Run ---------- */
+      function runCalc() {
+        const inp = collectInput();
+        if (inp.errors.length) {
+          const shown = inp.errors.length > 8 ? inp.errors.slice(0, 8).concat(['…and ' + (inp.errors.length - 8) + ' more problem(s).']) : inp.errors;
+          showAlert('err', shown);
+          showAlert('ok', []);
+          $('resultsContent').hidden = true;
+          $('emptyState').style.display = '';
+          return;
+        }
+        const alpha = parseFloat($('alphaSelect').value);
+        const res = computeFactorial(inp.Y, alpha);
+        renderResults(res);
+        showAlert('err', []);
+        showAlert('ok', ['Calculation complete: r = ' + res.r + ', N = ' + res.N + ' observations, α = ' + alpha.toFixed(2) + '.']);
+        $('emptyState').style.display = 'none';
+        $('resultsContent').hidden = false;
+      }
+
+      /* ---------- Events ---------- */
+      function loadExample() {
+        $('repInput').value = '2';
+        buildObs(2, EX_Y.map(row => row.map(String)));
+        $('alphaSelect').value = '0.05';
+        state.live = true;
+        runCalc();
+      }
+      function resetAll() {
+        $('repInput').value = '2';
+        buildObs(2, TREAT.map(() => ['', '']));
+        $('alphaSelect').value = '0.05';
+        state.live = false;
+        $('resultsContent').hidden = true;
+        $('emptyState').style.display = '';
+        showAlert('ok', []);
+        showAlert('err', []);
+      }
+      $('repInput').addEventListener('input', () => {
+        const r = validR($('repInput').value);
+        if (r === null) { showAlert('err', ['Replications r must be a whole number from ' + MIN_R + ' to ' + MAX_R + '.']); return; }
+        showAlert('err', []);
+        setReplications(r);
+        if (state.live) runCalc();
+      });
+      $('obsWrap').addEventListener('input', () => { updateTotals(); if (state.live) runCalc(); });
+      $('alphaSelect').addEventListener('change', () => { if (state.live) runCalc(); });
+      $('calcBtn').addEventListener('click', () => { state.live = true; runCalc(); });
+      $('exampleBtn').addEventListener('click', loadExample);
+      $('resetBtn').addEventListener('click', resetAll);
+      $('modeComplete').addEventListener('click', () => setMode('complete'));
+      $('modeSteps').addEventListener('click', () => setMode('steps'));
+
+      /* background symbols (same as adam.html) */
+      (function () {
+        const box = $('bgSymbols');
+        const syms = ['∑', 'x̄', 'F', 'σ²', 'α', 'SSA', 'SSB', 'MSE', 'p', 'μ'];
+        const cls = ['', 'violet', 'mint'];
+        for (let i = 0; i < 18; i++) {
+          const s = document.createElement('span');
+          s.className = 'bg-symbol ' + cls[i % 3];
+          s.textContent = syms[i % syms.length];
+          s.style.left = (Math.random() * 100).toFixed(1) + '%';
+          s.style.animationDuration = (18 + Math.random() * 22).toFixed(1) + 's';
+          s.style.animationDelay = (-Math.random() * 30).toFixed(1) + 's';
+          s.style.fontSize = (0.7 + Math.random() * 0.8).toFixed(2) + 'rem';
+          s.style.bottom = '-60px';
+          box.appendChild(s);
+        }
+      })();
+
+      buildObs(2, TREAT.map(() => ['', '']));
+      setMode('complete');
+    </script>
+  </body>
+</html>
